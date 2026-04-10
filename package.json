@@ -1,0 +1,55 @@
+{
+  "name": "techcv-ai-candidate-screener",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --config config/vite.config.ts",
+    "build": "tsc --noEmit --project config/tsconfig.json && vite build --config config/vite.config.ts",
+    "preview": "vite preview --config config/vite.config.ts",
+    "embed:data": "tsx utils/embedData.ts"
+  },
+  "dependencies": {
+    "@google/genai": "^1.11.0",
+    "@google/generative-ai": "^0.24.1",
+    "@vercel/analytics": "^1.5.0",
+    "@vercel/speed-insights": "^1.2.0",
+    "canvas": "^3.2.0",
+    "firebase": "^12.3.0",
+    "lodash.debounce": "^4.0.8",
+    "lucide-react": "^0.553.0",
+    "mammoth": "1.7.1",
+    "openai": "^6.34.0",
+    "p-queue": "^8.1.1",
+    "pdfjs-dist": "4.3.136",
+    "pg": "^8.16.3",
+    "pgvector": "^0.2.1",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-router-dom": "^7.9.1",
+    "recharts": "^2.13.0",
+    "tesseract.js": "5.1.0",
+    "web-vitals": "^5.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@types/react": "^19.2.13",
+    "@types/react-dom": "^19.2.3",
+    "@vercel/node": "^5.7.2",
+    "@vitejs/plugin-react": "^5.0.0",
+    "autoprefixer": "^10.4.22",
+    "dotenv": "^16.4.5",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.17",
+    "tsx": "^4.19.2",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "packageManager": "npm@10.9.0",
+  "overrides": {
+    "rollup": "4.21.2"
+  }
+}

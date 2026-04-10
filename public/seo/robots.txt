@@ -1,0 +1,36 @@
+# Robots.txt for Support HR - AI Recruitment Platform
+
+# Google Bot
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0
+
+# Bing Bot
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 0
+
+# All other bots
+User-agent: *
+Allow: /
+Crawl-delay: 1
+
+# Sitemaps
+Sitemap: https://support-hr.vercel.app/seo/sitemap.xml
+
+# Disallow admin pages
+Disallow: /admin/
+Disallow: /api/
+Disallow: /*.json$
+Disallow: /firebase-config
+
+# Allow important pages
+Allow: /
+Allow: /dashboard
+Allow: /process
+Allow: /history
+Allow: /analytics
+Allow: /salary-analysis
+Allow: /*.css$
+Allow: /*.js$
+Allow: /images/

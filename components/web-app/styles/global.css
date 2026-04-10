@@ -1,0 +1,80 @@
+/* ================================================
+   WebApp Global Styles — 全局样式
+   Chỉ hỗ trợ Dark Mode
+   ================================================ */
+
+/* 确保组件在加载前隐藏内容 */
+.webapp-shell *,
+.mobile-simulator *,
+.settings-panel * {
+  box-sizing: border-box;
+}
+
+/* 滚动条样式 */
+.webapp-shell ::-webkit-scrollbar,
+.mobile-simulator__controls ::-webkit-scrollbar,
+.settings-panel__content::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.webapp-shell ::-webkit-scrollbar-track,
+.mobile-simulator__controls ::-webkit-scrollbar-track,
+.settings-panel__content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.webapp-shell ::-webkit-scrollbar-thumb,
+.mobile-simulator__controls ::-webkit-scrollbar-thumb,
+.settings-panel__content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+.webapp-shell ::-webkit-scrollbar-thumb:hover,
+.mobile-simulator__controls ::-webkit-scrollbar-thumb:hover,
+.settings-panel__content::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* Firefox */
+.webapp-shell {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+/* 动画优化 */
+@media (prefers-reduced-motion: reduce) {
+  .webapp-shell *,
+  .mobile-simulator *,
+  .settings-panel * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* 焦点样式 */
+.webapp-shell button:focus-visible,
+.mobile-simulator button:focus-visible,
+.settings-panel button:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
+}
+
+/* 禁用选择 */
+.webapp-shell,
+.mobile-simulator__device,
+.settings-panel {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* 允许文本选择 */
+.mobile-app-view,
+.pc-app-view,
+.mobile-tab,
+.pc-candidate-card {
+  user-select: text;
+  -webkit-user-select: text;
+}

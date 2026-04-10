@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/jpeg" href="/images/logos/logo.jpg" />
+    <link rel="manifest" href="/pwa/manifest.json" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- Primary Meta Tags -->
+    <title>Support HR - AI Sàng Lọc CV Thông Minh | TuyểN Dụng Tự Động</title>
+    <meta name="title" content="Support HR - AI Sàng Lọc CV Thông Minh | Tuyển Dụng Tự Động" />
+    <meta name="description" content="Support HR - Giải pháp AI hỗ trợ HR tuyển dụng: sàng lọc CV tự động, phân tích ứng viên thông minh, gợi ý câu hỏi phỏng vấn. Tiết kiệm 80% thời gian tuyển dụng." />
+    <meta name="keywords" content="support hr, hỗ trợ hr, tuyển dụng AI, sàng lọc CV, phân tích ứng viên, AI recruitment, HR tech, tuyển dụng thông minh, công cụ HR, phỏng vấn AI" />
+    <meta name="author" content="Support HR Team" />
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+    <meta name="googlebot" content="index, follow" />
+    <meta name="bingbot" content="index, follow" />
+    
+    <!-- Bing & Microsoft Meta Tags -->
+    <meta name="msapplication-TileColor" content="#0B1220" />
+    <meta name="msapplication-TileImage" content="/images/logos/logo.jpg" />
+    <meta name="msapplication-config" content="/pwa/browserconfig.xml" />
+    <meta name="msvalidate.01" content="YOUR_BING_VERIFICATION_CODE" />
+    
+    <!-- Language & Geographic -->
+    <meta name="language" content="Vietnamese" />
+    <meta name="geo.region" content="VN" />
+    <meta name="geo.placename" content="Vietnam" />
+    
+    <!-- Theme Color for Edge/Mobile -->
+    <meta name="theme-color" content="#0B1220" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://support-hr.vercel.app/" />
+    <meta property="og:title" content="Support HR - AI Sàng Lọc CV Thông Minh" />
+    <meta property="og:description" content="Giải pháp AI hỗ trợ HR: Sàng lọc CV tự động, phân tích ứng viên, gợi ý phỏng vấn. Tiết kiệm 80% thời gian tuyển dụng." />
+    <meta property="og:image" content="https://support-hr.vercel.app/images/logos/logo.jpg" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://support-hr.vercel.app/" />
+    <meta property="twitter:title" content="Support HR - AI Sàng Lọc CV Thông Minh" />
+    <meta property="twitter:description" content="Giải pháp AI hỗ trợ HR: Sàng lọc CV tự động, phân tích ứng viên, gợi ý phỏng vấn." />
+    <meta property="twitter:image" content="https://support-hr.vercel.app/images/logos/logo.jpg" />
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://support-hr.vercel.app/" />
+    
+    <!-- Alternate for Bing International -->
+    <link rel="alternate" hreflang="vi-VN" href="https://support-hr.vercel.app/" />
+    <link rel="alternate" hreflang="vi" href="https://support-hr.vercel.app/" />
+    <link rel="alternate" hreflang="x-default" href="https://support-hr.vercel.app/" />
+    
+    <!-- JSON-LD Structured Data for Bing & Google -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Support HR",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web Browser",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "VND"
+      },
+      "description": "Giải pháp AI hỗ trợ HR tuyển dụng: sàng lọc CV tự động, phân tích ứng viên thông minh, gợi ý câu hỏi phỏng vấn",
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "ratingCount": "150"
+      },
+      "creator": {
+        "@type": "Organization",
+        "name": "Support HR Team",
+        "url": "https://support-hr.vercel.app"
+      }
+    }
+    </script>
+    
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Support HR",
+      "url": "https://support-hr.vercel.app",
+      "logo": "https://support-hr.vercel.app/images/logos/logo.jpg",
+      "description": "Nền tảng AI hỗ trợ tuyển dụng thông minh cho HR",
+      "sameAs": []
+    }
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://esm.sh/@google/genai@^1.11.0",
+    "mammoth": "https://esm.sh/mammoth@1.7.1",
+    "pdfjs-dist": "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.3.136/build/pdf.min.mjs",
+    "recharts": "https://esm.sh/recharts@3.0.0-alpha.10",
+    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.9.1",
+    "react/": "https://aistudiocdn.com/react@^19.1.1/",
+    "react": "https://aistudiocdn.com/react@^19.1.1",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
+    "tesseract.js": "https://esm.sh/tesseract.js@5.1.0"
+  }
+}
+</script>
+    <style>
+      :root {
+        --bg: #F8FAFC;
+        --card: #FFFFFF;
+        --card-stroke: #E2E8F0;
+        --txt: #0F172A;
+        --muted: #64748B;
+        --primary: #3B82F6;
+        --accent: #6366F1;
+        --success: #10B981;
+        --warning: #F59E0B;
+        --shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+      }
+      html {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: #F8FAFC;
+        color: #0F172A;
+        min-height: 100vh;
+      }
+      .ai-aurora {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background: radial-gradient(60% 60% at 20% 10%, rgba(59, 130, 246, 0.04), transparent 60%),
+                    radial-gradient(50% 50% at 80% 30%, rgba(99, 102, 241, 0.03), transparent 60%),
+                    radial-gradient(70% 70% at 50% 90%, rgba(16, 185, 129, 0.03), transparent 60%);
+        filter: blur(60px);
+        opacity: 1;
+        z-index: -1;
+      }
+      .grid-overlay {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background-image:
+          linear-gradient(to right, rgba(0,0,0,0.025) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(0,0,0,0.025) 1px, transparent 1px);
+        background-size: 40px 40px;
+        mask-image: radial-gradient(ellipse 100% 100% at 50% 50%, black 20%, transparent 80%);
+        opacity: 0.5;
+        z-index: -1;
+      }
+      @keyframes shimmer {
+        0% { background-position: -100% 50%; }
+        100% { background-position: 200% 50%; }
+      }
+      .animate-shimmer {
+        animation: shimmer 2s cubic-bezier(0.4, 0, 0.6, 1) 1;
+        background-size: 200% 100%;
+      }
+      .btn-glow {
+        position: relative;
+        overflow: hidden;
+      }
+      .btn-glow::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 50%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.7s ease-in-out;
+      }
+      .btn-glow:hover::before {
+        left: 150%;
+      }
+      .pulse-animation {
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+      @keyframes pulse {
+        0%, 100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: .5;
+        }
+      }
+      .float-animation {
+        animation: float 3s ease-in-out infinite;
+      }
+      @keyframes float {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+        100% { transform: translateY(0px); }
+      }
+    </style>
+  <link rel="stylesheet" href="/assets/index.css">
+</head>
+  <body>
+    <div class="ai-aurora"></div>
+    <div class="grid-overlay"></div>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+    <!-- Google API Scripts -->
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://accounts.google.com/gsi/client"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/pwa/service-worker.js', { scope: '/' })
+            .then(registration => {
+              console.log('SW registered: ', registration);
+            })
+            .catch(registrationError => {
+              console.log('SW registration failed: ', registrationError);
+            });
+        });
+      }
+    </script>
+  </body>
+</html> 

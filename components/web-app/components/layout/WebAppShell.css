@@ -1,0 +1,381 @@
+/* ================================================
+   WebAppShell Styles — 核心布局样式
+   Chỉ hỗ trợ Dark Mode
+   ================================================ */
+
+/* ======== Dark Mode Variables ======== */
+:root {
+  --wa-bg: #0B1120;
+  --wa-bg-secondary: #0f172a;
+  --wa-surface: rgba(59, 130, 246, 0.04);
+  --wa-surface-hover: rgba(59, 130, 246, 0.08);
+  --wa-surface-active: rgba(59, 130, 246, 0.12);
+  --wa-border: rgba(255, 255, 255, 0.08);
+  --wa-border-subtle: rgba(255, 255, 255, 0.05);
+  --wa-text: #F1F5F9;
+  --wa-text-secondary: #CBD5E1;
+  --wa-text-muted: #94A3B8;
+  --wa-text-disabled: #64748B;
+  --wa-primary: #60a5fa;
+  --wa-primary-hover: #93C5FD;
+  --wa-primary-muted: rgba(96, 165, 250, 0.12);
+  --wa-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  --wa-radius: 12px;
+  --wa-btn-bg: rgba(255, 255, 255, 0.06);
+  --wa-btn-hover: rgba(255, 255, 255, 0.1);
+  --wa-btn-active: rgba(255, 255, 255, 0.15);
+  --wa-sim-bg: #1a1a2e;
+  --wa-sim-device-bg: #2d2d44;
+  --wa-sim-notch: #1a1a2e;
+  --wa-sim-speaker: #3d3d5c;
+  --wa-sim-camera: #1a1a2e;
+}
+
+/* ======== Shell Container ======== */
+
+.webapp-shell {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: var(--wa-bg);
+  color: var(--wa-text);
+  overflow: hidden;
+}
+
+.webapp-shell--mobile {
+  background: var(--wa-sim-bg);
+}
+
+.webapp-shell--pc {
+  background: var(--wa-bg);
+}
+
+/* ======== Header ======== */
+
+.webapp-shell__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  height: 52px;
+  min-height: 52px;
+  background: var(--wa-surface);
+  border-bottom: 1px solid var(--wa-border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 100;
+  gap: 12px;
+}
+
+.webapp-shell__header-left,
+.webapp-shell__header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.webapp-shell__header-right {
+  justify-content: flex-end;
+}
+
+.webapp-shell__header-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ======== Device Info ======== */
+
+.webapp-device-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.webapp-device-info__badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: var(--wa-surface-hover);
+  border: 1px solid var(--wa-border);
+  border-radius: 20px;
+  color: var(--wa-primary);
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.webapp-device-info__badge i {
+  font-size: 10px;
+}
+
+.webapp-device-info__size {
+  color: var(--wa-text-muted);
+  font-size: 11px;
+  font-family: 'SF Mono', 'Consolas', monospace;
+}
+
+.webapp-device-info__real-tag {
+  padding: 2px 8px;
+  background: var(--wa-primary);
+  color: #ffffff;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ======== Toggle Button ======== */
+
+.webapp-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px 4px 4px;
+  background: var(--wa-btn-bg);
+  border: 1px solid var(--wa-border);
+  border-radius: 24px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--wa-text);
+}
+
+.webapp-toggle-btn:hover {
+  background: var(--wa-btn-hover);
+  border-color: var(--wa-primary);
+}
+
+.webapp-toggle-btn__track {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  background: var(--wa-primary);
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.webapp-toggle-btn__thumb {
+  position: absolute;
+  top: 2px;
+  width: 16px;
+  height: 16px;
+  background: #ffffff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  color: var(--wa-primary);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.webapp-toggle-btn__thumb--pc {
+  left: 2px;
+}
+
+.webapp-toggle-btn__thumb--mobile {
+  left: 18px;
+}
+
+.webapp-toggle-btn__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--wa-text);
+}
+
+/* ======== Settings Button ======== */
+
+.webapp-settings-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: var(--wa-btn-bg);
+  border: 1px solid var(--wa-border);
+  border-radius: 10px;
+  cursor: pointer;
+  color: var(--wa-text-muted);
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.webapp-settings-btn:hover {
+  background: var(--wa-btn-hover);
+  color: var(--wa-text);
+  border-color: var(--wa-primary);
+}
+
+.webapp-settings-btn--active {
+  background: var(--wa-primary);
+  color: #ffffff;
+  border-color: var(--wa-primary);
+}
+
+.webapp-settings-btn--active:hover {
+  background: var(--wa-primary-hover);
+}
+
+/* ======== Toolbar ======== */
+
+.webapp-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ======== Main Content ======== */
+
+.webapp-shell__main {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ======== PC Container ======== */
+
+.webapp-shell__pc-container {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+.webapp-shell__sidebar {
+  width: 240px;
+  min-width: 240px;
+  height: 100%;
+  background: var(--wa-surface);
+  border-right: 1px solid var(--wa-border);
+  overflow-y: auto;
+}
+
+.webapp-shell__pc-content {
+  flex: 1;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* ======== Mobile Control Bar ======== */
+
+.webapp-mobile-control-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  background: var(--wa-surface);
+  border-top: 1px solid var(--wa-border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.webapp-mobile-control-bar__inner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.webapp-mobile-control-bar__btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 8px;
+  background: var(--wa-btn-bg);
+  border: 1px solid var(--wa-border);
+  border-radius: 10px;
+  cursor: pointer;
+  color: var(--wa-text-muted);
+  font-size: 10px;
+  transition: all 0.2s ease;
+}
+
+.webapp-mobile-control-bar__btn i {
+  font-size: 16px;
+}
+
+.webapp-mobile-control-bar__btn:hover {
+  background: var(--wa-btn-hover);
+  color: var(--wa-text);
+  border-color: var(--wa-primary);
+}
+
+.webapp-mobile-control-bar__btn:active {
+  background: var(--wa-btn-active);
+  transform: scale(0.96);
+}
+
+/* ======== Responsive ======== */
+
+@media (max-width: 640px) {
+  .webapp-shell__header {
+    padding: 6px 12px;
+    height: 48px;
+    min-height: 48px;
+  }
+
+  .webapp-device-info__size {
+    display: none;
+  }
+
+  .webapp-toggle-btn__label {
+    display: none;
+  }
+
+  .webapp-toggle-btn {
+    padding: 4px;
+  }
+
+  .webapp-toggle-btn__track {
+    width: 32px;
+    height: 18px;
+  }
+
+  .webapp-toggle-btn__thumb {
+    width: 14px;
+    height: 14px;
+  }
+
+  .webapp-toggle-btn__thumb--mobile {
+    left: 16px;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .webapp-shell__sidebar {
+    width: 200px;
+    min-width: 200px;
+  }
+}
+
+@media (min-width: 1025px) {
+  .webapp-shell__sidebar {
+    width: 256px;
+    min-width: 256px;
+  }
+}
+
+/* ======== Settings Panel Animation ======== */
+
+@keyframes wa-slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.webapp-settings-panel {
+  animation: wa-slideDown 0.25s ease-out;
+}
