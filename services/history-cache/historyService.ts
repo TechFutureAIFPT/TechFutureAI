@@ -1,5 +1,5 @@
 import { collection, addDoc, serverTimestamp, getDocs, query, orderBy, limit, where, doc, setDoc } from 'firebase/firestore';
-import { db, auth } from '../../services/firebase';
+import { db, auth } from '../firebase';
 import { UserProfileService } from '../data-sync/userProfileService';
 import type { Candidate, HistoryEntry } from '../../assets/types';
 

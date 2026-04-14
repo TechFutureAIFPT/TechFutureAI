@@ -1,5 +1,6 @@
 /**
  * Dark Button — Component cho Dark Mode
+ * Màu sắc đồng bộ từ tokens.ts
  */
 import React from 'react';
 
@@ -16,7 +17,7 @@ interface DarkButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> 
 }
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: 'bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-400 hover:to-indigo-400 text-white shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 border border-blue-400/30',
+  primary: `bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-400 hover:to-indigo-400 text-white shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 border border-blue-400/30`,
   secondary: 'bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 border border-slate-700/50 hover:border-slate-600/50',
   ghost: 'bg-transparent hover:bg-slate-800/50 text-slate-300 hover:text-white border border-transparent hover:border-slate-700/30',
   danger: 'bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 hover:border-red-500/30',

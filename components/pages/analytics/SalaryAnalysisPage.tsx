@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import SalaryAnalysisPanel from '../../features/analysis/SalaryAnalysisPanel';
+import SalaryAnalysisPanel from '../../../components/features/analysis/SalaryAnalysisPanel';
 import type { Candidate } from '../../../assets/types';
 
 interface SalaryAnalysisPageProps {

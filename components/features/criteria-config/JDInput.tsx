@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { filterAndStructureJD, extractJobPositionFromJD } from '../../../services/ai-ml/gemini/geminiService';
+import { filterAndStructureJD, extractJobPositionFromJD } from '../../../services/ai-ml/models/gemini/gemini-core';
 import type { HardFilters } from '../../../assets/types';
 
 interface JDInputProps {
@@ -11,9 +11,16 @@ interface JDInputProps {
   setHardFilters: React.Dispatch<React.SetStateAction<HardFilters>>;
   onComplete: () => void;
   onBackToWelcome?: () => void;
-  /** Khi true: chỉ hiển thị ô JD (toolbar nằm ở ScreenerPage phía trên header) */
+  /** Khi true: chi hien thi o JD (toolbar nam o ScreenerPage phia tren header) */
   hideToolbar?: boolean;
 }
+
+/** Tailwind ring + inline vars */
+const toolbarFieldStyle = {
+  background: 'rgba(255,255,255,0.04)',
+  border: '1px solid rgba(255,255,255,0.08)',
+  '--tw-ring-color': 'rgba(99,102,241,0.5)',
+} as React.CSSProperties;
 
 const JDInput: React.FC<JDInputProps> = ({
   jdText,
@@ -35,7 +42,7 @@ const JDInput: React.FC<JDInputProps> = ({
 
   const handleSummarizeJD = async () => {
     if (jdText.trim().length < 200) {
-      setSummarizeError('Nội dung JD quá ngắn để tối ưu.');
+      setSummarizeError('Noi dung JD qua ngan de toi uu.');
       return;
     }
     setIsSummarizing(true);
@@ -48,13 +55,13 @@ const JDInput: React.FC<JDInputProps> = ({
       const extractedPosition = await extractJobPositionFromJD(structuredJd);
       if (extractedPosition) {
         setJobPosition(extractedPosition);
-        setSummarizeMsg(`Đã tối ưu JD và trích xuất chức danh: ${extractedPosition}`);
+        setSummarizeMsg(`Da toi uu JD va trich xuat chuc danh: ${extractedPosition}`);
       } else {
-        setSummarizeMsg('Đã tối ưu JD bằng AI.');
+        setSummarizeMsg('Da toi uu JD bang AI.');
       }
       setTimeout(() => setSummarizeMsg(''), 5000);
     } catch (error) {
-      setSummarizeError('Dịch vụ AI đang gặp sự cố. Vui lòng thử lại.');
+      setSummarizeError('Dich vu AI dang gap su co. Vui long thu lai.');
     } finally {
       setIsSummarizing(false);
     }
@@ -82,7 +89,7 @@ const JDInput: React.FC<JDInputProps> = ({
           className="text-[10px] font-bold uppercase tracking-widest"
           style={{ color: 'rgba(100,116,139,0.4)', padding: '0 20px 20px', textAlign: 'right' }}
         >
-          {characterCount > 0 ? `${characterCount} ký tự` : 'Bắt đầu nhập JD'}
+          {characterCount > 0 ? `${characterCount} ky tu` : 'Bat dau nhap JD'}
         </div>
       </section>
     );
@@ -94,7 +101,7 @@ const JDInput: React.FC<JDInputProps> = ({
       className="module-pane active flex h-full min-h-0 w-full flex-col"
       aria-labelledby="jd-title"
     >
-      {/* ── Header bar (tách rời) ───────────────────────────── */}
+      {/* ── Header bar (tach roi) ───────────────────────────── */}
       <div
         className="flex shrink-0 items-center gap-2 px-5 py-3"
         style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}
@@ -102,16 +109,12 @@ const JDInput: React.FC<JDInputProps> = ({
         {/* Job Position */}
         <div
           className="group flex min-w-[150px] flex-1 items-center rounded-lg px-3 py-2 transition-all focus-within:ring-1"
-          style={{
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            '--tw-ring-color': 'rgba(99,102,241,0.5)',
-          }}
+          style={toolbarFieldStyle}
         >
           <i className="fa-solid fa-briefcase text-xs transition-colors group-focus-within:text-purple-400" style={{ color: '#475569' }} />
           <input
             type="text"
-            placeholder="Vị trí công việc..."
+            placeholder="Vi tri cong viec..."
             value={jobPosition}
             onChange={(e) => setJobPosition(e.target.value)}
             className="ml-2 w-full border-none bg-transparent text-[11px] font-medium outline-none placeholder:text-slate-600"
@@ -122,16 +125,12 @@ const JDInput: React.FC<JDInputProps> = ({
         {/* Company */}
         <div
           className="group flex min-w-[130px] flex-1 items-center rounded-lg px-3 py-2 transition-all focus-within:ring-1"
-          style={{
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            '--tw-ring-color': 'rgba(99,102,241,0.5)',
-          }}
+          style={toolbarFieldStyle}
         >
           <i className="fa-regular fa-building text-xs transition-colors group-focus-within:text-purple-400" style={{ color: '#475569' }} />
           <input
             type="text"
-            placeholder="Công ty..."
+            placeholder="Cong ty..."
             className="ml-2 w-full border-none bg-transparent text-[11px] font-medium outline-none placeholder:text-slate-600"
             style={{ color: '#cbd5e1' }}
           />
@@ -140,16 +139,12 @@ const JDInput: React.FC<JDInputProps> = ({
         {/* Industry */}
         <div
           className="group flex min-w-[130px] flex-1 items-center rounded-lg px-3 py-2 transition-all focus-within:ring-1"
-          style={{
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            '--tw-ring-color': 'rgba(99,102,241,0.5)',
-          }}
+          style={toolbarFieldStyle}
         >
           <i className="fa-solid fa-layer-group text-xs transition-colors group-focus-within:text-purple-400" style={{ color: '#475569' }} />
           <input
             type="text"
-            placeholder="Ngành nghề..."
+            placeholder="Nganh nghe..."
             value={hardFilters.industry}
             onChange={(e) =>
               setHardFilters((prev) => ({
@@ -166,16 +161,12 @@ const JDInput: React.FC<JDInputProps> = ({
         {/* Salary */}
         <div
           className="group flex min-w-[120px] flex-1 items-center rounded-lg px-3 py-2 transition-all focus-within:ring-1"
-          style={{
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            '--tw-ring-color': 'rgba(99,102,241,0.5)',
-          }}
+          style={toolbarFieldStyle}
         >
           <i className="fa-solid fa-money-bill text-xs transition-colors group-focus-within:text-purple-400" style={{ color: '#475569' }} />
           <input
             type="text"
-            placeholder="Mức lương..."
+            placeholder="Muc luong..."
             value={hardFilters.salaryMin}
             onChange={(e) => setHardFilters((prev) => ({ ...prev, salaryMin: e.target.value }))}
             className="ml-2 w-full border-none bg-transparent text-[11px] font-medium outline-none placeholder:text-slate-600"
@@ -189,7 +180,7 @@ const JDInput: React.FC<JDInputProps> = ({
             onClick={handleSummarizeJD}
             disabled={isSummarizing || jdText.trim().length < 200}
             className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-all hover:bg-white/5 hover:text-purple-400 disabled:opacity-40"
-            title="Tối ưu hóa bằng AI"
+            title="Toi uu hoa bang AI"
           >
             {isSummarizing ? (
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-700 border-t-purple-400" />
@@ -202,7 +193,7 @@ const JDInput: React.FC<JDInputProps> = ({
             <button
               onClick={onBackToWelcome}
               className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-all hover:bg-white/5 hover:text-indigo-400"
-              title="Quay lại tải file"
+              title="Quay lai tai file"
             >
               <i className="fa-solid fa-file-arrow-up text-xs" />
             </button>
@@ -213,14 +204,14 @@ const JDInput: React.FC<JDInputProps> = ({
             disabled={!isCompleteEnabled}
             className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-all hover:bg-white/5 hover:text-white disabled:opacity-30"
             style={isCompleteEnabled ? { background: 'rgba(99,102,241,0.15)', color: '#818cf8' } : {}}
-            title="Kế tiếp"
+            title="Ke tiep"
           >
             <i className="fa-solid fa-arrow-right text-xs" />
           </button>
         </div>
       </div>
 
-      {/* ── Textarea full area (không viền, không khung) ──── */}
+      {/* ── Textarea full area (khong vien, khong khung) ──── */}
       <div className="relative flex min-h-0 flex-1 flex-col">
         <textarea
           className="custom-scrollbar min-h-0 w-full flex-1 resize-none border-none bg-transparent p-5 text-sm leading-[1.75] text-slate-300 outline-none placeholder:text-slate-700 focus:ring-0 font-mono"

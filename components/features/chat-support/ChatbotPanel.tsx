@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import type { AnalysisRunData, ChatMessage } from '../../../assets/types';
-import { getChatbotAdvice } from '../../../services/ai-ml/gemini/geminiService';
+import { getChatbotAdvice } from '../../../services/ai-ml/models/gemini/geminiService';
 import { analyzeSalary } from '../../../services/salary-analysis/salaryAnalysisService';
 
 interface ChatbotPanelProps {

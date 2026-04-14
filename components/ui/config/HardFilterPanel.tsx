@@ -84,7 +84,7 @@ const HardFilterPanel: React.FC<HardFilterPanelProps> = ({ hardFilters, setHardF
             placeholder: 'Không yêu cầu',
             mandatoryKey: 'seniorityMandatory',
             icon: Layers,
-            color: '#06b6d4',
+            color: '#60a5fa',  // tokens.dark.primary (thống nhất cyan → blue)
             colorBg: 'cyan',
             options: [
                 { value: '', label: 'Không yêu cầu' },
@@ -191,7 +191,7 @@ const HardFilterPanel: React.FC<HardFilterPanelProps> = ({ hardFilters, setHardF
                 <div className="relative z-10 w-full">
                     <select
                         id={config.id}
-                        value={hardFilters[config.id]}
+                        value={String(hardFilters[config.id] ?? '')}
                         onChange={handleChange}
                         className={inputClasses(Boolean(isMandatory), hasCurrentValue)}
                     >

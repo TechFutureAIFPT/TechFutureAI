@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Users, Award, Star, AlertTriangle, Search, Filter, Download, Question, TrendingUp, Calendar, ChevronDown, X, Crown, CheckSquare, Square, Briefcase } from 'lucide-react';
+import { Users, Award, Star, AlertTriangle, Search, Filter, Download, CircleHelp, TrendingUp, Calendar, ChevronDown, X, Crown, CheckSquare, Square, Briefcase } from 'lucide-react';
 import type { AnalysisRunData, Candidate } from '../../../assets/types';
-import CandidateCard from '../../ui/candidate/CandidateCard';
-import InterviewQuestionGenerator from '../../features/analysis/InterviewQuestionGenerator';
+import CandidateCard from '../../../components/ui/candidate/CandidateCard';
+import InterviewQuestionGenerator from '../../../components/features/analysis/InterviewQuestionGenerator';
 
 const FILTER_TABS = [
   { key: 'all' as const, label: 'Tất cả', color: 'text-white', bg: 'bg-slate-700/60', border: 'border-slate-600/40' },
@@ -43,15 +43,6 @@ const DashboardPage: React.FC = () => {
     });
   }, []);
 
-  const handleSelectAll = useCallback(() => {
-    if (!analysisData) return;
-    if (selectedCandidates.size === filteredCandidates.length) {
-      setSelectedCandidates(new Set());
-    } else {
-      setSelectedCandidates(new Set(filteredCandidates.map(c => c.id)));
-    }
-  }, [analysisData, selectedCandidates, filteredCandidates]);
-
   const summaryData = useMemo(() => {
     if (!analysisData) return { total: 0, countA: 0, countB: 0, countC: 0, failed: 0 };
     const candidates = analysisData.candidates;
@@ -83,6 +74,29 @@ const DashboardPage: React.FC = () => {
     }
     return candidates;
   }, [analysisData, searchTerm, filter]);
+
+  const handleSelectAll = useCallback(() => {
+    if (!analysisData) return;
+    let list = analysisData.candidates;
+    if (filter !== 'all') {
+      list = filter === 'FAILED'
+        ? list.filter(c => c.status === 'FAILED')
+        : list.filter(c => c.analysis?.['Hạng'] === filter && c.status === 'SUCCESS');
+    }
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      list = list.filter(c =>
+        c.candidateName?.toLowerCase().includes(term) ||
+        c.jobTitle?.toLowerCase().includes(term) ||
+        c.email?.toLowerCase().includes(term)
+      );
+    }
+    if (selectedCandidates.size === list.length) {
+      setSelectedCandidates(new Set());
+    } else {
+      setSelectedCandidates(new Set(list.map(c => c.id)));
+    }
+  }, [analysisData, filter, searchTerm, selectedCandidates]);
 
   const exportToCSV = useCallback(() => {
     if (!analysisData) return;
@@ -190,7 +204,7 @@ const DashboardPage: React.FC = () => {
               onClick={() => setShowInterviewQuestions(true)}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold border bg-slate-800/60 border-slate-700/50 text-slate-400 hover:text-white hover:border-slate-600 transition-all"
             >
-              <Question className="w-4 h-4 text-purple-400" />
+              <CircleHelp className="w-4 h-4 text-purple-400" />
               Gợi ý câu hỏi PV
             </button>
             <button

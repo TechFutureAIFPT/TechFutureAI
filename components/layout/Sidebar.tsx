@@ -1,11 +1,12 @@
 /**
  * Sidebar — Professional HR Platform (Dark Theme)
- * Đồng bộ màu với DarkSection (#0B1120 / #0f172a)
+ * Dong bo mau voi DarkSection (#0B1120 / #0f172a)
+ * Màu sắc đồng bộ từ tokens.ts
  */
 import React, { useState } from 'react';
 import {
   Briefcase, SlidersHorizontal, Upload, Sparkles,
-  PieChart, MessageSquare, LogOut, ChevronDown,
+  PieChart, MessageSquare, LogOut, ChevronDown, UserCheck,
 } from 'lucide-react';
 import type { AppStep } from '../../assets/types';
 
@@ -27,19 +28,21 @@ interface SidebarProps {
   onNewSession?: () => void;
 }
 
-// ── Dark palette (đồng bộ DarkSection) ────────────────────────────────
+// ── Dark palette (đồng bộ với tokens.ts) ───────────────────────────────
 const C = {
-  bg:         '#0B1120',   // nền chính sidebar
-  bg2:        '#0f172a',   // khối card nhẹ / section header
-  bg3:        '#1e293b',   // hover bg
-  bg4:        '#111827',   // dropdown / panel
-  border:     '#1e293b',   // viền mỏng
-  border2:    '#334155',   // viền nhấn
-  text:       '#e2e8f0',   // chữ chính
-  text2:      '#94a3b8',   // chữ phụ
-  text3:      '#475569',   // chữ mờ / label
-  accentBlue: '#3b82f6',
-  accent:     '#6366f1',   // indigo brand
+  bg:         '#0B1120',   // tokens.dark.bgPrimary — nền chính sidebar
+  bg2:        '#0f172a',   // tokens.dark.bgSecondary — section header
+  bg3:        '#1e293b',   // tokens.dark.bgTertiary — hover bg
+  bg4:        '#111827',   // tokens.dark.gradientCard darker
+  border:     '#1e293b',   // tokens.dark.bgTertiary
+  border2:    '#334155',   // slate-700
+  text:       '#e2e8f0',   // tokens.dark.textSecondary
+  text2:      '#94a3b8',   // tokens.dark.textMuted
+  text3:      '#475569',   // slate-600
+  accentBlue: '#60a5fa',   // tokens.dark.primary — light blue
+  accent:     '#818cf8',   // tokens.dark.accent — indigo brand
+  // Gradient cho header sidebar
+  headerGradient: 'linear-gradient(135deg, #1e3a5f, #1e40af)',
 } as const;
 
 // ── Step definitions ───────────────────────────────────────────────────────
@@ -49,13 +52,13 @@ const PROCESS_STEPS: Array<{
   color: string; bgActive: string;
 }> = [
   { key: 'jd',       label: 'Mô tả công việc', sub: 'Nhập JD · Bước 1',
-    icon: Briefcase,         color: '#60a5fa', bgActive: 'rgba(96,165,250,0.1)' },
+    icon: Briefcase,         color: '#60a5fa', bgActive: 'rgba(96,165,250,0.1)' },   // tokens.dark.primary
   { key: 'weights',  label: 'Trọng số & Bộ lọc', sub: 'Thiết lập · Bước 2',
-    icon: SlidersHorizontal, color: '#a78bfa', bgActive: 'rgba(167,139,250,0.1)' },
+    icon: SlidersHorizontal, color: '#60a5fa', bgActive: 'rgba(96,165,250,0.1)' },   // tokens.dark.primary (đồng bộ)
   { key: 'upload',   label: 'Tải lên CV', sub: 'Upload · Bước 3',
-    icon: Upload,            color: '#22d3ee', bgActive: 'rgba(34,211,238,0.1)' },
+    icon: Upload,            color: '#60a5fa', bgActive: 'rgba(96,165,250,0.1)' },   // tokens.dark.primary (đồng bộ)
   { key: 'analysis', label: 'Phân tích AI', sub: 'Xử lý · Bước 4',
-    icon: Sparkles,          color: '#fbbf24', bgActive: 'rgba(251,191,36,0.1)' },
+    icon: Sparkles,          color: '#60a5fa', bgActive: 'rgba(96,165,250,0.1)' },   // tokens.dark.primary (đồng bộ)
 ];
 
 const TOOL_ITEMS: Array<{
@@ -64,9 +67,11 @@ const TOOL_ITEMS: Array<{
   color: string; bgActive: string;
 }> = [
   { key: 'dashboard', label: 'Thống kê chi tiết', sub: 'Analytics Dashboard',
-    icon: PieChart,      color: '#34d399', bgActive: 'rgba(52,211,153,0.1)' },
-  { key: 'chatbot',    label: 'Gợi ý ứng viên',  sub: 'AI Recruitment Assistant',
-    icon: MessageSquare, color: '#c084fc', bgActive: 'rgba(192,132,252,0.1)' },
+    icon: PieChart,      color: '#60a5fa', bgActive: 'rgba(96,165,250,0.1)' },   // tokens.dark.primary
+  { key: 'chatbot',    label: 'Gợi ý ứng viên AI',  sub: 'AI Recruitment Assistant',
+    icon: MessageSquare, color: '#60a5fa', bgActive: 'rgba(96,165,250,0.1)' },   // tokens.dark.primary
+  { key: 'selected',   label: 'Ứng viên đã chọn', sub: 'Shortlist candidates',
+    icon: UserCheck,     color: '#34d399', bgActive: 'rgba(52,211,153,0.1)' },   // emerald — shortlist
 ];
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -75,7 +80,7 @@ const isStepEnabled = (step: AppStep, completedSteps: AppStep[]): boolean => {
   if (step === 'weights') return completedSteps.includes('jd');
   if (step === 'upload') return completedSteps.includes('jd') && completedSteps.includes('weights');
   if (step === 'analysis') return completedSteps.includes('jd') && completedSteps.includes('weights') && completedSteps.includes('upload');
-  if (step === 'dashboard' || step === 'chatbot') return completedSteps.includes('upload');
+  if (step === 'dashboard' || step === 'chatbot' || step === 'selected') return completedSteps.includes('upload');
   return false;
 };
 
@@ -109,7 +114,7 @@ const NavItem = ({
       onClick={onClick}
       disabled={!isEnabled}
       className={`
-        relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 text-left
+        relative w-full flex items-center gap-3 px-3 py-2.5  transition-all duration-200 text-left
         ${isActive
           ? ''
           : isEnabled
@@ -121,7 +126,7 @@ const NavItem = ({
       {/* Active background card */}
       {isActive && (
         <div
-          className="absolute inset-0 rounded-xl"
+          className="absolute inset-0 "
           style={{
             background: item.bgActive,
             border: `1px solid ${item.color}25`,
@@ -133,23 +138,22 @@ const NavItem = ({
       {/* Left accent bar */}
       {isActive && (
         <div
-          className="absolute left-0 top-2.5 bottom-2.5 w-[3px] rounded-full"
+          className="absolute left-0 top-2.5 bottom-2.5 w-[3px] "
           style={{ background: `linear-gradient(180deg, ${item.color}, ${item.color}60)` }}
         />
       )}
 
       {/* Icon */}
       <div
-        className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all duration-200"
+        className="relative flex h-9 w-9 shrink-0 items-center justify-center  transition-all duration-200"
         style={{
           background: isActive ? `${item.color}15` : 'rgba(255,255,255,0.04)',
           border: isActive ? `1px solid ${item.color}30` : '1px solid rgba(255,255,255,0.06)',
         }}
       >
-        <Icon
-          size={17}
-          style={{ color: isActive ? item.color : isEnabled ? C.text2 : C.text3 }}
-        />
+        <span style={{ color: isActive ? item.color : isEnabled ? C.text2 : C.text3 }}>
+          <Icon size={17} />
+        </span>
       </div>
 
       {/* Label */}
@@ -167,7 +171,7 @@ const NavItem = ({
       {/* Done checkmark */}
       {isDone && !isActive && (
         <div
-          className="relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
+          className="relative flex h-5 w-5 shrink-0 items-center justify-center "
           style={{ background: `${item.color}15` }}
         >
           <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
@@ -176,8 +180,8 @@ const NavItem = ({
         </div>
       )}
       {isActive && (
-        <div className="relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full" style={{ background: `${item.color}20` }}>
-          <div className="h-1.5 w-1.5 rounded-full" style={{ background: item.color }} />
+        <div className="relative flex h-5 w-5 shrink-0 items-center justify-center " style={{ background: `${item.color}20` }}>
+          <div className="h-1.5 w-1.5 " style={{ background: item.color }} />
         </div>
       )}
     </button>
@@ -197,14 +201,14 @@ const StepProgress = ({ completedSteps }: { completedSteps: AppStep[] }) => {
           {pct === 100 ? 'Hoàn tất!' : `${done}/${total} bước`}
         </span>
       </div>
-      <div className="h-1 w-full overflow-hidden rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>
+        <div className="h-1 w-full overflow-hidden " style={{ background: 'rgba(255,255,255,0.06)' }}>
         <div
-          className="h-full rounded-full transition-all duration-500"
+          className="h-full  transition-all duration-500"
           style={{
             width: `${pct}%`,
             background: pct === 100
-              ? 'linear-gradient(90deg, #059669, #34d399)'
-              : 'linear-gradient(90deg, #3b82f6, #60a5fa)',
+              ? 'linear-gradient(90deg, #10b981, #34d399)'  // tokens.dark.success → emerald
+              : 'linear-gradient(90deg, #3B82F6, #60a5fa)', // tokens.dark.gradientPrimary
           }}
         />
       </div>
@@ -227,12 +231,15 @@ const AccountPanel: React.FC<{
   const [localAvatar, setLocalAvatar] = useState<string | null>(null);
   const [localName, setLocalName]     = useState<string>('');
 
-  const effectiveAvatar = avatar !== undefined ? avatar : localAvatar;
-  const effectiveName   = name   !== undefined ? name   : localName;
+  const effectiveAvatar = (avatar !== undefined && avatar !== null) ? avatar : localAvatar;
+  const effectiveName   = (name !== undefined && name !== '') ? name : localName;
   const analysisDone    = completedSteps.includes('analysis');
 
   React.useEffect(() => {
-    if (!userEmail || avatar !== undefined || name !== undefined) return;
+    // Load từ Firebase nếu: có email, và avatar chưa được cung cấp (undefined hoặc null) HOẶC name chưa có
+    const needsAvatarLoad = avatar === undefined || avatar === null;
+    const needsNameLoad   = name === undefined || name === '';
+    if (!userEmail || (!needsAvatarLoad && !needsNameLoad)) return;
     (async () => {
       try {
         const { onAuthStateChanged } = await import('firebase/auth');
@@ -240,12 +247,23 @@ const AccountPanel: React.FC<{
         const { UserProfileService }  = await import('../../services/data-sync/userProfileService');
         const unsub = onAuthStateChanged(auth, async (user) => {
           if (user && user.email === userEmail) {
-            setLocalName(user.displayName || userEmail.split('@')[0]);
-            const av = user.photoURL || null;
-            setLocalAvatar(av);
-            if (!user.photoURL) {
-              const profile = await UserProfileService.getUserProfile(user.uid);
-              if (profile?.avatar) setLocalAvatar(profile.avatar);
+            if (needsNameLoad) {
+              setLocalName(user.displayName || userEmail.split('@')[0]);
+            }
+            if (needsAvatarLoad) {
+              // Ưu tiên: Firebase photoURL → Firestore avatar → localStorage cache
+              if (user.photoURL) {
+                setLocalAvatar(user.photoURL);
+              } else {
+                const profile = await UserProfileService.getUserProfile(user.uid);
+                if (profile?.avatar) {
+                  setLocalAvatar(profile.avatar);
+                } else {
+                  // fallback localStorage (lưu bởi Navbar với key avatar_${email})
+                  const cached = localStorage.getItem(`avatar_${userEmail}`);
+                  if (cached) setLocalAvatar(cached);
+                }
+              }
             }
           }
         });
@@ -263,16 +281,16 @@ const AccountPanel: React.FC<{
 
   const getAvatarGradient = (email: string) => {
     const grads = [
-      'from-blue-600 to-indigo-700', 'from-emerald-600 to-teal-700',
-      'from-violet-600 to-purple-700', 'from-amber-600 to-orange-700',
-      'from-rose-600 to-pink-700',
+      'from-blue-600 to-indigo-700', 'from-blue-700 to-indigo-800',
+      'from-blue-500 to-indigo-600', 'from-blue-800 to-indigo-900',
+      'from-indigo-600 to-blue-700',
     ];
     return grads[email.charCodeAt(0) % grads.length];
   };
 
   if (!userEmail) {
     return onLoginRequest ? (
-      <div className="mx-2 mb-2 rounded-2xl border p-3" style={{
+      <div className=" border p-3" style={{
         background: 'rgba(255,255,255,0.03)',
         borderColor: 'rgba(255,255,255,0.08)',
       }}>
@@ -280,9 +298,9 @@ const AccountPanel: React.FC<{
         <button
           type="button"
           onClick={onLoginRequest}
-          className="mt-2 w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-[12px] font-bold text-white transition-all hover:brightness-110 active:scale-[0.99]"
+          className="w-full flex items-center justify-center gap-2  py-2.5 text-[12px] font-bold text-white transition-all hover:brightness-110 active:scale-[0.99]"
           style={{
-            background: 'linear-gradient(135deg, #3b82f6, #6366f1)',
+            background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
             boxShadow: '0 4px 12px rgba(59,130,246,0.3)',
           }}
         >
@@ -294,18 +312,18 @@ const AccountPanel: React.FC<{
   }
 
   return (
-    <div className="relative mx-2 mb-2">
+    <div className="relative">
       <button
         type="button"
         onClick={() => setShowMenu(!showMenu)}
-        className="w-full flex items-center gap-2.5 rounded-2xl px-3 py-2.5 text-left transition-all hover:brightness-110 active:scale-[0.995]"
+        className="w-full flex items-center gap-2.5  px-3 py-2.5 text-left transition-all hover:brightness-110 active:scale-[0.995]"
         style={{
           background: showMenu ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.05)',
           border: `1px solid ${showMenu ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.08)'}`,
         }}
       >
         {/* Avatar */}
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden  border border-white/10">
           {effectiveAvatar ? (
             <img src={effectiveAvatar} alt="" className="h-full w-full object-cover" />
           ) : (
@@ -322,13 +340,13 @@ const AccountPanel: React.FC<{
           </p>
           <div className="flex items-center gap-1.5 mt-0.5">
             <span className="flex items-center gap-1">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              <span className="h-1.5 w-1.5  bg-blue-400" />
               <span className="text-[9px] font-medium" style={{ color: C.text3 }}>Online</span>
             </span>
             {analysisDone && (
               <span
-                className="rounded-full px-1.5 py-px text-[8px] font-bold"
-                style={{ background: 'rgba(52,211,153,0.15)', color: '#34d399' }}
+                className=" px-1.5 py-px text-[8px] font-bold"
+                style={{ background: 'rgba(59,130,246,0.15)', color: '#60a5fa' }}
               >
                 HR Pro
               </span>
@@ -348,7 +366,7 @@ const AccountPanel: React.FC<{
         <>
           <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
           <div
-            className="absolute bottom-full left-0 right-0 z-50 mb-2 overflow-hidden rounded-2xl shadow-2xl"
+            className="absolute bottom-full left-0 right-0 z-50 mb-2 overflow-hidden  shadow-2xl"
             style={{
               background: C.bg4,
               border: '1px solid rgba(255,255,255,0.1)',
@@ -359,7 +377,7 @@ const AccountPanel: React.FC<{
               className="flex items-center gap-3 border-b px-4 py-3"
               style={{ borderColor: 'rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.03)' }}
             >
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden  border border-white/10">
                 {effectiveAvatar ? (
                   <img src={effectiveAvatar} alt="" className="h-full w-full object-cover" />
                 ) : (
@@ -379,33 +397,33 @@ const AccountPanel: React.FC<{
                 <button
                   type="button"
                   onClick={() => { setShowMenu(false); onShowSettings(); }}
-                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[12px] transition-colors hover:bg-white/5"
+                  className="flex w-full items-center gap-2.5  px-3 py-2.5 text-left text-[12px] transition-colors hover:bg-white/5"
                   style={{ color: C.text2 }}
                 >
-                  <i className="fa-solid fa-file-invoice w-4 text-center text-[11px]" style={{ color: '#818cf8' }} />
-                  Mẫu JD đã lưu
+                  <i className="fa-solid fa-file-invoice w-4 text-center text-[11px]" style={{ color: '#60a5fa' }} />
+                  Mau JD da luu
                 </button>
               )}
               {onShowHistory && (
                 <button
                   type="button"
                   onClick={() => { setShowMenu(false); onShowHistory(); }}
-                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[12px] transition-colors hover:bg-white/5"
+                  className="flex w-full items-center gap-2.5  px-3 py-2.5 text-left text-[12px] transition-colors hover:bg-white/5"
                   style={{ color: C.text2 }}
                 >
-                  <i className="fa-solid fa-clock-rotate-left w-4 text-center text-[11px]" style={{ color: '#22d3ee' }} />
-                  Lịch sử sàng lọc
+                  <i className="fa-solid fa-clock-rotate-left w-4 text-center text-[11px]" style={{ color: '#3b82f6' }} />
+                  Lich su sang loc
                 </button>
               )}
               <div className="my-1 h-px" style={{ background: 'rgba(255,255,255,0.07)' }} />
               <button
                 type="button"
                 onClick={() => { setShowMenu(false); onLogout?.(); }}
-                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[12px] transition-colors hover:bg-white/5"
+                className="flex w-full items-center gap-2.5  px-3 py-2.5 text-left text-[12px] transition-colors hover:bg-white/5"
                 style={{ color: '#f87171' }}
               >
                 <LogOut size={14} className="shrink-0" />
-                Đăng xuất
+                Dang xuat
               </button>
             </div>
           </div>
@@ -455,13 +473,13 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div
           className="flex shrink-0 items-center gap-2.5 px-3 py-3"
           style={{
-            background: 'linear-gradient(135deg, #1e3a5f, #1e40af)',
+            background: C.headerGradient,  // tokens: linear-gradient(135deg, #1e3a5f, #1e40af)
             borderBottom: '1px solid rgba(255,255,255,0.06)',
           }}
         >
           <button
             onClick={() => handleClick('jd')}
-            className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/20 bg-black/30 shadow-sm transition-transform hover:scale-105"
+            className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden  border border-white/20 bg-black/30 shadow-sm transition-transform hover:scale-105"
           >
             <img src="/images/logos/logo.jpg" alt="SupportHR" className="h-full w-full object-cover" />
           </button>
@@ -469,7 +487,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             <div className="flex items-center gap-1.5">
               <h1 className="text-sm font-black tracking-tight text-white leading-none">SupportHR</h1>
               <span
-                className="rounded-full px-1.5 py-px text-[8px] font-black uppercase tracking-wide"
+                className=" px-1.5 py-px text-[8px] font-black uppercase tracking-wide"
                 style={{ background: 'rgba(255,255,255,0.15)', color: '#bae6fd' }}
               >
                 AI

@@ -1,20 +1,25 @@
 :root {
-  --bg: #020617;
-  /* slate-950 */
+  /* ── Background ── */
+  /* Navy Blue Theme — aligned with tokens.ts dark.bgPrimary */
+  --bg: #0B1120;
+  /* ── Card / Surface ── */
   --card: rgba(30, 41, 59, 0.4);
   /* slate-800 with opacity */
   --card-stroke: rgba(255, 255, 255, 0.05);
+  /* ── Text ── */
   --txt: #FFFFFF;
   --muted: #94a3b8;
   /* slate-400 */
-  --primary: #06b6d4;
-  /* cyan-500 */
-  --primary-gradient: linear-gradient(135deg, #06b6d4 0%, #34d399 100%);
-  --accent: #34d399;
-  /* emerald-400 */
+  /* ── Brand — Primary: Light Blue #60a5fa (from tokens.dark.primary) ── */
+  --primary: #60a5fa;
+  --primary-gradient: linear-gradient(135deg, #3B82F6 0%, #6366F1 100%);
+  /* ── Accent — Indigo #818cf8 (from tokens.dark.accent) ── */
+  --accent: #818cf8;
+  /* ── Status ── */
   --success: #10b981;
   --warning: #f59e0b;
   --error: #ef4444;
+  /* ── Shadows & Glass ── */
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   --glass: rgba(255, 255, 255, 0.03);
   --glass-border: rgba(255, 255, 255, 0.08);
@@ -26,10 +31,10 @@
   --navy-600: #2d4458;
   --navy-500: #3e5771;
 
-  /* Accent colors */
-  --accent-blue: #3b82f6;
-  --accent-blue-light: #60a5fa;
-  --accent-indigo: #6366f1;
+  /* Accent colors — aligned with tokens.dark */
+  --accent-blue: #60a5fa;         /* tokens.dark.primary */
+  --accent-blue-light: #93C5FD;  /* tokens.dark.primaryHover */
+  --accent-indigo: #818cf8;      /* tokens.dark.accent */
 
   /* Spacing system (8px grid) */
   --space-2: 0.5rem;
@@ -69,18 +74,15 @@
   --lm-nav-bg: rgba(255, 255, 255, 0.9);
 }
 
-/* Dark mode variables */
+/* Dark mode variables — aligned with tokens.ts dark mode */
 .dark {
-  --bg: #15202b;
-  /* navy-800 */
-  --card: rgba(59, 130, 246, 0.04);
-  --card-stroke: rgba(59, 130, 246, 0.08);
-  --txt: #F1F5F9;
-  --muted: #94A3B8;
-  --primary: #60a5fa;
-  /* accent-blue-light */
-  --accent: #818cf8;
-  /* indigo-400 */
+  --bg: #0B1120;                /* tokens.dark.bgPrimary */
+  --card: rgba(96, 165, 250, 0.04);    /* tokens.dark.surfaceCard */
+  --card-stroke: rgba(96, 165, 250, 0.08); /* tokens.dark.surfaceBorder */
+  --txt: #F1F5F9;               /* tokens.dark.textPrimary */
+  --muted: #94A3B8;             /* tokens.dark.textMuted */
+  --primary: #60a5fa;            /* tokens.dark.primary */
+  --accent: #818cf8;             /* tokens.dark.accent */
   --success: #10b981;
   --warning: #f59e0b;
   --error: #ef4444;
@@ -658,9 +660,10 @@
 /* (dividers handled by sidebar dropdown overrides above) */
 
 /* --- Progress bar (sidebar step indicator) --- */
+/* tokens.dark.gradientPrimary: blue-500 to indigo-500 — unified */
 .light .bg-cyan-400.shadow-\[0_0_10px_rgba\(6\,182\,212\,0\.6\)\] {
-  background: #6366f1 !important;
-  box-shadow: 0 0 10px rgba(99, 102, 241, 0.5) !important;
+  background: #3B82F6 !important;  /* tokens.dark.primaryActive */
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.5) !important;
 }
 
 /* --- Emerald dots (completed steps) --- */
@@ -855,7 +858,7 @@ body {
   z-index: -1;
 }
 
-/* Dark mode aurora with different gradients */
+/* Dark mode aurora with unified primary/accent palette (tokens.dark.primary #60a5fa, accent #818cf8) */
 .dark .ai-aurora {
   background: radial-gradient(60% 60% at 20% 10%, rgba(96, 165, 250, 0.08), transparent 60%),
     radial-gradient(50% 50% at 80% 30%, rgba(129, 140, 248, 0.06), transparent 60%),
@@ -1327,7 +1330,8 @@ html {
 .progress__bar {
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #6366f1, #3b82f6 40%, #8b5cf6);
+  /* tokens.dark.gradientPrimary: linear-gradient(90deg, #3B82F6, #6366F1) */
+  background: linear-gradient(90deg, #3B82F6, #6366F1);
   transition: width 0.4s cubic-bezier(.4, 0, .2, 1);
 }
 

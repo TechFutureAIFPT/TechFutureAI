@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { filterAndStructureJD, extractJobPositionFromJD } from '../../../services/ai-ml/gemini/geminiService';
+import { filterAndStructureJD, extractJobPositionFromJD } from '../../../services/ai-ml/models/gemini/gemini-core';
 import type { HardFilters } from '../../../assets/types';
 
 export interface JDMetaToolbarProps {
@@ -148,16 +148,16 @@ const JDMetaToolbar: React.FC<JDMetaToolbarProps> = ({
             style={
               isCompleteEnabled
                 ? {
-                    background: 'linear-gradient(135deg, #4f46e5, #6366f1)',
-                    border: '1px solid rgba(99,102,241,0.4)',
-                    color: '#fff',
-                    boxShadow: '0 2px 12px rgba(99,102,241,0.3)',
-                  }
+                  background: 'linear-gradient(135deg, #4f46e5, #6366f1)',
+                  border: '1px solid rgba(99,102,241,0.4)',
+                  color: '#fff',
+                  boxShadow: '0 2px 12px rgba(99,102,241,0.3)',
+                }
                 : {
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    color: '#475569',
-                  }
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  color: '#475569',
+                }
             }
           >
             Tiếp theo

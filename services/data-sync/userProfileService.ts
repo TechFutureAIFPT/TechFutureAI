@@ -13,7 +13,7 @@ import {
   deleteDoc,
   serverTimestamp
 } from 'firebase/firestore';
-import { db } from '../../services/firebase';
+import { db } from '../firebase';
 
 export interface UserProfile {
   uid: string;
@@ -172,11 +172,14 @@ export class UserProfileService {
   // Migrate dữ liệu từ localStorage sang Firebase
   static async migrateLocalDataToFirebase(uid: string, email: string): Promise<void> {
     try {
-      // Migrate avatar
-      const localAvatar = localStorage.getItem('userAvatar');
+      // Migrate avatar — thử cả hai key: key mới dùng email, key cũ fallback
+      const localAvatarByEmail = email ? localStorage.getItem(`avatar_${email}`) : null;
+      const localAvatarLegacy  = localStorage.getItem('userAvatar');
+      const localAvatar = localAvatarByEmail || localAvatarLegacy;
       if (localAvatar) {
         await this.updateUserAvatar(uid, localAvatar);
-        localStorage.removeItem('userAvatar'); // Xóa sau khi migrate
+        if (localAvatarLegacy) localStorage.removeItem('userAvatar');
+        // Không xóa avatar_${email} khỏi localStorage — vẫn dùng làm cache offline
       }
 
       // Migrate lịch sử CV filtering

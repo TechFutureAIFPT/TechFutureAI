@@ -113,14 +113,52 @@ stempe-/
 │
 ├── 📁 services/                # Business Logic Services
 │   ├── 📁 ai-ml/            # AI & Machine Learning
-│   │   ├── geminiService.ts            # Google Gemini AI integration
-│   │   ├── industryDetector.ts         # Industry detection
-│   │   ├── experienceMatch.ts          # Experience matching algorithm
-│   │   ├── requirementsExtractor.ts    # JD requirements extraction
-│   │   ├── interviewQuestionService.ts  # Interview questions generation
-│   │   ├── industryEmbeddingService.ts # Industry embeddings
-│   │   ├── deterministicScoring.ts     # Deterministic scoring engine
-│   │   └── matchEngine.ts             # Matching algorithms
+│   │   ├── 📁 models/                  # AI Models
+│   │   │   ├── 📁 gemini/              # Gemini AI (chính — OpenAI là fallback)
+│   │   │   │   ├── gemini-core.ts     # Core: API key rotation, generateContentWithFallback
+│   │   │   │   ├── gemini-analyze.ts  # CV Analysis pipeline + 5 nâng cấp tích hợp
+│   │   │   │   ├── gemini-hard-filters.ts # Hard filter extraction
+│   │   │   │   ├── gemini-chatbot.ts  # AI chatbot advisor
+│   │   │   │   └── geminiService.ts   # Entry point re-export
+│   │   │   └── 📁 openai/            # OpenAI (chỉ chạy khi Gemini thất bại)
+│   │   │       ├── openai-core.ts     # OpenAI API wrapper
+│   │   │       ├── openai-analyze.ts # CV analysis via OpenAI
+│   │   │       ├── openai-hard-filters.ts # Hard filter via OpenAI
+│   │   │       ├── openai-chatbot.ts # Chatbot via OpenAI
+│   │   │       └── openaiService.ts  # Entry point re-export
+│   │   │
+│   │   ├── 📁 algorithms/             # Thuật toán chấm điểm
+│   │   │   ├── 📁 extraction/          # Trích xuất JD & câu hỏi phỏng vấn
+│   │   │   │   ├── requirementsExtractor.ts # Trích xuất yêu cầu từ JD
+│   │   │   │   └── interviewQuestionService.ts # Sinh câu hỏi phỏng vấn
+│   │   │   ├── 📁 matching/           # Engine đối sánh kinh nghiệm
+│   │   │   │   ├── experienceMatch.ts # Thuật toán đối sánh kinh nghiệm
+│   │   │   │   ├── matchEngine.ts    # Matching algorithms
+│   │   │   │   └── deterministicScoring.ts # Chấm điểm deterministic
+│   │   │   ├── 📁 soft-skills/        # ② Kỹ năng mềm định lượng
+│   │   │   │   ├── actionVerbAnalyzer.ts # Action Verbs: chủ động vs thụ động
+│   │   │   │   ├── starAnalyzer.ts    # STAR format detection
+│   │   │   │   ├── tenureAnalyzer.ts  # Loyalty/Tenure Index
+│   │   │   │   └── softSkillsService.ts
+│   │   │   ├── 📁 dynamic-weighting/  # ① Trọng số động
+│   │   │   │   ├── dynamicBoost.ts    # Dynamic Boost: thành tựu bù đắp thiếu sót
+│   │   │   │   ├── careerVelocity.ts # Career Velocity: tốc độ thăng tiến
+│   │   │   │   ├── weightingEngine.ts # Contextual weighting + final score
+│   │   │   │   └── dynamicWeightingService.ts
+│   │   │   ├── 📁 ai-debiasing/       # ④ Đạo đức AI & chống thiên kiến
+│   │   │   │   └── debiasingService.ts # Blind CV scoring + bias alert
+│   │   │   └── 📁 feedback-loop/      # ⑤ Vòng lặp học máy
+│   │   │       └── feedbackLoopService.ts # Feedback + weight self-adjustment
+│   │   │
+│   │   └── 📁 embeddings/             # ③ Điểm tương đồng chuyên ngành
+│   │       ├── skillGraph.ts          # Skill Graph: transferable skills
+│   │       ├── companyTiering.ts      # Company/Institution tiering
+│   │       ├── industryDetector.ts     # Industry detection
+│   │       ├── industryEmbeddingService.ts # Industry CV embedding & similarity
+│   │       └── industryService.ts      # Entry point re-export
+│   └── 📁 auth/                     # Authentication Services
+│       ├── authService.ts           # Firebase auth
+│       └── authTypes.ts           # Auth type definitions
 │   ├── 📁 data-sync/     # Data & Sync Services
 │   │   ├── userProfileService.ts       # User profile management
 │   │   ├── dataSyncService.ts         # Cross-device sync
@@ -209,6 +247,32 @@ Dự án được chia thành 3 phần tài liệu chính để dễ dàng theo 
 -   **Chấm điểm deterministic**: Kết quả nhất quán 100% với cùng input
 -   **Trọng số tùy chỉnh**: Điều chỉnh tiêu chí đánh giá theo từng vị trí
 
+###  **5 Nâng Cấp AI Nâng Cao** *(Điểm nhấn của hệ thống)*
+
+#### 1. 🧮 Trọng Số Động (Dynamic Weighting)
+-   **Dynamic Boost**: Thành tựu nổi bật tự động bù đắp thiếu sót nhỏ thay vì trừ điểm máy móc
+-   **Career Velocity**: Đánh giá tốc độ phát triển sự nghiệp — ai thăng tiến nhanh hơn được điểm tiềm năng cao hơn
+-   **Contextual Weighting**: Tự động điều chỉnh trọng số theo ngữ cảnh JD và ngành nghề
+
+#### 2. 🗣️ Kỹ Năng Mềm Định Lượng (Soft Skills Quantification)
+-   **Action Verbs Analysis**: Phân biệt động từ chủ động (dẫn dắt, giải quyết) vs thụ động (được giao, tham gia)
+-   **STAR Format Detection**: Nhận diện CV có cấu trúc STAR rõ ràng kèm số liệu chứng minh
+-   **Tenure/Loyalty Index**: Đo lường sự ổn định, phân biệt nhảy việc có thăng chức vs nhảy việc giữ nguyên cấp
+
+#### 3. 🔗 Điểm Tương Đồng Chuyên Ngành (Industry Similarity)
+-   **Skill Graph**: Hiểu transferable skills — React ≈ Next.js ≈ Vue.js (cùng họ kỹ năng)
+-   **Company Tiering**: Hệ số nhân cho kinh nghiệm từ công ty uy tín (FAANG, Big4, FPT, Viettel...)
+-   **Industry Embedding**: So sánh CV với thư viện CV chuẩn ngành qua vector similarity
+
+#### 4. ⚖️ Đạo Đức AI & Chống Thiên Kiến (AI Debiasing)
+-   **Blind CV Scoring**: Mù hóa giới tính, tuổi tác, dân tộc, tôn giáo, hình ảnh trước khi chấm điểm
+-   **Bias Alert**: Cảnh báo nguy cơ vi phạm luật Bình đẳng lao động Việt Nam (Điều 8 BLLĐ 2019) khi HR đặt bộ lọc nhạy cảm
+
+#### 5. 🔄 Vòng Lặp Học Máy (Predictive Feedback Loop)
+-   **HR Feedback Collection**: Thu thập kết quả Pass/Fail sau phỏng vấn
+-   **Weight Self-Adjustment**: Tự động điều chỉnh trọng số tiêu chí khi AI xếp hạng sai nhiều lần
+-   **Accuracy Tracking**: Theo dõi độ chính xác dự đoán và hiển thị lịch sử điều chỉnh
+
 ###  **Advanced Comparison Tools**
 -   **Side-by-side Compare**: So sánh chi tiết giữa ứng viên
 -   **Strengths Analysis**: Phân tích điểm mạnh/yếu của từng ứng viên
@@ -272,11 +336,12 @@ Dự án được chia thành 3 phần tài liệu chính để dễ dàng theo 
 -   **React Router 7.9.1** - Client-side routing
 
 ### **Backend & AI**
--   **Google Gemini AI 1.5 Flash** - Phân tích CV và tạo câu hỏi (4 API keys for load balancing)
--   **Firebase 12.3.0** - Authentication (Gmail) & Firestore database
--   **Tesseract.js 5.1.0** - OCR cho hình ảnh
--   **PDF.js 4.3.136** - Xử lý file PDF
--   **Mammoth.js 1.7.1** - Word document parsing
+-   **Google Gemini AI 1.5 Flash** — AI chính cho phân tích CV (4 API keys, tự động rotate tránh rate limit)
+-   **OpenAI GPT-4o-mini** — Chỉ là fallback khi Gemini thất bại (key-less proxy)
+-   **Firebase 12.3.0** — Authentication (Gmail) & Firestore database
+-   **Tesseract.js 5.1.0** — OCR cho hình ảnh
+-   **PDF.js 4.3.136** — Xử lý file PDF
+-   **Mammoth.js 1.7.1** — Word document parsing
 
 ### **Additional Services**
 -   **Recharts 2.13.0** - Data visualization

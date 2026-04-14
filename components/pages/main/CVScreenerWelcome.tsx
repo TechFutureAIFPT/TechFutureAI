@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { extractTextFromJdFile } from '../../../services/file-processing/ocrService';
-import { extractJobPositionFromJD, filterAndStructureJD, extractHardFiltersFromJD } from '../../../services/ai-ml/gemini/geminiService';
+import { extractJobPositionFromJD, filterAndStructureJD, extractHardFiltersFromJD } from '../../../services/ai-ml/models/gemini/geminiService';
 import { googleDriveService } from '../../../services/file-processing/googleDriveService';
 import type { HardFilters } from '../../../assets/types';
 

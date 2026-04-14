@@ -1,5 +1,6 @@
 /**
  * Dark Card — Component cho Dark Mode
+ * Màu sắc đồng bộ từ tokens.ts (bgPrimary: #0B1120, primary: #60a5fa)
  */
 import React from 'react';
 
@@ -21,10 +22,10 @@ export const DarkCard: React.FC<DarkCardProps> = ({
   hover = false,
 }) => {
   const variantClasses = {
-    default: 'bg-[#0B1120] border border-[rgba(59,130,246,0.08)] shadow-md',
+    default: 'bg-[#0B1120] border border-[rgba(96,165,250,0.08)] shadow-md',
     elevated: 'bg-[#0f172a] border border-[rgba(255,255,255,0.06)] shadow-lg',
     glass: 'bg-[rgba(30,41,59,0.4)] backdrop-blur-md border border-[rgba(255,255,255,0.05)]',
-    bordered: 'bg-transparent border border-[rgba(59,130,246,0.12)]',
+    bordered: 'bg-transparent border border-[rgba(96,165,250,0.12)]',
   };
 
   const paddingClasses = {
@@ -40,7 +41,7 @@ export const DarkCard: React.FC<DarkCardProps> = ({
         rounded-xl transition-all duration-200
         ${variantClasses[variant]}
         ${paddingClasses[padding]}
-        ${hover ? 'hover:border-[rgba(59,130,246,0.15)] hover:shadow-lg hover:shadow-blue-500/5 cursor-pointer' : ''}
+        ${hover ? 'hover:border-[rgba(96,165,250,0.15)] hover:shadow-lg hover:shadow-blue-500/5 cursor-pointer' : ''}
         ${onClick ? 'cursor-pointer' : ''}
         ${className}
       `}

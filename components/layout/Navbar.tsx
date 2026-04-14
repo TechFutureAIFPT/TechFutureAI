@@ -1,5 +1,6 @@
 /**
  * Navbar — Chỉ hỗ trợ Dark Mode
+ * Màu sắc đồng bộ từ tokens.ts
  */
 import React, { useState } from 'react';
 import { auth } from '../../services/firebase';

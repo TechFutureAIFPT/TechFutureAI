@@ -14,7 +14,7 @@ import {
   serverTimestamp,
   writeBatch
 } from 'firebase/firestore';
-import { db, auth } from '../../services/firebase';
+import { db, auth } from '../firebase';
 import type { AnalysisRunData } from '../../assets/types';
 
 interface SyncedCacheEntry {

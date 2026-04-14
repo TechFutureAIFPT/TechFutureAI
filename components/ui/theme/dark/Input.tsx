@@ -1,5 +1,6 @@
 /**
  * Dark Input — Component cho Dark Mode
+ * Màu sắc đồng bộ từ tokens.ts (bgPrimary: #0B1120, primary: #60a5fa)
  */
 import React, { forwardRef } from 'react';
 
@@ -51,6 +52,7 @@ export const DarkInput = forwardRef<HTMLInputElement, DarkInputProps>(({
             text-slate-200 placeholder-slate-500
             transition-all duration-200
             focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50
+            /* rgba(96,165,250,0.3) = tokens.dark.borderFocus / tokens.dark.primaryMuted */
             ${leftIcon ? 'pl-10' : ''}
             ${rightIcon ? 'pr-10' : ''}
             ${error ? 'border-red-500/50 focus:ring-red-500/30' : 'border-slate-700/60'}

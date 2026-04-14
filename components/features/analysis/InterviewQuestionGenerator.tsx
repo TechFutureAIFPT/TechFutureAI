@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import type { AnalysisRunData, Candidate } from '../../../assets/types';
-import { generateInterviewQuestions } from '../../../services/ai-ml/extraction/interviewQuestionService';
+import { generateInterviewQuestions } from '../../../services/ai-ml/algorithms/extraction/interviewQuestionService';
 
 interface InterviewQuestionGeneratorProps {
   analysisData: AnalysisRunData;

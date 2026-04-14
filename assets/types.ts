@@ -1,4 +1,4 @@
-export type AppStep = 'home' | 'jd' | 'weights' | 'upload' | 'analysis' | 'dashboard' | 'chatbot' | 'process' | 'history';
+export type AppStep = 'home' | 'jd' | 'weights' | 'upload' | 'analysis' | 'dashboard' | 'chatbot' | 'process' | 'history' | 'selected';
 
 export interface DetailedScore {
   "Tiêu chí": string;
@@ -35,7 +35,12 @@ export interface Candidate {
       "validationNote": string;
       "warnings"?: string[];
     };
+    // 5 Nâng cấp tích hợp
+    softSkillsReport?: Record<string, unknown>;
+    feedbackAdjusted?: number;
   };
+  // 5 Nâng cấp: cảnh báo debiasing
+  debiasingWarnings?: string[];
 
   status: 'SUCCESS' | 'FAILED';
   error?: string;
@@ -68,6 +73,13 @@ export interface HardFilters {
   workFormatMandatory: boolean;
   contractTypeMandatory: boolean;
   salaryMandatory: boolean;
+
+  // Bias-sensitive fields (optional, triggers debiasing alerts)
+  age?: { min?: number; max?: number };
+  gender?: string[];
+  ethnicity?: string[];
+  religion?: string[];
+  maritalStatus?: string[];
 }
 
 export interface SubCriterion {

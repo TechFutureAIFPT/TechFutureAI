@@ -4,9 +4,13 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line,
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
-  AreaChart, Area, FunnelChart, Funnel, LabelList
+  AreaChart, Area,
 } from 'recharts';
-import { TrendingUp, Users, Award, Target, Save, ArrowRight, Filter, Star, ChevronDown, Download, RefreshCw, Clock, Zap, Crown, TrendingDown } from 'lucide-react';
+import {
+  TrendingUp, Users, Award, Target, Save, Star, Crown,
+  Clock, Zap, BarChart3, Activity, PieChart as LucidePieChart,
+  LineChart as LucideLineChart, ChevronLeft,
+} from 'lucide-react';
 import type { Candidate } from '../../../assets/types';
 import { saveHistorySession } from '../../../services/history-cache/historyService';
 import { auth } from '../../../services/firebase';
@@ -174,71 +178,74 @@ const DetailedAnalyticsPage: React.FC<DetailedAnalyticsPageProps> = ({ candidate
   const sharedGridStyle = { strokeDasharray: '3 3', stroke: 'rgba(71,85,105,0.3)' };
 
   const CHART_TABS = [
-    { key: 'grade' as const, label: 'Phân bố hạng', icon: PieChart },
-    { key: 'score' as const, label: 'Phân bố điểm', icon: BarChart },
-    { key: 'radar' as const, label: 'Tiêu chí đánh giá', icon: Radar },
-    { key: 'trend' as const, label: 'Xu hướng điểm', icon: LineChart },
+    { key: 'grade' as const, label: 'Phân bố hạng', icon: LucidePieChart },
+    { key: 'score' as const, label: 'Phân bố điểm', icon: BarChart3 },
+    { key: 'radar' as const, label: 'Tiêu chí đánh giá', icon: Activity },
+    { key: 'trend' as const, label: 'Xu hướng điểm', icon: LucideLineChart },
   ];
 
   return (
     <div className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-gradient-to-br from-[#0a0e1a] via-[#0d1220] to-[#0a0e1a]">
+
+      {/* ── Header Bar (đồng bộ) ─────────────────────────────── */}
+      <div className="shrink-0 border-b border-slate-800/60 bg-[#0a0e1a]/90 backdrop-blur-xl px-4 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate('/jd')}
+              className="w-9 h-9 rounded-xl bg-slate-800/60 border border-slate-700/50 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition-all"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500/20 to-violet-500/20 border border-indigo-500/30 flex items-center justify-center shadow-lg shadow-indigo-500/10">
+              <TrendingUp className="w-5 h-5 text-indigo-400" />
+            </div>
+            <div>
+              <h1 className="text-sm font-bold text-white leading-tight">
+                Phân tích chi tiết
+                <span className="ml-2 px-2 py-0.5 rounded-lg text-[10px] font-semibold bg-indigo-500/15 border border-indigo-500/20 text-indigo-300">
+                  {jobPosition}
+                </span>
+              </h1>
+              <div className="flex items-center gap-3 mt-0.5">
+                <span className="text-[10px] text-slate-500 flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  {new Date().toLocaleDateString('vi-VN')}
+                </span>
+                <span className="text-[10px] text-slate-500 flex items-center gap-1">
+                  <Users className="w-3 h-3" />
+                  {analyticsData.totalCandidates} ứng viên
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate('/chatbot')}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20 transition-all border border-indigo-400/20"
+            >
+              <Zap className="w-3.5 h-3.5" />
+              Gợi ý ứng viên
+            </button>
+            <button
+              onClick={handleCompleteProcess}
+              disabled={isSaving}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all border border-emerald-400/20"
+            >
+              <Save className="w-3.5 h-3.5" />
+              {isSaving ? 'Đang lưu...' : 'Lưu & Hoàn tất'}
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Background decoration */}
       <div className="pointer-events-none absolute top-0 right-0 w-[600px] h-[400px] bg-gradient-to-bl from-indigo-500/5 via-violet-500/3 to-transparent rounded-full blur-3xl" />
       <div className="pointer-events-none absolute bottom-0 left-0 w-[500px] h-[300px] bg-gradient-to-tr from-emerald-500/5 via-cyan-500/3 to-transparent rounded-full blur-3xl" />
 
       <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto px-4 pb-6 pt-3 md:px-6 md:pt-5">
         <div className="mx-auto max-w-[1400px] space-y-5">
-
-          {/* ── Page Header ─────────────────────────────────────── */}
-          <div className="relative">
-            <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-              <div>
-                <div className="flex items-center gap-2.5 mb-2">
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20">
-                    <TrendingUp className="w-3 h-3 text-indigo-400" />
-                    <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider">Analytics</span>
-                  </div>
-                  <span className="text-[10px] text-slate-600 font-medium">/</span>
-                  <span className="text-[10px] text-slate-500 tracking-wider font-medium">Báo cáo chi tiết</span>
-                </div>
-                <h1 className="text-2xl font-black text-white flex items-center gap-3">
-                  Phân tích ứng viên
-                  <span className="px-3 py-1 rounded-xl text-xs font-bold bg-gradient-to-r from-indigo-500/20 to-violet-500/20 border border-indigo-500/20 text-indigo-300 shadow-lg shadow-indigo-500/10">
-                    {jobPosition}
-                  </span>
-                </h1>
-                <div className="flex items-center gap-4 mt-2">
-                  <div className="flex items-center gap-1.5 text-slate-500">
-                    <Clock className="w-3 h-3" />
-                    <span className="text-[11px] font-medium">{new Date().toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-slate-500">
-                    <Users className="w-3 h-3" />
-                    <span className="text-[11px] font-medium">{analyticsData.totalCandidates} ứng viên</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 flex-wrap">
-                <button
-                  onClick={() => navigate('/chatbot')}
-                  className="flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-xl shadow-indigo-500/20 hover:shadow-indigo-500/30 transition-all hover:-translate-y-0.5 hover:scale-105 border border-indigo-400/20"
-                >
-                  <Zap className="w-4 h-4" />
-                  Gợi ý ứng viên
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={handleCompleteProcess}
-                  disabled={isSaving}
-                  className="flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-sm font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xl shadow-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all border border-emerald-400/20"
-                >
-                  <Save className="w-4 h-4" />
-                  {isSaving ? 'Đang lưu...' : 'Lưu & Hoàn tất'}
-                </button>
-              </div>
-            </div>
-          </div>
 
           {/* ── Summary Stats Cards ───────────────────────────────── */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">

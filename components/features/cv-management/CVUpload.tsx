@@ -1,6 +1,6 @@
 import React, { useState, useCallback, memo, useMemo } from 'react';
 import type { Candidate, HardFilters, WeightCriteria, AppStep } from '../../../assets/types';
-import { analyzeCVs } from '../../../services/ai-ml/gemini/geminiService';
+import { analyzeCVs } from '../../../services/ai-ml/models/gemini/geminiService';
 import { googleDriveService } from '../../../services/file-processing/googleDriveService';
 
 interface CVUploadProps {

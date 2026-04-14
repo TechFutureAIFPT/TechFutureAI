@@ -1,5 +1,6 @@
 /**
  * Dark Badge — Component cho Dark Mode
+ * Màu sắc đồng bộ từ tokens.ts
  */
 import React from 'react';
 

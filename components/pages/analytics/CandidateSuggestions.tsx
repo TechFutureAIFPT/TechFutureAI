@@ -1,7 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Send, Bot, User, Sparkles, ChevronDown, ChevronUp, Check, Plus, FileText, Users, Lightbulb, MessageSquare, ArrowUp, X, Copy, CheckCheck, Loader2 } from 'lucide-react';
 import type { Candidate, AnalysisRunData } from '../../../assets/types';
-import { getChatbotAdvice } from '../../../services/ai-ml/gemini/geminiService';
+import { getChatbotAdvice } from '../../../services/ai-ml/models/gemini/geminiService';
+
+const SELECTED_IDS_KEY = 'supporthr.selectedCandidateIds';
 
 interface CandidateSuggestionsProps {
   candidates: Candidate[];
@@ -20,41 +22,41 @@ const QUICK_ACTIONS = [
     label: 'Gợi ý ứng viên tiêu biểu',
     prompt: 'Hãy gợi ý cho tôi danh sách các ứng viên phù hợp nhất dựa trên kết quả lọc CV. Ghi rõ điểm mạnh cốt lõi và đề xuất ít nhất 3 câu hỏi phỏng vấn cho mỗi người để khai thác điểm yếu của họ.',
     icon: Lightbulb,
-    color: '#f59e0b',
-    bg: 'bg-amber-500/10',
-    border: 'border-amber-500/30',
-    hoverBg: 'hover:bg-amber-500/15',
-    textColor: 'text-amber-400',
+    color: '#60a5fa',
+    bg: 'bg-blue-500/10',
+    border: 'border-blue-500/30',
+    hoverBg: 'hover:bg-blue-500/15',
+    textColor: 'text-blue-400',
   },
   {
     label: 'Phân nhóm theo cấp độ',
     prompt: 'Hãy phân nhóm các ứng viên theo cấp độ kinh nghiệm (Junior, Mid, Senior) và so sánh ưu khuyết điểm của từng nhóm.',
     icon: Users,
-    color: '#8b5cf6',
-    bg: 'bg-violet-500/10',
-    border: 'border-violet-500/30',
-    hoverBg: 'hover:bg-violet-500/15',
-    textColor: 'text-violet-400',
+    color: '#3b82f6',
+    bg: 'bg-blue-500/10',
+    border: 'border-blue-500/30',
+    hoverBg: 'hover:bg-blue-500/15',
+    textColor: 'text-blue-400',
   },
   {
     label: 'So sánh top ứng viên',
     prompt: 'So sánh chi tiết top 3 ứng viên hàng đầu về kỹ năng, kinh nghiệm, và mức lương kỳ vọng.',
     icon: MessageSquare,
-    color: '#06b6d4',
-    bg: 'bg-cyan-500/10',
-    border: 'border-cyan-500/30',
-    hoverBg: 'hover:bg-cyan-500/15',
-    textColor: 'text-cyan-400',
+    color: '#2563eb',
+    bg: 'bg-blue-500/10',
+    border: 'border-blue-500/30',
+    hoverBg: 'hover:bg-blue-500/15',
+    textColor: 'text-blue-400',
   },
   {
     label: 'Tạo câu hỏi phỏng vấn',
     prompt: 'Dựa trên top ứng viên, hãy tạo danh sách câu hỏi phỏng vấn chuyên sâu cho từng người, bao gồm cả câu hỏi kỹ thuật và hành vi.',
     icon: Sparkles,
-    color: '#ec4899',
-    bg: 'bg-pink-500/10',
-    border: 'border-pink-500/30',
-    hoverBg: 'hover:bg-pink-500/15',
-    textColor: 'text-pink-400',
+    color: '#1d4ed8',
+    bg: 'bg-blue-500/10',
+    border: 'border-blue-500/30',
+    hoverBg: 'hover:bg-blue-500/15',
+    textColor: 'text-blue-400',
   },
 ];
 
@@ -62,12 +64,17 @@ const CandidateSuggestions: React.FC<CandidateSuggestionsProps> = ({ candidates,
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem(SELECTED_IDS_KEY);
+      return raw ? new Set(JSON.parse(raw)) : new Set();
+    } catch { return new Set(); }
+  });
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [expandedMsg, setExpandedMsg] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const analysisData: AnalysisRunData = {
     timestamp: Date.now(),
@@ -106,9 +113,14 @@ const CandidateSuggestions: React.FC<CandidateSuggestionsProps> = ({ candidates,
 
   const handleQuickAction = (prompt: string) => { setInput(''); handleSend(prompt); };
 
-  const handleToggleSelect = (id: string) => {
-    setSelectedIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
-  };
+  const handleToggleSelect = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const n = new Set(prev);
+      n.has(id) ? n.delete(id) : n.add(id);
+      try { localStorage.setItem(SELECTED_IDS_KEY, JSON.stringify(Array.from(n))); } catch { }
+      return n;
+    });
+  }, []);
 
   const exportSelectedToCSV = () => {
     if (selectedIds.size === 0) return;
@@ -143,15 +155,15 @@ const CandidateSuggestions: React.FC<CandidateSuggestionsProps> = ({ candidates,
         const parts = str.split(/(\*\*[^*]+\*\*)/g);
         return parts.map((part, i) =>
           part.startsWith('**') && part.endsWith('**')
-            ? <strong key={i} className="text-indigo-300 font-bold">{part.slice(2, -2)}</strong>
+            ? <strong key={i} className="text-blue-300 font-bold">{part.slice(2, -2)}</strong>
             : <React.Fragment key={i}>{part}</React.Fragment>
         );
       };
       if (line.trim().startsWith('* ') || line.trim().startsWith('- ')) {
-        return <li key={index} className="ml-5 list-disc marker:text-indigo-400 my-1 text-slate-200 leading-relaxed">{formatBold(line.trim().substring(2))}</li>;
+        return <li key={index} className="ml-5 list-disc marker:text-blue-400 my-1 text-slate-200 leading-relaxed">{formatBold(line.trim().substring(2))}</li>;
       }
       if (/^(\d+\.|\*\*\d+\.)/.test(line.trim())) {
-        return <div key={index} className="my-2.5 ml-1 text-indigo-300 font-semibold text-sm">{formatBold(line)}</div>;
+        return <div key={index} className="my-2.5 ml-1 text-blue-300 font-semibold text-sm">{formatBold(line)}</div>;
       }
       if (line.trim() === '') return <div key={index} className="h-2" />;
       return <p key={index} className="text-slate-200 leading-relaxed">{formatBold(line)}</p>;
@@ -161,10 +173,10 @@ const CandidateSuggestions: React.FC<CandidateSuggestionsProps> = ({ candidates,
   const GradeBadge = ({ grade }: { grade?: string }) => {
     if (!grade) return null;
     return (
-      <span className={`px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase ${
-        grade === 'A' ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20' :
+      <span className={`px-2 py-0.5 text-[10px] font-bold uppercase ${
+        grade === 'A' ? 'bg-blue-500/15 text-blue-400 border border-blue-500/20' :
         grade === 'B' ? 'bg-blue-500/15 text-blue-400 border border-blue-500/20' :
-        'bg-amber-500/15 text-amber-400 border border-amber-500/20'
+        'bg-blue-500/15 text-blue-400 border border-blue-500/20'
       }`}>Hạng {grade}</span>
     );
   };
@@ -177,7 +189,7 @@ const CandidateSuggestions: React.FC<CandidateSuggestionsProps> = ({ candidates,
   if (!candidates || candidates.length === 0) {
     return (
       <div className="flex h-full min-h-0 w-full flex-1 flex-col items-center justify-center bg-gradient-to-br from-[#0a0e1a] via-[#0d1220] to-[#0a0e1a] px-4 text-center">
-        <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-3xl border border-slate-800/60 bg-[#0B1628] shadow-2xl shadow-black/30">
+        <div className="mb-6 flex h-24 w-24 items-center justify-center border border-slate-800/60 bg-[#0B1628] shadow-2xl shadow-black/30">
           <Bot className="w-10 h-10 text-slate-600" />
         </div>
         <h2 className="mb-3 text-2xl font-bold text-white">Chưa có dữ liệu ứng viên</h2>
@@ -187,26 +199,28 @@ const CandidateSuggestions: React.FC<CandidateSuggestionsProps> = ({ candidates,
   }
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-1 flex-col gap-0 overflow-hidden bg-gradient-to-br from-[#0a0e1a] via-[#0d1220] to-[#0a0e1a] md:flex-row">
+    <div className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-gradient-to-br from-[#0a0e1a] via-[#0d1220] to-[#0a0e1a]">
+      {/* Wrapper: chat + sidebar cùng flex-row để sidebar chiếm không gian khi mở */}
+      <div className="flex min-h-0 flex-1 overflow-hidden">
 
       {/* ── Chat Area ─────────────────────────────────────────── */}
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-col flex-1 transition-all duration-300">
 
         {/* Chat Header */}
-        <div className="shrink-0 border-b border-slate-800/50 bg-[#0a0e1a]/90 backdrop-blur-xl px-4 py-4 md:px-6">
+        <div className="shrink-0 border-b border-slate-800/50 bg-[#0a0e1a]/90 backdrop-blur-xl px-4 pb-3 md:px-6 md:pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3.5">
               <div className="relative">
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500/20 to-violet-500/20 border border-indigo-500/30 flex items-center justify-center shadow-lg shadow-indigo-500/10">
-                  <Bot className="w-5 h-5 text-indigo-400" />
+                <div className="w-11 h-11 bg-gradient-to-br from-blue-500/20 to-blue-600/20 border border-blue-500/30 flex items-center justify-center shadow-lg shadow-blue-500/10">
+                  <Bot className="w-5 h-5 text-blue-400" />
                 </div>
-                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-[#0a0e1a] shadow-[0_0_8px_rgba(52,211,153,0.6)]" />
+                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-blue-400 rounded-full border-2 border-[#0a0e1a] shadow-[0_0_8px_rgba(96,165,250,0.6)]" />
               </div>
               <div>
                 <h1 className="text-base font-bold text-white leading-tight">Trợ lý tuyển dụng AI</h1>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
-                  <span className="text-[10px] text-emerald-400 font-medium">Đang hoạt động</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-400 inline-block shadow-[0_0_6px_rgba(96,165,250,0.6)]" />
+                  <span className="text-[10px] text-blue-400 font-medium">Đang hoạt động</span>
                   <span className="text-[10px] text-slate-600">·</span>
                   <span className="text-[10px] text-slate-500">{jobPosition}</span>
                 </div>
@@ -215,9 +229,9 @@ const CandidateSuggestions: React.FC<CandidateSuggestionsProps> = ({ candidates,
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className={`w-9 h-9 rounded-xl border transition-all flex items-center justify-center ${
+                className={`w-9 h-9 border transition-all flex items-center justify-center ${
                   sidebarOpen
-                    ? 'bg-indigo-500/15 border-indigo-500/30 text-indigo-400'
+                    ? 'bg-blue-500/15 border-blue-500/30 text-blue-400'
                     : 'bg-slate-800/60 border-slate-700/50 text-slate-500 hover:text-slate-300 hover:bg-slate-700'
                 }`}
                 title="Danh sách ứng viên"
@@ -229,9 +243,9 @@ const CandidateSuggestions: React.FC<CandidateSuggestionsProps> = ({ candidates,
         </div>
 
         {/* Quick Actions */}
-        <div className="shrink-0 border-b border-slate-800/50 bg-[#0a0e1a]/50 px-4 py-3 md:px-6">
+        <div className="shrink-0 border-b border-slate-800/50 bg-[#0a0e1a]/50 px-4 pb-3 md:px-6 md:pb-3">
           <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="w-3 h-3 text-indigo-400" />
+            <Sparkles className="w-3 h-3 text-blue-400" />
             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Gợi ý nhanh</span>
           </div>
           <div className="flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
@@ -240,7 +254,7 @@ const CandidateSuggestions: React.FC<CandidateSuggestionsProps> = ({ candidates,
                 key={action.label}
                 onClick={() => handleQuickAction(action.prompt)}
                 disabled={isLoading}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold border transition-all whitespace-nowrap flex-shrink-0 ${action.bg} ${action.border} ${action.hoverBg} ${action.textColor} disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg hover:shadow-black/20`}
+                className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold border transition-all whitespace-nowrap flex-shrink-0 ${action.bg} ${action.border} ${action.hoverBg} ${action.textColor} disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg hover:shadow-black/20`}
               >
                 <action.icon className="w-3.5 h-3.5 flex-shrink-0" />
                 {action.label}
@@ -256,15 +270,15 @@ const CandidateSuggestions: React.FC<CandidateSuggestionsProps> = ({ candidates,
             const isExpanded = expandedMsg === i;
             return (
               <div key={i} className={`flex ${isUser ? 'justify-end' : 'justify-start'} animate-fade-in`}>
-                <div className={`max-w-[88%] rounded-2xl p-4 shadow-xl transition-all ${
+                <div className={`max-w-[88%] p-4 shadow-xl transition-all ${
                   isUser
-                    ? 'bg-gradient-to-br from-indigo-600 to-violet-600 text-white rounded-br-sm shadow-indigo-900/30'
-                    : 'bg-gradient-to-br from-[#0d1420] to-[#0a1020] border border-slate-800/60 text-slate-200 rounded-tl-sm shadow-black/30'
+                    ? 'bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-blue-900/30'
+                    : 'bg-gradient-to-br from-[#0d1420] to-[#0a1020] border border-slate-800/60 text-slate-200 shadow-black/30'
                 }`}>
                   {!isUser && (
                     <div className="flex items-center gap-2 mb-3 pb-2.5 border-b border-slate-800/40">
-                      <div className="w-7 h-7 rounded-lg bg-indigo-500/15 flex items-center justify-center">
-                        <Bot className="w-3.5 h-3.5 text-indigo-400" />
+                      <div className="w-7 h-7 bg-blue-500/15 flex items-center justify-center">
+                        <Bot className="w-3.5 h-3.5 text-blue-400" />
                       </div>
                       <span className="text-xs font-bold text-slate-300">Support HR AI</span>
                       <span className="ml-auto text-[9px] text-slate-600">
@@ -279,7 +293,7 @@ const CandidateSuggestions: React.FC<CandidateSuggestionsProps> = ({ candidates,
                         {formatContent(msg.content.substring(0, 600) + '...')}
                         <button
                           onClick={() => setExpandedMsg(i)}
-                          className="mt-2 flex items-center gap-1 text-[11px] font-semibold text-indigo-400 hover:text-indigo-300 transition-colors"
+                          className="mt-2 flex items-center gap-1 text-[11px] font-semibold text-blue-400 hover:text-blue-300 transition-colors"
                         >
                           <ChevronDown className="w-3.5 h-3.5" />
                           Xem thêm
@@ -291,7 +305,7 @@ const CandidateSuggestions: React.FC<CandidateSuggestionsProps> = ({ candidates,
                         {msg.content.length > 600 && isExpanded && (
                           <button
                             onClick={() => setExpandedMsg(null)}
-                            className="mt-2 flex items-center gap-1 text-[11px] font-semibold text-indigo-400 hover:text-indigo-300 transition-colors"
+                            className="mt-2 flex items-center gap-1 text-[11px] font-semibold text-blue-400 hover:text-blue-300 transition-colors"
                           >
                             <ChevronUp className="w-3.5 h-3.5" />
                             Thu gọn
@@ -305,8 +319,8 @@ const CandidateSuggestions: React.FC<CandidateSuggestionsProps> = ({ candidates,
                   {!isUser && msg.candidateIds && msg.candidateIds.length > 0 && (
                     <div className="mt-4 pt-4 border-t border-slate-700/40">
                       <div className="flex items-center gap-2 mb-3">
-                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 shadow-[0_0_6px_rgba(99,102,241,0.6)]" />
-                        <p className="text-[11px] text-indigo-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                        <div className="w-1.5 h-1.5 rounded-full bg-blue-400 shadow-[0_0_6px_rgba(96,165,250,0.6)]" />
+                        <p className="text-[11px] text-blue-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
                           <User className="w-3 h-3" />
                           Ứng viên được đề xuất ({msg.candidateIds.length})
                         </p>
@@ -317,16 +331,16 @@ const CandidateSuggestions: React.FC<CandidateSuggestionsProps> = ({ candidates,
                           if (!c) return null;
                           const isSelected = selectedIds.has(id);
                           return (
-                            <div key={id} className={`flex items-center justify-between gap-3 p-3 rounded-xl border transition-all duration-200 ${
+                            <div key={id} className={`flex items-center justify-between gap-3 p-3 border transition-all duration-200 ${
                               isSelected
-                                ? 'border-emerald-500/40 bg-emerald-500/5 shadow-[0_0_15px_rgba(16,185,129,0.05)]'
-                                : 'border-slate-700/50 bg-slate-800/30 hover:border-slate-600 hover:bg-slate-800/50'
+                                ? 'border-blue-500/40 bg-blue-500/5 shadow-[0_0_15px_rgba(59,130,246,0.05)]'
+                                : 'border-slate-700/50 bg-slate-800/30 hover:border-blue-500/30 hover:bg-slate-800/50'
                             }`}>
                               <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-black flex-shrink-0 ${
-                                  c.analysis?.['Hạng'] === 'A' ? 'bg-emerald-500/20 text-emerald-400' :
+                                <div className={`w-8 h-8 flex items-center justify-center text-[10px] font-black flex-shrink-0 ${
+                                  c.analysis?.['Hạng'] === 'A' ? 'bg-blue-500/20 text-blue-400' :
                                   c.analysis?.['Hạng'] === 'B' ? 'bg-blue-500/20 text-blue-400' :
-                                  'bg-amber-500/20 text-amber-400'
+                                  'bg-blue-500/20 text-blue-400'
                                 }`}>
                                   {getInitials(c.candidateName || '')}
                                 </div>
@@ -339,15 +353,15 @@ const CandidateSuggestions: React.FC<CandidateSuggestionsProps> = ({ candidates,
                                   <div className="flex items-center gap-3 mt-0.5 text-[10px] text-slate-300">
                                     <span>Điểm: <span className="font-bold text-white">{c.analysis?.['Tổng điểm']}</span></span>
                                     <span>Cấp: <span className="font-semibold">{c.experienceLevel || '—'}</span></span>
-                                    {c.email && <span className="text-indigo-400 truncate">{c.email}</span>}
+                                    {c.email && <span className="text-blue-400 truncate">{c.email}</span>}
                                   </div>
                                 </div>
                               </div>
                               <button
                                 onClick={() => handleToggleSelect(id!)}
-                                className={`flex-shrink-0 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                                className={`flex-shrink-0 px-3.5 py-1.5 text-xs font-bold transition-all flex items-center gap-1.5 ${
                                   isSelected
-                                    ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow shadow-emerald-600/20'
+                                    ? 'bg-blue-600 hover:bg-blue-500 text-white shadow shadow-blue-600/20'
                                     : 'bg-slate-700/80 hover:bg-slate-600 text-slate-200 border border-slate-600/40'
                                 }`}
                               >
@@ -366,9 +380,9 @@ const CandidateSuggestions: React.FC<CandidateSuggestionsProps> = ({ candidates,
                     <div className="flex items-center gap-1 mt-3 pt-2.5 border-t border-slate-700/30">
                       <button
                         onClick={() => handleCopy(msg.content, `msg-${i}`)}
-                        className="flex items-center gap-1 text-[10px] text-slate-600 hover:text-slate-400 transition-colors px-2 py-1 rounded-lg hover:bg-slate-800/50"
+                        className="flex items-center gap-1 text-[10px] text-slate-600 hover:text-slate-400 transition-colors px-2 py-1 hover:bg-slate-800/50"
                       >
-                        {copiedId === `msg-${i}` ? <CheckCheck className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                        {copiedId === `msg-${i}` ? <CheckCheck className="w-3 h-3 text-blue-400" /> : <Copy className="w-3 h-3" />}
                         {copiedId === `msg-${i}` ? 'Đã sao chép' : 'Sao chép'}
                       </button>
                     </div>
@@ -380,16 +394,16 @@ const CandidateSuggestions: React.FC<CandidateSuggestionsProps> = ({ candidates,
 
           {isLoading && (
             <div className="flex justify-start">
-              <div className="bg-gradient-to-br from-[#0d1420] to-[#0a1020] border border-slate-800/60 text-slate-200 rounded-2xl rounded-tl-sm p-5 flex flex-col gap-3 shadow-xl shadow-black/20 max-w-md">
+              <div className="bg-gradient-to-br from-[#0d1420] to-[#0a1020] border border-slate-800/60 text-slate-200 p-5 flex flex-col gap-3 shadow-xl shadow-black/20 max-w-md">
                 <div className="flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-lg bg-indigo-500/15 flex items-center justify-center">
-                    <Bot className="w-3.5 h-3.5 text-indigo-400" />
+                  <div className="w-7 h-7 bg-blue-500/15 flex items-center justify-center">
+                    <Bot className="w-3.5 h-3.5 text-blue-400" />
                   </div>
                   <span className="text-xs font-bold text-slate-300">Support HR AI</span>
                   <div className="ml-2 flex items-center gap-1">
-                    <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: '300ms' }} />
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -406,23 +420,27 @@ const CandidateSuggestions: React.FC<CandidateSuggestionsProps> = ({ candidates,
         {/* Input Area */}
         <div className="shrink-0 border-t border-slate-800/50 bg-[#0a0e1a]/90 backdrop-blur-xl px-4 py-4 md:px-6">
           <div className="relative">
-            <div className="flex items-center gap-3 bg-gradient-to-br from-[#0d1420] to-[#0a1020] border border-slate-700/50 rounded-2xl px-4 py-3 focus-within:border-indigo-500/50 focus-within:shadow-[0_0_0_3px_rgba(99,102,241,0.1)] transition-all">
+            <div className="flex items-center gap-3 bg-gradient-to-br from-[#0d1420] to-[#0a1020] border border-slate-700/50 px-4 py-3 focus-within:border-blue-500/50 focus-within:shadow-[0_0_0_3px_rgba(59,130,246,0.1)] transition-all">
               <Bot className="w-4 h-4 text-slate-600 flex-shrink-0" />
-              <input
+              <textarea
                 ref={inputRef}
-                type="text"
                 value={input}
                 onChange={e => setInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend(input)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend(input);
+                  }
+                }}
                 placeholder="Nhập câu hỏi hoặc yêu cầu về ứng viên..."
-                className="flex-1 bg-transparent text-sm text-white placeholder:text-slate-600 focus:outline-none resize-none"
+                className="flex-1 min-h-[24px] max-h-32 bg-transparent text-sm text-white placeholder:text-slate-600 focus:outline-none resize-y"
                 disabled={isLoading}
                 rows={1}
               />
               <button
                 onClick={() => { if (input.trim()) { handleSend(input); } }}
                 disabled={isLoading || !input.trim()}
-                className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white flex items-center justify-center transition shadow-lg shadow-indigo-900/30 disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0 hover:scale-105 active:scale-95"
+                className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-500 hover:to-indigo-500 text-white flex items-center justify-center transition shadow-lg shadow-blue-900/30 disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0 hover:scale-105 active:scale-95"
               >
                 {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowUp className="w-4 h-4" />}
               </button>
@@ -432,8 +450,8 @@ const CandidateSuggestions: React.FC<CandidateSuggestionsProps> = ({ candidates,
                 Nhấn Enter để gửi · Shift + Enter để xuống dòng
               </span>
               {selectedIds.size > 0 && (
-                <span className="text-[9px] text-emerald-400 font-semibold flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                <span className="text-[9px] text-blue-400 font-semibold flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
                   {selectedIds.size} ứng viên đã chọn
                 </span>
               )}
@@ -448,13 +466,13 @@ const CandidateSuggestions: React.FC<CandidateSuggestionsProps> = ({ candidates,
           <div className="flex shrink-0 items-center justify-between border-b border-slate-800/50 px-4 py-4">
             <div>
               <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                <FileText className="w-4 h-4 text-indigo-400" />
+                <FileText className="w-4 h-4 text-blue-400" />
                 Ứng viên đã chọn
               </h4>
               <p className="text-[10px] text-slate-500 mt-0.5">{selectedIds.size} / {candidates.filter(c => c.status === 'SUCCESS').length} ứng viên</p>
             </div>
             {selectedIds.size > 0 && (
-              <div className="w-8 h-8 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center text-xs font-black shadow-lg shadow-emerald-500/10">
+              <div className="w-8 h-8 bg-blue-500/15 border border-blue-500/30 text-blue-400 flex items-center justify-center text-xs font-black shadow-lg shadow-blue-500/10">
                 {selectedIds.size}
               </div>
             )}
@@ -463,7 +481,7 @@ const CandidateSuggestions: React.FC<CandidateSuggestionsProps> = ({ candidates,
           <div className="custom-scrollbar min-h-0 flex-1 space-y-2 overflow-y-auto p-3">
             {selectedIds.size === 0 ? (
               <div className="flex min-h-[14rem] flex-col items-center justify-center p-4 text-center">
-                <div className="w-14 h-14 rounded-2xl bg-slate-800/60 border border-slate-700/40 flex items-center justify-center mb-4 shadow-lg">
+                <div className="w-14 h-14 bg-slate-800/60 border border-slate-700/40 flex items-center justify-center mb-4 shadow-lg">
                   <Users className="w-6 h-6 text-slate-600" />
                 </div>
                 <p className="text-xs text-slate-500 font-medium">Chưa có ứng viên nào được chọn</p>
@@ -474,19 +492,19 @@ const CandidateSuggestions: React.FC<CandidateSuggestionsProps> = ({ candidates,
                 const c = candidates.find(cand => cand.id === id);
                 if (!c) return null;
                 return (
-                  <div key={id} className="p-3.5 rounded-xl bg-gradient-to-br from-[#0d1420] to-[#0a1020] border border-slate-800/60 relative group hover:border-emerald-500/30 transition-all shadow-lg shadow-black/10">
+                  <div key={id} className="p-3.5 bg-gradient-to-br from-[#0d1420] to-[#0a1020] border border-slate-800/60 relative group hover:border-blue-500/30 transition-all shadow-lg shadow-black/10">
                     <button
                       onClick={() => handleToggleSelect(id)}
-                      className="absolute top-2.5 right-2.5 w-7 h-7 rounded-lg bg-slate-800/80 hover:bg-red-500/20 text-slate-500 hover:text-red-400 flex items-center justify-center transition-all border border-slate-700/40 hover:border-red-500/30"
+                      className="absolute top-2.5 right-2.5 w-7 h-7 bg-slate-800/80 hover:bg-red-500/20 text-slate-500 hover:text-red-400 flex items-center justify-center transition-all border border-slate-700/40 hover:border-red-500/30"
                       title="Bỏ chọn"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
                     <div className="flex items-center gap-2.5 mb-2.5 pr-7">
-                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-xs font-black ${
-                        c.analysis?.['Hạng'] === 'A' ? 'bg-emerald-500/20 text-emerald-400' :
+                      <div className={`w-9 h-9 flex items-center justify-center text-xs font-black ${
+                        c.analysis?.['Hạng'] === 'A' ? 'bg-blue-500/20 text-blue-400' :
                         c.analysis?.['Hạng'] === 'B' ? 'bg-blue-500/20 text-blue-400' :
-                        'bg-amber-500/20 text-amber-400'
+                        'bg-blue-500/20 text-blue-400'
                       }`}>
                         {getInitials(c.candidateName || '')}
                       </div>
@@ -497,13 +515,13 @@ const CandidateSuggestions: React.FC<CandidateSuggestionsProps> = ({ candidates,
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <GradeBadge grade={c.analysis?.['Hạng']} />
-                      <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-slate-800/80 text-slate-300 border border-slate-700/40">
+                      <span className="px-2 py-0.5 text-[10px] font-bold bg-slate-800/80 text-slate-300 border border-slate-700/40">
                         Điểm: <span className="text-white">{c.analysis?.['Tổng điểm']}</span>
                       </span>
                       <span className="text-[10px] text-slate-500">{c.experienceLevel || '—'}</span>
                     </div>
                     {c.email && (
-                      <p className="text-[10px] text-indigo-400 mt-2 truncate">{c.email}</p>
+                      <p className="text-[10px] text-blue-400 mt-2 truncate">{c.email}</p>
                     )}
                   </div>
                 );
@@ -515,7 +533,7 @@ const CandidateSuggestions: React.FC<CandidateSuggestionsProps> = ({ candidates,
             <button
               onClick={exportSelectedToCSV}
               disabled={selectedIds.size === 0}
-              className="w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2.5 transition-all bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-lg shadow-emerald-600/20 disabled:opacity-30 disabled:cursor-not-allowed border border-emerald-400/20 hover:shadow-emerald-500/30"
+              className="w-full py-3 text-sm font-bold flex items-center justify-center gap-2.5 transition-all bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-600/20 disabled:opacity-30 disabled:cursor-not-allowed border border-blue-400/20 hover:shadow-blue-500/30"
             >
               <FileText className="w-4 h-4" />
               Xuất danh sách ({selectedIds.size})
@@ -523,6 +541,7 @@ const CandidateSuggestions: React.FC<CandidateSuggestionsProps> = ({ candidates,
           </div>
         </div>
       )}
+      </div>{/* end wrapper flex-row */}
     </div>
   );
 };

@@ -1,20 +1,12 @@
 import React, { Suspense, lazy, useState, useCallback } from 'react';
 import type { AppStep, Candidate, HardFilters, WeightCriteria } from '../../../assets/types';
-import JDInput from '../../features/criteria-config/JDInput';
-import JDMetaToolbar from '../../features/criteria-config/JDMetaToolbar';
+import JDInput from '../../../components/features/criteria-config/JDInput';
+import JDMetaToolbar from '../../../components/features/criteria-config/JDMetaToolbar';
 import CVScreenerWelcome from './CVScreenerWelcome';
 
-const WeightsConfig = lazy(() => import('../../features/criteria-config/WeightsConfig'));
-const CVUpload = lazy(() => import('../../features/cv-management/CVUpload'));
-const AnalysisResults = lazy(() => import('../../features/cv-management/AnalysisResults'));
-
-const STEPS = [
-  { key: 'jd', label: 'Nhập JD', icon: 'fa-wand-magic-sparkles', sub: 'JOB DESCRIPTION ANALYTICS' },
-  { key: 'weights', label: 'Trọng số', icon: 'fa-sliders', sub: 'BƯỚC 2: TRỌNG SỐ & BỘ LỌC' },
-  { key: 'upload', label: 'Tải CV', icon: 'fa-cloud-arrow-up', sub: 'BƯỚC 3: DỮ LIỆU ĐẦU VÀO' },
-  { key: 'analysis', label: 'Kết quả', icon: 'fa-chart-line', sub: 'BƯỚC 4: KẾT QUẢ PHÂN TÍCH' },
-  { key: 'chatbot', label: 'AI Chat', icon: 'fa-robot', sub: 'AI CHATBOT ADVISOR' },
-] as const;
+const WeightsConfig = lazy(() => import('../../../components/features/criteria-config/WeightsConfig'));
+const CVUpload = lazy(() => import('../../../components/features/cv-management/CVUpload'));
+const AnalysisResults = lazy(() => import('../../../components/features/cv-management/AnalysisResults'));
 
 const ModuleLoader = () => (
   <div className="flex flex-col items-center justify-center h-40 gap-4">
@@ -103,74 +95,6 @@ const ScreenerPage: React.FC<ScreenerPageProps> = (props) => {
           onBackToWelcome={() => setShowWelcome(true)}
         />
       )}
-
-      {/* Tiêu đề (khi không phải JD — đã gộp vào toolbar) + stepper gọn */}
-      <div className={`shrink-0 border-b border-slate-800/60 bg-[#040814] px-3 py-2 md:px-5 ${activeStep === 'jd' ? 'hidden' : ''}`}>
-        <div
-          className={`flex flex-col gap-2 md:flex-row md:items-center md:gap-3 ${
-            activeStep === 'jd' ? '' : 'md:justify-between'
-          }`}
-        >
-          {activeStep !== 'jd' && (
-            <div className="flex shrink-0 items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-cyan-500/30 bg-cyan-500/15">
-                <i className="fa-solid fa-users-viewfinder text-sm text-cyan-400" aria-hidden />
-              </div>
-              <div>
-                <h1 className="text-sm font-bold leading-tight text-white">Sàng lọc ứng viên</h1>
-                <p className="text-[8px] font-semibold uppercase tracking-[0.14em] text-slate-500">Recruitment Intelligence</p>
-              </div>
-            </div>
-          )}
-
-          <div
-            className={`flex min-w-0 flex-1 items-center gap-0 overflow-x-auto [-webkit-overflow-scrolling:touch] pb-0.5 md:pb-0 ${
-              activeStep === 'jd' ? 'md:justify-start' : 'md:justify-end'
-            }`}
-          >
-            {STEPS.map((step, idx) => {
-              const isActive = activeStep === step.key;
-              const isCompleted = props.completedSteps.includes(step.key as AppStep);
-              const isClickable = !['chatbot'].includes(step.key) || isActive;
-
-              return (
-                <React.Fragment key={step.key}>
-                  <button
-                    onClick={() => isClickable && !isActive && props.setActiveStep(step.key as AppStep)}
-                    disabled={!isClickable}
-                    className={`
-                      flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2 py-1.5 text-[11px] font-semibold transition-all duration-200
-                      ${isActive
-                        ? 'border border-cyan-500/40 bg-cyan-500/20 text-cyan-300 shadow-md shadow-cyan-500/10'
-                        : isCompleted
-                          ? 'cursor-pointer border border-emerald-500/25 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/15'
-                          : 'border border-slate-700/50 bg-slate-800/40 text-slate-500 hover:bg-slate-800 hover:text-slate-300'
-                      }
-                      ${!isClickable ? 'cursor-default' : 'cursor-pointer'}
-                    `}
-                  >
-                    {isCompleted ? (
-                      <i className="fa-solid fa-check-circle text-[9px]" />
-                    ) : (
-                      <i className={`${step.icon} text-[9px] ${isActive ? 'text-cyan-300' : ''}`} />
-                    )}
-                    <span className="hidden sm:inline">{step.label}</span>
-                    <span className="sm:hidden">{idx + 1}</span>
-                  </button>
-
-                  {idx < STEPS.length - 1 && (
-                    <div
-                      className={`mx-1 h-px min-w-[0.75rem] flex-1 sm:mx-1.5 ${
-                        isCompleted ? 'bg-emerald-500/40' : 'bg-slate-800/60'
-                      }`}
-                    />
-                  )}
-                </React.Fragment>
-              );
-            })}
-          </div>
-        </div>
-      </div>
 
       {/* ── Nội dung module ────────────────────────────────────── */}
       <div

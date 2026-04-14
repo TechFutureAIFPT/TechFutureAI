@@ -8,9 +8,9 @@ import { cvCache } from '../history-cache/cacheService';
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@4.3.136/build/pdf.worker.min.mjs`;
 
 const FILE_SIZE_LIMIT_MB = 15;
-const MIN_PDF_TEXT_LENGTH = 200; // Increased threshold to avoid unnecessary OCR
-const MAX_OCR_PAGES = 2; // Reduced from 3 to 2 pages for faster processing
-const CANVAS_SCALE = 1.5; // Reduced from 2.0 for better performance
+const MIN_PDF_TEXT_LENGTH = 200;
+const MAX_OCR_PAGES = 3;        // Tăng lên 3 trang để không bỏ sót nội dung
+const CANVAS_SCALE = 2.5;       // Tăng độ phân giải PDF render
 const GEMINI_VISION_MODEL = 'gemini-1.5-flash';
 
 const GOOGLE_CLOUD_VISION_API_KEY = (import.meta as any)?.env?.VITE_GOOGLE_CLOUD_VISION_API_KEY;
@@ -53,17 +53,32 @@ const rotateVisionKey = () => {
 };
 
 const buildVisionPrompt = (documentType: 'cv' | 'jd'): string => {
-  return documentType === 'jd'
-    ? 'Bạn là chuyên gia OCR và xử lý dữ liệu tuyển dụng cao cấp. Nhiệm vụ: Chuyển đổi hình ảnh JD thành văn bản chuẩn xác tuyệt đối.\n\nYÊU CẦU:\n1. Trích xuất TOÀN BỘ nội dung văn bản, không bỏ sót bất kỳ chi tiết nào (kỹ năng, yêu cầu, quyền lợi).\n2. Tự động sửa lỗi chính tả tiếng Việt/Anh do ảnh mờ (ví dụ: "l" -> "1", "rn" -> "m", sai dấu).\n3. Giữ nguyên định dạng phân đoạn, gạch đầu dòng để máy dễ đọc.\n4. Nếu có bảng biểu, hãy chuyển thành dạng text cấu trúc dễ hiểu.\n5. CHỈ trả về nội dung văn bản đã trích xuất, KHÔNG thêm lời dẫn.'
-    : 'Bạn là chuyên gia OCR và xử lý hồ sơ nhân sự cao cấp. Nhiệm vụ: Chuyển đổi hình ảnh CV thành văn bản chuẩn xác tuyệt đối.\n\nYÊU CẦU:\n1. Trích xuất ĐẦY ĐỦ thông tin: Thông tin cá nhân, Kinh nghiệm, Học vấn, Kỹ năng, Dự án.\n2. Tự động sửa lỗi chính tả tên riêng, email, số điện thoại, tên công ty (đặc biệt là tiếng Việt).\n3. Giữ nguyên cấu trúc logic của CV (các đề mục).\n4. Nếu ảnh mờ hoặc khó đọc, hãy dùng khả năng suy luận để điền từ hợp lý nhất dựa trên ngữ cảnh.\n5. CHỈ trả về nội dung văn bản đã trích xuất, KHÔNG thêm lời dẫn.';
+  const base = [
+    'Bạn là chuyên gia OCR cấp cao, chuyên xử lý hồ sơ việc làm bằng tiếng Việt và tiếng Anh.',
+    '',
+    'NHIỆM VỤ: Chuyển toàn bộ nội dung có trong hình ảnh thành văn bản chính xác.',
+    '',
+    'QUY TẮC BẮT BUỘC:',
+    '1. SAO CHÉP NGUYÊN VẸN tất cả từ ngữ - không tóm tắt, không bỏ sót bất kỳ dòng nào.',
+    '2. GIỮ NGUYÊN cấu trúc: xuống dòng, gạch đầu dòng, số thứ tự, bảng biểu.',
+    '3. SỬA LỖI OCR rõ ràng: "rn" thành "m", số "0" thành chữ "o" khi ở giữa từ.',
+    '4. DẤU TIẾNG VIỆT: ghi đúng dấu hoàn toàn (à, á, ạ, ả, ã, â, ầ, ấ...).',
+    '5. Email, số điện thoại, URL: giữ nguyên chính xác 100%.',
+    '6. CHỈ trả về văn bản đã trích xuất. KHÔNG thêm lời dẫn hay giải thích.',
+  ].join('\n');
+
+  if (documentType === 'jd') {
+    return base + '\n\nLOẠI TÀI LIỆU: Mô tả công việc (JD). Ưu tiên trích xuất:\n- Tên vị trí / chức danh\n- Yêu cầu kinh nghiệm, kỹ năng bắt buộc\n- Bằng cấp, chứng chỉ\n- Quyền lợi, mức lương (nếu có)\n- Địa điểm làm việc';
+  } else {
+    return base + '\n\nLOẠI TÀI LIỆU: Hồ sơ người xét tuyển (CV). Ưu tiên trích xuất:\n- Họ tên, email, điện thoại, địa chỉ\n- Tất cả vị trí công việc đã làm và thời gian\n- Học vấn và bằng cấp\n- Kỹ năng, công cụ, công nghệ\n- Dự án, thành tựu nổi bật';
+  }
 };
 
 const runGeminiVisionOCR = async (canvas: HTMLCanvasElement, documentType: 'cv' | 'jd'): Promise<string> => {
-  if (!geminiVisionKeys.length) {
-    return '';
-  }
+  if (!geminiVisionKeys.length) return '';
 
-  const dataUrl = canvas.toDataURL('image/png');
+  // JPEG chất lượng cao: nhỏ hơn PNG, ít noise hơn, Gemini xử lý tốt hơn
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
   const base64 = dataUrl.split(',')[1];
   const maxAttempts = Math.max(1, geminiVisionKeys.length);
 
@@ -77,15 +92,16 @@ const runGeminiVisionOCR = async (canvas: HTMLCanvasElement, documentType: 'cv' 
           {
             role: 'user',
             parts: [
-              { inlineData: { data: base64, mimeType: 'image/png' } },
+              { inlineData: { data: base64, mimeType: 'image/jpeg' } },
               { text: buildVisionPrompt(documentType) },
             ],
           },
         ],
         generationConfig: {
           temperature: 0,
-          topP: 0,
+          topP: 0.05,
           topK: 1,
+          maxOutputTokens: 8192, // Tăng để không bị cắt giữa chừng
           responseMimeType: 'text/plain',
         },
       });
@@ -97,8 +113,13 @@ const runGeminiVisionOCR = async (canvas: HTMLCanvasElement, documentType: 'cv' 
         return text.trim();
       }
       return text?.trim() || '';
-    } catch (error) {
-      console.warn('[OCR] Gemini Vision OCR thất bại, chuyển key khác:', error);
+    } catch (error: any) {
+      // Hết quota → chuyển key khác ngay
+      if (error?.status === 429 || error?.message?.includes('quota') || error?.message?.includes('exhausted')) {
+        console.warn(`[OCR] Gemini key [${activeVisionKeyIndex}] hết quota, chuyển sang key khác...`);
+      } else {
+        console.warn('[OCR] Gemini Vision OCR thất bại:', error);
+      }
       rotateVisionKey();
     }
   }
@@ -149,40 +170,54 @@ const runGoogleCloudVisionOCR = async (canvas: HTMLCanvasElement): Promise<strin
 };
 
 /**
- * Enhance image quality for better OCR accuracy
- * Applies contrast enhancement, noise reduction, and sharpening
+ * Adaptive contrast enhancement for OCR (CLAHE-like).
+ * Dùng cho Tesseract — KHÔNG dùng trước khi gửi Gemini.
+ * Hiệu quả hơn binarization cứng vì giữ được dấu tiếng Việt.
  */
 const enhanceImageForOCR = (context: CanvasRenderingContext2D, width: number, height: number): void => {
   try {
     const imageData = context.getImageData(0, 0, width, height);
     const data = imageData.data;
-    
-    // Apply contrast enhancement and convert to grayscale for better text recognition
-    for (let i = 0; i < data.length; i += 4) {
-      // Convert to grayscale using luminance formula
-      const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-      
-      // Increase contrast
-      // Formula: factor = (259 * (contrast + 255)) / (255 * (259 - contrast))
-      // Use contrast = 50 (approx) for moderate enhancement
-      const contrast = 50;
-      const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
-      const enhanced = factor * (gray - 128) + 128;
-      
-      // Clamp
-      const final = Math.min(255, Math.max(0, enhanced));
-      
-      // Simple binarization for cleaner text
-      // Tesseract often works better with high contrast grayscale or binary
-      // Let's use a soft threshold to keep some anti-aliasing but push towards black/white
-      const thresholded = final > 160 ? 255 : final < 90 ? 0 : final;
-      
-      data[i] = thresholded;     // R
-      data[i + 1] = thresholded; // G
-      data[i + 2] = thresholded; // B
-      // Alpha channel stays the same
+
+    // Bước 1: Chuyển sang grayscale
+    const gray = new Float32Array(width * height);
+    for (let i = 0; i < width * height; i++) {
+      const r = data[i * 4], g = data[i * 4 + 1], b = data[i * 4 + 2];
+      gray[i] = 0.299 * r + 0.587 * g + 0.114 * b;
     }
-    
+
+    // Bước 2: Adaptive contrast theo block 64×64
+    const blockSize = 64;
+    const cols = Math.ceil(width / blockSize);
+    const rows = Math.ceil(height / blockSize);
+    const minMap = new Float32Array(cols * rows).fill(255);
+    const maxMap = new Float32Array(cols * rows).fill(0);
+
+    for (let py = 0; py < height; py++) {
+      for (let px = 0; px < width; px++) {
+        const bi = Math.min(Math.floor(px / blockSize), cols - 1);
+        const bj = Math.min(Math.floor(py / blockSize), rows - 1);
+        const idx = bj * cols + bi;
+        const val = gray[py * width + px];
+        if (val < minMap[idx]) minMap[idx] = val;
+        if (val > maxMap[idx]) maxMap[idx] = val;
+      }
+    }
+
+    for (let py = 0; py < height; py++) {
+      for (let px = 0; px < width; px++) {
+        const bi = Math.min(Math.floor(px / blockSize), cols - 1);
+        const bj = Math.min(Math.floor(py / blockSize), rows - 1);
+        const idx = bj * cols + bi;
+        const range = maxMap[idx] - minMap[idx];
+        const pixIdx = py * width + px;
+        let v = range > 8 ? ((gray[pixIdx] - minMap[idx]) / range) * 255 : gray[pixIdx];
+        v = Math.min(255, Math.max(0, v));
+        const di = pixIdx * 4;
+        data[di] = data[di + 1] = data[di + 2] = v;
+      }
+    }
+
     context.putImageData(imageData, 0, 0);
   } catch (error) {
     console.warn('Image enhancement failed, using original image:', error);
@@ -792,48 +827,44 @@ export const extractTextFromFile = async (
       await new Promise((resolve, reject) => {
         img.onload = () => {
           // Optimize image size for better OCR performance on job descriptions
-          const maxWidth = 1600; // Increased for better text quality
-          const maxHeight = 2200;
+          // Tối đa 3200×4400 — đủ sắc nét cho chữ nhỏ
+          const MAX_W = 3200;
+          const MAX_H = 4400;
           let { width, height } = img;
 
-          // Calculate optimal scale to maintain aspect ratio
-          const scaleX = maxWidth / width;
-          const scaleY = maxHeight / height;
-          const scale = Math.min(scaleX, scaleY, 2); // Don't upscale more than 2x
+          let scale = Math.min(MAX_W / width, MAX_H / height);
+          // Upscale nếu ảnh gốc nhỏ hơn 1200px ở cạnh ngắn nhất
+          const shortSide = Math.min(width, height) * scale;
+          if (shortSide < 1200) scale = Math.min(scale * (1200 / shortSide), 3.0);
+          scale = Math.min(scale, 3.0); // Không upscale quá 3x
 
           const newWidth = Math.floor(width * scale);
           const newHeight = Math.floor(height * scale);
 
           canvas.width = newWidth;
           canvas.height = newHeight;
-          
+
           if (ctx) {
-            // Enable image smoothing for better quality
+            // Nền trắng — tránh alpha channel gây nhiễu cho OCR
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, newWidth, newHeight);
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
-            
-            // Draw image with high quality
             ctx.drawImage(img, 0, 0, newWidth, newHeight);
-            
-            // Apply enhancement specifically for job descriptions
-            enhanceImageForOCR(ctx, newWidth, newHeight);
+            // KHÔNG enhance trước Gemini — AI nhận ảnh gốc sẽ tốt hơn
           }
-          
+
           resolve(void 0);
         };
         img.onerror = reject;
         img.src = URL.createObjectURL(file);
       });
 
-      rawText = await performOptimizedOCR(canvas, 'jd');
-      
-      // Try to extract job position immediately after OCR
-      const extractedPosition = extractJobPositionFromText(rawText);
-      if (extractedPosition) {
-        console.log('Đã phát hiện chức danh từ OCR:', extractedPosition);
-      }
-      
-      onProgress('Đã OCR ảnh thành công với AI tối ưu');
+      // Tự phát hiện loại tài liệu từ tên file
+      const docType: 'cv' | 'jd' = (fileName.includes('jd') || fileName.includes('job') || fileName.includes('position')) ? 'jd' : 'cv';
+      rawText = await performOptimizedOCR(canvas, docType);
+
+      onProgress('Đã OCR ảnh thành công');
 
     } else if (fileType === 'text/plain' || fileName.endsWith('.txt')) {
       rawText = await file.text();

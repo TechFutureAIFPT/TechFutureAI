@@ -1,5 +1,5 @@
 import { DataSyncService } from '../data-sync/dataSyncService';
-import { auth } from '../../services/firebase';
+import { auth } from '../firebase';
 
 /**
  * Advanced caching service for CV analysis results

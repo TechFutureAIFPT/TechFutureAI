@@ -1,5 +1,6 @@
 /**
  * Dark ProgressBar — Component cho Dark Mode
+ * Màu sắc đồng bộ từ tokens.ts
  */
 import React from 'react';
 
@@ -76,12 +77,12 @@ interface DarkCircleProgressProps {
 }
 
 const circleColors = {
-  blue: '#60a5fa',
-  green: '#34d399',
-  amber: '#fbbf24',
-  red: '#f87171',
-  purple: '#a5b4fc',
-  cyan: '#22d3ee',
+  blue: '#60a5fa',   // tokens.dark.primary
+  green: '#10b981',  // tokens.dark.success
+  amber: '#f59e0b',  // tokens.dark.warning
+  red: '#ef4444',    // tokens.dark.error
+  purple: '#818cf8', // tokens.dark.accent
+  cyan: '#06b6d4',   // tokens.dark.info
 };
 
 export const DarkCircleProgress: React.FC<DarkCircleProgressProps> = ({
