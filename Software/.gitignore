@@ -1,0 +1,13 @@
+node_modules/
+dist/
+build/
+.gradle/
+.expo/
+.venv/
+venv/
+__pycache__/
+.pytest_cache/
+.codegraph/
+*.db
+*.log
+*-firebase-adminsdk-*.json
