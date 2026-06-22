@@ -4,6 +4,7 @@ import {
   doc,
   getDocs,
   getFirestore,
+  onSnapshot,
   query,
   serverTimestamp,
   updateDoc,
@@ -31,8 +32,35 @@ export const FIRESTORE_COLLECTIONS = {
   syncedAnalysisHistory: "syncedAnalysisHistory",
   userJDTemplates: "userJDTemplates",
   manualHistory: "CLdl7JGuaOGIuijiDZeG",
-  analysisFeedback: "analysisFeedback"
+  analysisFeedback: "analysisFeedback",
+  desktopSessions: "desktopSessions"
 } as const;
+
+export type DesktopSession = {
+  status: "analyzing" | "done" | "idle";
+  jobPosition: string;
+  totalCvs: number;
+  analyzedCount: number;
+  startedAt: number;
+  lastHeartbeat: number;
+};
+
+export function subscribeDesktopSession(
+  uid: string,
+  onUpdate: (session: DesktopSession | null) => void
+): () => void {
+  if (!db) return () => {};
+  const ref = doc(db, FIRESTORE_COLLECTIONS.desktopSessions, uid);
+  return onSnapshot(ref, (snap) => {
+    if (!snap.exists()) {
+      onUpdate(null);
+      return;
+    }
+    const data = snap.data() as DesktopSession;
+    const isStale = data.lastHeartbeat && Date.now() - data.lastHeartbeat > 60_000;
+    onUpdate(isStale ? null : data);
+  });
+}
 
 const db = firebaseApp ? getFirestore(firebaseApp) : null;
 

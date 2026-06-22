@@ -2,6 +2,7 @@ import { create } from "zustand";
 
 import { getAuthToken, loginWithEmail, loginWithGoogle, loginWithGoogleIdToken, logout, registerWithEmail, resetPasswordEmail } from "../services/auth";
 import { fetchFirestoreCandidateInbox, saveFirestoreDecisionFeedback } from "../services/firebaseStore";
+import type { DesktopSession } from "../services/firebaseStore";
 import { localCacheKeys, readLocalCacheEnvelope, removeLocalCache, writeLocalCache } from "../services/localDataCache";
 import { readLoginHistory, recordLoginSession } from "../services/loginHistory";
 import { fetchRenderCandidateInbox, fetchRenderMobileInbox, scoreRenderQuickCvForm, scoreRenderQuickCvText } from "../services/renderStore";
@@ -34,6 +35,8 @@ interface RecruiterState {
   submitting: boolean;
   error: string | null;
   lastDecision: string | null;
+  liveSession: DesktopSession | null;
+  setLiveSession: (session: DesktopSession | null) => void;
   setAuthUser: (user: AuthUser | null) => void;
   setAuthReady: (ready: boolean) => void;
   loadLoginHistory: () => Promise<void>;
@@ -201,6 +204,8 @@ export const useRecruiterStore = create<RecruiterState>((set, get) => ({
   submitting: false,
   error: null,
   lastDecision: null,
+  liveSession: null,
+  setLiveSession: (session) => set({ liveSession: session }),
   setAuthUser: (user) => set({ authUser: user, loginHistory: user ? get().loginHistory : [] }),
   setAuthReady: (ready) => set({ authReady: ready }),
   loadLoginHistory: async () => {

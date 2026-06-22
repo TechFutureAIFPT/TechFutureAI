@@ -24,6 +24,7 @@ import { NotificationsScreen } from "./screens/NotificationsScreen";
 import { JDStandardizerScreen } from "./screens/JDStandardizerScreen";
 import { JDStandardizerResultScreen } from "./screens/JDStandardizerResultScreen";
 import { subscribeAuth } from "./services/auth";
+import { subscribeDesktopSession } from "./services/firebaseStore";
 import { ThemeProvider, useAppTheme } from "./theme/ThemeContext";
 import { useRecruiterStore } from "./store/useRecruiterStore";
 import type { JDStandardizeResponse } from "./types";
@@ -79,19 +80,32 @@ function AppContent() {
   const setAuthReady = useRecruiterStore((state) => state.setAuthReady);
   const loadInbox = useRecruiterStore((state) => state.loadInbox);
   const loadLoginHistory = useRecruiterStore((state) => state.loadLoginHistory);
+  const setLiveSession = useRecruiterStore((state) => state.setLiveSession);
 
   useEffect(() => {
+    let unsubSession: (() => void) | null = null;
+
     const unsubscribe = subscribeAuth((user) => {
       setAuthUser(user);
       setAuthReady(true);
+
+      unsubSession?.();
+      unsubSession = null;
+
       if (user) {
         void loadLoginHistory();
         void loadInbox();
+        unsubSession = subscribeDesktopSession(user.uid, setLiveSession);
+      } else {
+        setLiveSession(null);
       }
     });
 
-    return unsubscribe;
-  }, [loadInbox, loadLoginHistory, setAuthReady, setAuthUser]);
+    return () => {
+      unsubscribe();
+      unsubSession?.();
+    };
+  }, [loadInbox, loadLoginHistory, setAuthReady, setAuthUser, setLiveSession]);
 
   const navigationTheme = useMemo(() => {
     const baseTheme = isDark ? DarkTheme : DefaultTheme;

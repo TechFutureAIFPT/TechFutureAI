@@ -1,5 +1,5 @@
 import { useMemo, type ReactNode } from "react";
-import { Pressable, ScrollView, Text, useWindowDimensions, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, Text, useWindowDimensions, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
@@ -11,6 +11,7 @@ import {
   FileSearch,
   LayoutGrid,
   MessageCircle,
+  Monitor,
   Sparkles,
   type LucideIcon
 } from "lucide-react-native";
@@ -186,6 +187,62 @@ function WorkflowItem({ icon: Icon, subtitle, title }: (typeof workflowItems)[nu
   );
 }
 
+function LiveSessionCard() {
+  const { colors, isDark } = useDashboardPalette();
+  const liveSession = useRecruiterStore((state) => state.liveSession);
+
+  if (!liveSession || liveSession.status === "idle") return null;
+
+  const isAnalyzing = liveSession.status === "analyzing";
+  const progress = liveSession.totalCvs > 0
+    ? Math.round((liveSession.analyzedCount / liveSession.totalCvs) * 100)
+    : 0;
+
+  return (
+    <View
+      className="rounded-3xl border p-4"
+      style={{
+        backgroundColor: isDark ? "rgba(24, 24, 27, 0.42)" : colors.surface,
+        borderColor: isAnalyzing ? colors.accent : colors.border
+      }}
+    >
+      <View className="flex-row items-center gap-3">
+        <View className="h-10 w-10 items-center justify-center rounded-full" style={{ backgroundColor: isDark ? "rgba(255,255,255,0.08)" : colors.iconSurface }}>
+          <Monitor color={colors.accent} size={18} strokeWidth={2.3} />
+        </View>
+        <View className="min-w-0 flex-1">
+          <Text className="text-[13px] font-bold uppercase tracking-wide" style={{ color: colors.accent }}>
+            {isAnalyzing ? "Máy tính đang phân tích" : "Phân tích hoàn tất"}
+          </Text>
+          <Text className="mt-0.5 text-[13px] font-semibold" numberOfLines={1} style={{ color: colors.textPrimary }}>
+            {liveSession.jobPosition || "Sàng lọc CV"}
+          </Text>
+        </View>
+        {isAnalyzing && <ActivityIndicator color={colors.accent} size="small" />}
+      </View>
+
+      {liveSession.totalCvs > 0 && (
+        <View className="mt-3">
+          <View className="mb-1.5 flex-row justify-between">
+            <Text className="text-[12px]" style={{ color: colors.textSecondary }}>
+              {liveSession.analyzedCount} / {liveSession.totalCvs} hồ sơ
+            </Text>
+            <Text className="text-[12px] font-bold" style={{ color: colors.accent }}>
+              {progress}%
+            </Text>
+          </View>
+          <View className="h-1.5 overflow-hidden rounded-full" style={{ backgroundColor: isDark ? "rgba(255,255,255,0.1)" : colors.iconSurface }}>
+            <View
+              className="h-full rounded-full"
+              style={{ backgroundColor: colors.accent, width: `${progress}%` }}
+            />
+          </View>
+        </View>
+      )}
+    </View>
+  );
+}
+
 export function AppInfoScreen() {
   const navigation = useNavigation<Navigation>();
   const { width } = useWindowDimensions();
@@ -216,6 +273,8 @@ export function AppInfoScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View className="gap-4 px-4" style={{ width: contentWidth + 32 }}>
+          <LiveSessionCard />
+
           <DashboardCard className="overflow-hidden p-5">
             <View className="flex-row items-start justify-between gap-4">
               <View className="min-w-0 flex-1">
