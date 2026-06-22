@@ -18,6 +18,7 @@ import { AccountSettingsScreen } from "./screens/AccountSettingsScreen";
 import { QuickCvResultScreen } from "./screens/QuickCvResultScreen";
 import { AdvisorScreen } from "./screens/AdvisorScreen";
 import { AdvisorChatHistoryScreen } from "./screens/AdvisorChatHistoryScreen";
+import { PCConnectScreen } from "./screens/PCConnectScreen";
 import { RecordsScreen } from "./screens/RecordsScreen";
 import { ToolsScreen } from "./screens/ToolsScreen";
 import { NotificationsScreen } from "./screens/NotificationsScreen";
@@ -45,6 +46,7 @@ export type RootStackParamList = {
   Advisor: { sessionId?: string } | undefined;
   AdvisorChatHistory: undefined;
   QuickCvResult: undefined;
+  PCConnect: undefined;
   Detail: { id: string };
 };
 
@@ -69,6 +71,7 @@ const linking = {
       Advisor: "advisor",
       AdvisorChatHistory: "advisor/history",
       QuickCvResult: "quick-cv-result",
+      PCConnect: "pc-connect",
       Detail: "candidate/:id"
     }
   }
@@ -144,6 +147,7 @@ function AppContent() {
           <Stack.Screen component={AdvisorScreen} name="Advisor" />
           <Stack.Screen component={AdvisorChatHistoryScreen} name="AdvisorChatHistory" />
           <Stack.Screen component={QuickCvResultScreen} name="QuickCvResult" />
+          <Stack.Screen component={PCConnectScreen} name="PCConnect" />
           <Stack.Screen component={DetailScreen} name="Detail" />
         </Stack.Navigator>
       </NavigationContainer>

@@ -62,6 +62,21 @@ export function subscribeDesktopSession(
   });
 }
 
+export async function sendSessionCommand(
+  uid: string,
+  command: "approve_all_a" | "view_results" | "ping",
+  payload?: Record<string, unknown>
+): Promise<void> {
+  if (!db) return;
+  const { setDoc: fsSetDoc } = await import("firebase/firestore");
+  await fsSetDoc(doc(db, "sessionCommands", uid), {
+    command,
+    payload: payload ?? {},
+    sentAt: Date.now(),
+    source: "mobile"
+  });
+}
+
 const db = firebaseApp ? getFirestore(firebaseApp) : null;
 
 function requireUser() {

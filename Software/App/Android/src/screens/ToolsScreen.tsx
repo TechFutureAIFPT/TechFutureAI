@@ -1,7 +1,8 @@
 import { Pressable, ScrollView, Text, useWindowDimensions, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Bot, Camera, FileText, type LucideIcon } from "lucide-react-native";
+import { Bot, Camera, FileText, Monitor, type LucideIcon } from "lucide-react-native";
+import { useRecruiterStore } from "../store/useRecruiterStore";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import type { RootStackParamList } from "../App";
@@ -49,6 +50,7 @@ export function ToolsScreen() {
   const navigation = useNavigation<Navigation>();
   const { width } = useWindowDimensions();
   const { colors } = useAppTheme();
+  const liveSession = useRecruiterStore((state) => state.liveSession);
   const contentWidth = Math.min(Math.max(width - 32, 300), 430);
 
   return (
@@ -68,6 +70,37 @@ export function ToolsScreen() {
               Chatbot và chấm CV nhanh được gom tại đây.
             </Text>
           </View>
+
+          <Pressable
+            accessibilityRole="button"
+            className="min-h-[76px] flex-row items-center gap-3 border-b px-1 py-3 active:opacity-75"
+            onPress={() => navigation.navigate("PCConnect")}
+            style={{ borderColor: colors.border }}
+          >
+            <View className="relative h-11 w-11 items-center justify-center rounded-2xl" style={{ backgroundColor: colors.accentSoft }}>
+              <Monitor color={colors.accent} size={21} strokeWidth={2.35} />
+              {liveSession && liveSession.status === "analyzing" && (
+                <View className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2" style={{ backgroundColor: colors.accent, borderColor: colors.background }} />
+              )}
+            </View>
+            <View className="min-w-0 flex-1">
+              <View className="flex-row items-center gap-2">
+                <Text className="text-[17px] font-semibold" style={{ color: colors.textPrimary }}>
+                  Kết nối với PC
+                </Text>
+                {liveSession && liveSession.status === "analyzing" && (
+                  <View className="rounded-full px-2 py-0.5" style={{ backgroundColor: colors.accentSoft }}>
+                    <Text className="text-[10px] font-black uppercase" style={{ color: colors.accent }}>LIVE</Text>
+                  </View>
+                )}
+              </View>
+              <Text className="mt-1 text-[13px] leading-5" numberOfLines={2} style={{ color: colors.textSecondary }}>
+                {liveSession?.status === "analyzing"
+                  ? `Đang phân tích: ${liveSession.analyzedCount}/${liveSession.totalCvs} hồ sơ`
+                  : "Xem tiến độ phân tích CV trên máy tính theo thời gian thực."}
+              </Text>
+            </View>
+          </Pressable>
 
           <ToolRow
             description="Chụp hoặc tải CV lên để AI đọc hồ sơ và chấm điểm nhanh."
