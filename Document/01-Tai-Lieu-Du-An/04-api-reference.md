@@ -326,7 +326,7 @@ Tat ca route account nam sau:
 /api/account
 ```
 
-Và thường cần `Authorization: Bearer <access_token>`; issuer là Firebase trước cutover và Supabase sau cutover, còn route/request/response giữ nguyên.
+Và thường cần `Authorization: Bearer <access_token>`; issuer là Supabase trước cutover và Supabase sau cutover, còn route/request/response giữ nguyên.
 
 ### Profile
 

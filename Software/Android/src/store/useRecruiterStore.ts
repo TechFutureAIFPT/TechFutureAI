@@ -1,8 +1,8 @@
 import { create } from "zustand";
 
 import { getAuthToken, loginWithEmail, loginWithGoogle, loginWithGoogleIdToken, logout, registerWithEmail, resetPasswordEmail } from "../services/auth";
-import { fetchFirestoreCandidateInbox, saveFirestoreDecisionFeedback } from "../services/firebaseStore";
-import type { DesktopSession } from "../services/firebaseStore";
+import { fetchSupabaseCandidateInbox, saveSupabaseDecisionFeedback } from "../services/supabaseStore";
+import type { DesktopSession } from "../services/supabaseStore";
 import { localCacheKeys, readLocalCacheEnvelope, removeLocalCache, writeLocalCache } from "../services/localDataCache";
 import { readLoginHistory, recordLoginSession } from "../services/loginHistory";
 import { fetchRenderCandidateInbox, fetchRenderMobileInbox, scoreRenderQuickCvForm, scoreRenderQuickCvText } from "../services/renderStore";
@@ -60,7 +60,7 @@ const INBOX_CACHE_TTL_MS = 5 * 60 * 1000;
 const AUTH_TOKEN_TIMEOUT_MS = 2500;
 const RENDER_WARM_INBOX_TIMEOUT_MS = 12000;
 const RENDER_COLD_INBOX_TIMEOUT_MS = 90000;
-const FIRESTORE_INBOX_TIMEOUT_MS = 5500;
+const SUPABASE_INBOX_TIMEOUT_MS = 5500;
 const RENDER_WARM_LEGACY_TIMEOUT_MS = 15000;
 const RENDER_COLD_LEGACY_TIMEOUT_MS = 90000;
 let inFlightInboxLoad: { key: string; promise: Promise<void> } | null = null;
@@ -97,18 +97,18 @@ async function fetchFastInbox(
         cachedValue: cacheMeta?.cachedInbox ?? null
       })
     : Promise.reject(new Error("No Render token."));
-  const firestorePromise = withTimeout(
-    fetchFirestoreCandidateInbox(30),
-    FIRESTORE_INBOX_TIMEOUT_MS,
+  const supabasePromise = withTimeout(
+    fetchSupabaseCandidateInbox(30),
+    SUPABASE_INBOX_TIMEOUT_MS,
     "Nguồn Supabase trực tiếp phản hồi quá lâu."
   );
 
-  const [mobileResult, firestoreResult] = await Promise.allSettled([mobilePromise, firestorePromise]);
+  const [mobileResult, supabaseResult] = await Promise.allSettled([mobilePromise, supabasePromise]);
   let mobileInbox = mobileResult.status === "fulfilled" ? mobileResult.value : null;
-  const firestoreInbox = firestoreResult.status === "fulfilled" ? firestoreResult.value : null;
+  const supabaseInbox = supabaseResult.status === "fulfilled" ? supabaseResult.value : null;
 
   if (hasInboxData(mobileInbox)) return mobileInbox;
-  if (hasInboxData(firestoreInbox)) return firestoreInbox;
+  if (hasInboxData(supabaseInbox)) return supabaseInbox;
 
   if (authToken) {
     try {
@@ -119,11 +119,11 @@ async function fetchFastInbox(
       if (hasInboxData(legacyInbox)) return legacyInbox;
       mobileInbox = mobileInbox ?? legacyInbox;
     } catch (legacyError) {
-      if (!mobileInbox && !firestoreInbox) {
+      if (!mobileInbox && !supabaseInbox) {
         throw new Error(
           errorMessage(legacyError) ||
             errorMessage(mobileResult.status === "rejected" ? mobileResult.reason : null) ||
-            errorMessage(firestoreResult.status === "rejected" ? firestoreResult.reason : null) ||
+            errorMessage(supabaseResult.status === "rejected" ? supabaseResult.reason : null) ||
             "Không thể tải inbox ứng viên."
         );
       }
@@ -131,11 +131,11 @@ async function fetchFastInbox(
   }
 
   if (mobileInbox) return mobileInbox;
-  if (firestoreInbox) return firestoreInbox;
+  if (supabaseInbox) return supabaseInbox;
 
   throw new Error(
     errorMessage(mobileResult.status === "rejected" ? mobileResult.reason : null) ||
-      errorMessage(firestoreResult.status === "rejected" ? firestoreResult.reason : null) ||
+      errorMessage(supabaseResult.status === "rejected" ? supabaseResult.reason : null) ||
       "Không thể tải inbox ứng viên."
   );
 }
@@ -339,8 +339,8 @@ export const useRecruiterStore = create<RecruiterState>((set, get) => ({
 
         try {
           const inbox = await withTimeout(
-              fetchFirestoreCandidateInbox(30),
-              FIRESTORE_INBOX_TIMEOUT_MS,
+              fetchSupabaseCandidateInbox(30),
+              SUPABASE_INBOX_TIMEOUT_MS,
               "Nguồn Supabase trực tiếp phản hồi quá lâu."
             );
             if (hasInboxData(inbox)) {
@@ -494,7 +494,7 @@ export const useRecruiterStore = create<RecruiterState>((set, get) => ({
   submitDecision: async (candidate, action, notes) => {
     set({ submitting: true, error: null, lastDecision: null });
     try {
-      await saveFirestoreDecisionFeedback(candidate, action, notes);
+      await saveSupabaseDecisionFeedback(candidate, action, notes);
       set((state) => ({
         submitting: false,
         lastDecision: `${candidate.candidateName} · ${action}`,

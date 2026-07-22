@@ -29,7 +29,7 @@ SupportHR co 3 khoi:
 
 Cau noi:
 
-"Frontend chi la noi nguoi dung thao tac, con logic quan trong nam o backend. Backend gom cac service rieng cho OCR, Gemini, scoring, classifier, RAG, cache, Firestore va Google Drive."
+"Frontend chi la noi nguoi dung thao tac, con logic quan trong nam o backend. Backend gom cac service rieng cho OCR, Gemini, scoring, classifier, RAG, cache, PostgreSQL va Google Drive."
 
 ## Demo flow goi y
 
@@ -48,7 +48,7 @@ Thao tac:
 
 Noi:
 
-"He thong dung Firebase Auth. Sau khi dang nhap, frontend lay ID token, backend verify token bang Firebase Admin truoc khi luu du lieu."
+"He thong dung Supabase Auth. Sau khi dang nhap, frontend lay ID token, backend verify token bang Supabase service role truoc khi luu du lieu."
 
 ### Buoc 3 - Nhap JD
 
@@ -109,7 +109,7 @@ Noi:
 
 ## Doan noi ve backend
 
-"Backend duoc xay bang FastAPI va chia thanh cac tang ro rang. Route nhan request, schema dinh nghia du lieu, service xu ly nghiep vu, repository lam viec voi Firestore, integration ket noi Firebase va Google. Pipeline chinh nam o `cv_pipeline_service.py`, co nhiem vu dieu phoi toan bo qua trinh phan tich CV."
+"Backend duoc xay bang FastAPI va chia thanh cac tang ro rang. Route nhan request, schema dinh nghia du lieu, service xu ly nghiep vu, repository lam viec voi PostgreSQL, integration ket noi Supabase va Google. Pipeline chinh nam o `cv_pipeline_service.py`, co nhiem vu dieu phoi toan bo qua trinh phan tich CV."
 
 ## Doan noi ve AI
 
@@ -117,7 +117,7 @@ Noi:
 
 ## Doan noi ve database
 
-"Du lieu cua nguoi dung duoc luu tren Cloud Firestore va gan voi `uid` Firebase. Cac collection duoc tach theo nghiep vu nhu users, uploadedFiles, history, cache, templates, chatbotSessions, feedback, approvedExemplars va analysisJobs."
+"Du lieu cua nguoi dung duoc luu tren Supabase PostgreSQL va gan voi `uid` Supabase. Cac collection duoc tach theo nghiep vu nhu users, uploadedFiles, history, cache, templates, chatbotSessions, feedback, approvedExemplars va analysisJobs."
 
 ## Doan noi ve ML pipeline
 

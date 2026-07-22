@@ -1,6 +1,6 @@
 # 02 - Kien truc he thong
 
-> Migration Supabase đã được triển khai sau feature flag. Firebase/Firestore vẫn là provider mặc định trước cutover; sau khi đối soát, Supabase Auth + PostgreSQL/pgvector + Realtime trở thành source of truth. Xem `13-supabase-migration-runbook.md`.
+> Migration Supabase đã được triển khai sau feature flag. Supabase/PostgreSQL vẫn là provider mặc định trước cutover; sau khi đối soát, Supabase Auth + PostgreSQL/pgvector + Realtime trở thành source of truth. Xem `13-supabase-migration-runbook.md`.
 
 ## Tong quan thu muc
 
@@ -36,8 +36,8 @@ flowchart LR
     API --> AI["Gemini AI services"]
     API --> CLS["Local/remote CV classifier"]
     API --> RAG["RAG + vector similarity"]
-    API --> AUTH["Firebase Auth verify"]
-    API --> DB["Cloud Firestore"]
+    API --> AUTH["Supabase Auth verify"]
+    API --> DB["Supabase PostgreSQL"]
     API --> REDIS["Redis Stream / cache / distributed limits"]
     REDIS --> WORKER["Analysis workers"]
     WORKER --> AI
@@ -57,7 +57,7 @@ sequenceDiagram
     participant BE as Backend
     participant OCR as File Extraction
     participant AI as Gemini
-    participant DB as Firestore
+    participant DB as PostgreSQL
 
     User->>FE: Nhap JD + upload CV
     FE->>BE: POST /api/files/extract-text
@@ -73,7 +73,7 @@ sequenceDiagram
     FE->>BE: POST /api/cv/analyze-core-async
     BE->>DB: Kiem cache/history neu co user
     BE->>BE: Classifier 1 lan + embedding 1 lan/CV (bounded concurrency)
-    BE->>DB: Firestore vector nearest-neighbor, chi exemplar approved v2
+    BE->>DB: PostgreSQL vector nearest-neighbor, chi exemplar approved v2
     BE->>AI: Cham diem CV theo JD
     AI-->>BE: Ket qua core
     BE->>BE: Enrich + advanced breakdown + ranking
@@ -91,8 +91,8 @@ flowchart TB
     ROUTES --> SERVICES["app/services"]
     SERVICES --> REPOS["app/repositories"]
     SERVICES --> INTEG["app/integrations"]
-    REPOS --> FIRESTORE["Cloud Firestore"]
-    INTEG --> FIREBASE["Firebase Admin"]
+    REPOS --> POSTGRES["Supabase PostgreSQL"]
+    INTEG --> SUPABASE["Supabase JWT/JWKS"]
     SERVICES --> GEMINI["Gemini API"]
     SERVICES --> DRIVE["Google Drive API"]
 ```
@@ -103,8 +103,8 @@ Vai tro tung tang:
 - `app/api/routes`: dinh nghia endpoint HTTP.
 - `app/schemas`: Pydantic request/response model.
 - `app/services`: business logic, AI, OCR, scoring, account.
-- `app/repositories`: helper truy cap Firestore collection.
-- `app/integrations`: ket noi provider ngoai nhu Firebase Admin.
+- `app/repositories`: helper truy cap PostgreSQL collection.
+- `app/integrations`: ket noi Supabase JWT/JWKS, PostgreSQL pool, Redis va cac provider ngoai.
 
 ## Kien truc frontend
 
@@ -116,9 +116,9 @@ flowchart TB
     PAGES --> FEATURES["features/components"]
     FEATURES --> SERVICES["src/services"]
     SERVICES --> API["renderClient.ts"]
-    SERVICES --> FIREBASE["firebase.ts"]
+    SERVICES --> SUPABASE["supabase.ts"]
     API --> BACKEND["FastAPI Backend"]
-    FIREBASE --> AUTH["Firebase Auth/Firestore"]
+    SUPABASE --> AUTH["Supabase Auth/PostgreSQL"]
 ```
 
 Frontend giu cac state chinh:
@@ -145,13 +145,13 @@ Dung cho:
 - OCR anh/PDF scan.
 - Embedding text.
 
-### Firebase
+### Supabase
 
 Dung cho:
 
 - Dang nhap tren frontend.
 - Verify token tren backend.
-- Luu Firestore data.
+- Luu PostgreSQL data.
 
 ### Google Drive
 
@@ -172,11 +172,11 @@ Dung cho:
 Tach nhu vay giup:
 
 - Frontend nhe, chi lo giao dien va trai nghiem.
-- Backend bao ve API key, Firebase Admin, Google OAuth secret.
+- Backend bao ve API key, Supabase service role, Google OAuth secret.
 - Ma ML nam cung repo backend de dong bo contract, nhung train/seed luon chay offline va data raw bi Git ignore.
 - Render chi nap `.pkl` da duyet; startup kiem checksum, nhan, schema va scikit-learn version.
 - Backend la modular monolith; chua tach classifier service khi chua co nhu cau scale doc lap.
 - API va analysis worker dung chung mot image nhung chay thanh hai process/Deployment rieng.
 - Docker Compose chay API + worker + Redis cho local; Kubernetes scale API va worker doc lap.
 - FE len Vercel; Render van co the chay che do `in_process`, con Kubernetes production dung Redis Stream.
-- Firestore native vector search la RAG production.
+- PostgreSQL native vector search la RAG production.

@@ -5,11 +5,11 @@ import { FilePenLine, History, Plus, Save, ScrollText, X } from "lucide-react-na
 import { AppButton, EmptyState, MutedText } from "./Primitives";
 import { getAuthToken } from "../services/auth";
 import {
-  createFirestoreJDTemplate,
-  fetchFirestoreFilterHistory,
-  fetchFirestoreJDTemplates,
-  updateFirestoreJDTemplate
-} from "../services/firebaseStore";
+  createSupabaseJDTemplate,
+  fetchSupabaseFilterHistory,
+  fetchSupabaseJDTemplates,
+  updateSupabaseJDTemplate
+} from "../services/supabaseStore";
 import {
   createRenderJDTemplate,
   extractRecentUsedJDTemplates,
@@ -301,8 +301,8 @@ export function AccountDataSection({
     } catch (renderError) {
       try {
         const [fallbackTemplatesResult, fallbackHistoryResult] = await Promise.allSettled([
-          fetchFirestoreJDTemplates(),
-          fetchFirestoreFilterHistory(10)
+          fetchSupabaseJDTemplates(),
+          fetchSupabaseFilterHistory(10)
         ]);
 
         if (fallbackTemplatesResult.status === "rejected" && fallbackHistoryResult.status === "rejected") {
@@ -321,7 +321,7 @@ export function AccountDataSection({
         setError(
           renderMessage ||
             fallbackMessage ||
-            "Không thể tải lịch sử và mẫu JD từ dữ liệu Firebase/Render thật."
+            "Không thể tải lịch sử và mẫu JD từ dữ liệu Supabase/Render thật."
         );
       }
     } finally {
@@ -361,7 +361,7 @@ export function AccountDataSection({
 
   const reloadTemplatesAfterSave = async (token: string | null) => {
     if (!token) {
-      const nextTemplates = (await fetchFirestoreJDTemplates()).map((template) => ({ ...template, origin: "saved" as const }));
+      const nextTemplates = (await fetchSupabaseJDTemplates()).map((template) => ({ ...template, origin: "saved" as const }));
       setTemplates(nextTemplates);
       await writeLocalCache(localCacheKeys.accountData(authUser.email || authUser.uid), { history, templates: nextTemplates });
       return;
@@ -398,10 +398,10 @@ export function AccountDataSection({
         }
         await reloadTemplatesAfterSave(token);
       } else if (editingTemplate?.origin === "saved") {
-        await updateFirestoreJDTemplate(editingTemplate.id, form);
+        await updateSupabaseJDTemplate(editingTemplate.id, form);
         await reloadTemplatesAfterSave(null);
       } else {
-        await createFirestoreJDTemplate(form);
+        await createSupabaseJDTemplate(form);
         await reloadTemplatesAfterSave(null);
       }
 
@@ -411,9 +411,9 @@ export function AccountDataSection({
     } catch (saveError) {
       try {
         if (editingTemplate?.origin === "saved") {
-          await updateFirestoreJDTemplate(editingTemplate.id, form);
+          await updateSupabaseJDTemplate(editingTemplate.id, form);
         } else {
-          await createFirestoreJDTemplate(form);
+          await createSupabaseJDTemplate(form);
         }
         await reloadTemplatesAfterSave(null);
         setFormOpen(false);
@@ -490,7 +490,7 @@ export function AccountDataSection({
               ) : (
                 <EmptyState
                   action={<AppButton label="Tải lại" onPress={() => void loadData()} />}
-                  description="Chưa có phiên lọc CV nào được đồng bộ từ Render API hoặc Firebase."
+                  description="Chưa có phiên lọc CV nào được đồng bộ từ Render API hoặc Supabase."
                   title="Chưa có lịch sử"
                 />
               )
@@ -578,7 +578,7 @@ export function AccountDataSection({
                 ) : (
                   <EmptyState
                     action={<AppButton label="Tạo mẫu đầu tiên" onPress={startCreate} />}
-                    description="Chưa có mẫu JD nào từ dữ liệu Firebase/Render thật."
+                    description="Chưa có mẫu JD nào từ dữ liệu Supabase/Render thật."
                     title="Chưa có mẫu JD"
                   />
                 )}

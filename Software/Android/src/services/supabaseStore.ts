@@ -12,8 +12,7 @@ import type {
 } from "../types";
 import type { DecisionAction } from "../theme/tokens";
 
-// Giữ tên export cũ để tránh churn ở UI; giá trị bên dưới là bảng Supabase.
-export const FIRESTORE_COLLECTIONS = {
+export const SUPABASE_TABLES = {
   users: "profiles",
   cvHistory: "cv_history",
   syncedAnalysisHistory: "synced_analysis_history",
@@ -49,11 +48,11 @@ export function subscribeDesktopSession(
     const isStale = data.lastHeartbeat && Date.now() - data.lastHeartbeat > 60_000;
     onUpdate(isStale ? null : data);
   };
-  void supabase.from(FIRESTORE_COLLECTIONS.desktopSessions).select("payload").eq("id", uid).maybeSingle()
+  void supabase.from(SUPABASE_TABLES.desktopSessions).select("payload").eq("id", uid).maybeSingle()
     .then(({ data }) => data ? emit(data) : onUpdate(null));
   const channel = supabase.channel(`desktop-session:${uid}`).on(
     "postgres_changes",
-    { event: "*", schema: "public", table: FIRESTORE_COLLECTIONS.desktopSessions, filter: `owner_id=eq.${uid}` },
+    { event: "*", schema: "public", table: SUPABASE_TABLES.desktopSessions, filter: `owner_id=eq.${uid}` },
     (change) => change.eventType === "DELETE" ? onUpdate(null) : emit(change.new)
   ).subscribe();
   return () => { void supabase?.removeChannel(channel); };
@@ -72,11 +71,11 @@ export function subscribeUserSyncState(
       lastSource: typeof data.lastSource === "string" ? data.lastSource : undefined
     });
   };
-  void supabase.from(FIRESTORE_COLLECTIONS.userSyncState).select("payload").eq("id", uid).maybeSingle()
+  void supabase.from(SUPABASE_TABLES.userSyncState).select("payload").eq("id", uid).maybeSingle()
     .then(({ data }) => data ? emit(data) : onUpdate(null));
   const channel = supabase.channel(`user-sync-state:${uid}`).on(
     "postgres_changes",
-    { event: "*", schema: "public", table: FIRESTORE_COLLECTIONS.userSyncState, filter: `owner_id=eq.${uid}` },
+    { event: "*", schema: "public", table: SUPABASE_TABLES.userSyncState, filter: `owner_id=eq.${uid}` },
     (change) => change.eventType === "DELETE" ? onUpdate(null) : emit(change.new)
   ).subscribe();
   return () => { void supabase?.removeChannel(channel); };
@@ -366,7 +365,7 @@ function normalizeManualHistoryEntry(raw: unknown, id: string): HistoryEntry {
 
 async function fetchManualHistoryEntries(userUid: string): Promise<HistoryEntry[]> {
   try {
-    const rows = await fetchPayloadRows(FIRESTORE_COLLECTIONS.manualHistory, userUid);
+    const rows = await fetchPayloadRows(SUPABASE_TABLES.manualHistory, userUid);
     return rows.map((item) => normalizeManualHistoryEntry(item.payload, item.id));
   } catch (error) {
     console.warn("Không thể đọc collection lịch sử thủ công trên mobile.", error);
@@ -417,11 +416,11 @@ function normalizeTemplate(raw: unknown, id: string): UserJDTemplate {
   };
 }
 
-export async function fetchFirestoreFilterHistory(limitCount = 12): Promise<FilterHistorySession[]> {
+export async function fetchSupabaseFilterHistory(limitCount = 12): Promise<FilterHistorySession[]> {
   const user = await requireUser();
   const [cvRows, syncRows, manualEntries] = await Promise.all([
-    fetchPayloadRows(FIRESTORE_COLLECTIONS.cvHistory, user.id),
-    fetchPayloadRows(FIRESTORE_COLLECTIONS.syncedAnalysisHistory, user.id),
+    fetchPayloadRows(SUPABASE_TABLES.cvHistory, user.id),
+    fetchPayloadRows(SUPABASE_TABLES.syncedAnalysisHistory, user.id),
     fetchManualHistoryEntries(user.id)
   ]);
 
@@ -434,11 +433,11 @@ export async function fetchFirestoreFilterHistory(limitCount = 12): Promise<Filt
   return normalizeFilterHistory(entries).slice(0, limitCount);
 }
 
-export async function fetchFirestoreCandidateInbox(limitCount = 30): Promise<CandidateInbox> {
+export async function fetchSupabaseCandidateInbox(limitCount = 30): Promise<CandidateInbox> {
   const user = await requireUser();
   const [cvRows, syncRows, manualEntries] = await Promise.all([
-    fetchPayloadRows(FIRESTORE_COLLECTIONS.cvHistory, user.id),
-    fetchPayloadRows(FIRESTORE_COLLECTIONS.syncedAnalysisHistory, user.id),
+    fetchPayloadRows(SUPABASE_TABLES.cvHistory, user.id),
+    fetchPayloadRows(SUPABASE_TABLES.syncedAnalysisHistory, user.id),
     fetchManualHistoryEntries(user.id)
   ]);
 
@@ -453,15 +452,15 @@ export async function fetchFirestoreCandidateInbox(limitCount = 30): Promise<Can
   return mapHistoryToInbox(entries);
 }
 
-export async function fetchFirestoreJDTemplates(): Promise<UserJDTemplate[]> {
+export async function fetchSupabaseJDTemplates(): Promise<UserJDTemplate[]> {
   const user = await requireUser();
-  const rows = await fetchPayloadRows(FIRESTORE_COLLECTIONS.userJDTemplates, user.id);
+  const rows = await fetchPayloadRows(SUPABASE_TABLES.userJDTemplates, user.id);
   return rows
     .map((item) => normalizeTemplate(item.payload, item.id))
     .sort((left, right) => toMillis(right.updatedAt) - toMillis(left.updatedAt));
 }
 
-export async function createFirestoreJDTemplate(input: JDTemplateInput): Promise<UserJDTemplate> {
+export async function createSupabaseJDTemplate(input: JDTemplateInput): Promise<UserJDTemplate> {
   const user = await requireUser();
   const now = new Date().toISOString();
   const id = `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
@@ -475,7 +474,7 @@ export async function createFirestoreJDTemplate(input: JDTemplateInput): Promise
     createdAt: now,
     updatedAt: now
   };
-  const { error } = await supabase!.from(FIRESTORE_COLLECTIONS.userJDTemplates).insert({
+  const { error } = await supabase!.from(SUPABASE_TABLES.userJDTemplates).insert({
     id,
     owner_id: user.id,
     payload,
@@ -487,23 +486,23 @@ export async function createFirestoreJDTemplate(input: JDTemplateInput): Promise
   return normalizeTemplate(payload, id);
 }
 
-export async function updateFirestoreJDTemplate(
+export async function updateSupabaseJDTemplate(
   templateId: string,
   input: Partial<JDTemplateInput>
 ): Promise<boolean> {
   const user = await requireUser();
-  const { data: current, error: readError } = await supabase!.from(FIRESTORE_COLLECTIONS.userJDTemplates)
+  const { data: current, error: readError } = await supabase!.from(SUPABASE_TABLES.userJDTemplates)
     .select("payload").eq("id", templateId).eq("owner_id", user.id).single();
   if (readError) throw readError;
   const payload = { ...asRecord(current?.payload), ...input, uid: user.id, updatedAt: new Date().toISOString() };
-  const { error } = await supabase!.from(FIRESTORE_COLLECTIONS.userJDTemplates)
+  const { error } = await supabase!.from(SUPABASE_TABLES.userJDTemplates)
     .update({ payload, updated_at: new Date().toISOString() })
     .eq("id", templateId).eq("owner_id", user.id);
   if (error) throw error;
   return true;
 }
 
-export async function saveFirestoreDecisionFeedback(
+export async function saveSupabaseDecisionFeedback(
   candidate: CandidateView,
   action: DecisionAction,
   notes: string
@@ -539,7 +538,7 @@ export async function saveFirestoreDecisionFeedback(
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
-  const { error } = await supabase!.from(FIRESTORE_COLLECTIONS.analysisFeedback).insert({
+  const { error } = await supabase!.from(SUPABASE_TABLES.analysisFeedback).insert({
     id,
     owner_id: user.id,
     action,

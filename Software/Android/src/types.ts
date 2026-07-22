@@ -126,7 +126,7 @@ export interface AuthUser {
 export interface LoginHistoryEntry {
   id: string;
   signedInAt: number;
-  provider: "Email" | "Google" | "Firebase";
+  provider: "Email" | "Google" | "Supabase";
   deviceLabel: string;
   platformLabel: string;
   appSurface: string;

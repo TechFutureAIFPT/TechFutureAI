@@ -1,26 +1,26 @@
 # 07 - Database, auth va luu tru
 
-> Kiến trúc đích là Supabase Auth + PostgreSQL/RLS + Realtime. Schema hybrid giữ field typed/indexed cùng `source_payload JSONB`, ID nguồn và SHA-256. Provider flags cho phép chạy Firebase/Firestore tới khi rehearsal và cutover đạt gate; chi tiết tại `13-supabase-migration-runbook.md`.
+> Runtime hiện là Supabase Auth + PostgreSQL/RLS + Realtime duy nhất. Schema hybrid giữ field typed/indexed cùng `source_payload JSONB`, ID nguồn và SHA-256; công cụ import nguồn cũ được tách khỏi dependency production.
 
 ## Auth tong quan
 
-Frontend dung Firebase Auth. Backend dung Firebase Admin SDK de verify token.
+Frontend dung Supabase Auth. Backend dung Supabase JWT/JWKS de verify token.
 
 Luong:
 
 ```mermaid
 sequenceDiagram
     participant FE as Frontend
-    participant FA as Firebase Auth
+    participant FA as Supabase Auth
     participant BE as Backend
-    participant ADM as Firebase Admin
-    participant DB as Firestore
+    participant JWKS as Supabase JWKS
+    participant DB as PostgreSQL
 
     FE->>FA: Dang nhap
-    FA-->>FE: ID token
+    FA-->>FE: access token
     FE->>BE: Authorization: Bearer token
-    BE->>ADM: verify_id_token
-    ADM-->>BE: uid/email/name
+    BE->>JWKS: verify signature, issuer, audience, exp
+    JWKS-->>BE: sub/email/name
     BE->>DB: Doc/ghi du lieu theo uid
 ```
 
@@ -28,17 +28,17 @@ sequenceDiagram
 
 Neu chi tin email tu frontend thi nguoi dung co the gia mao. Backend verify token de chac chan:
 
-- Token do Firebase cap.
+- Token do Supabase cap.
 - Token con hop le.
 - `uid` dung la user that.
 - Moi du lieu ghi/doc deu gan voi `uid`.
 
-## Firestore repository
+## PostgreSQL repository
 
 File:
 
 ```text
-app/repositories/firestore/account_repository.py
+app/repositories/postgres/account_repository.py
 ```
 
 File nay khong phai ORM phuc tap. No chu yeu tra ve collection reference va helper CRUD co ban.
@@ -207,7 +207,7 @@ SupportHR khong luu file goc Drive vao backend nhu object storage. Backend:
 2. List file.
 3. Download/export file.
 4. Trich text.
-5. Luu metadata va extracted text vao Firestore neu can.
+5. Luu metadata va extracted text vao PostgreSQL neu can.
 
 Y nghia:
 
@@ -218,9 +218,9 @@ Y nghia:
 
 Nen noi:
 
-- Backend verify Firebase token truoc khi doc/ghi du lieu ca nhan.
+- Backend verify Supabase token truoc khi doc/ghi du lieu ca nhan.
 - Moi history/cache/file gan voi `uid`.
-- API key va service account nam o bien moi truong backend.
+- API key, database URL va khoa ma hoa nam o bien moi truong backend.
 - `.env.example` chi la template, khong chua secret.
 - Feedback/history giup user tai su dung ket qua, khong phai public data.
 

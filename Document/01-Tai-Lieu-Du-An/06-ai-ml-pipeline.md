@@ -146,7 +146,7 @@ Y tuong:
 - Record canonical co `schemaVersion`, `approved`, `status`, `rubricVersion`, `embeddingModel`,
   `embeddingDimension`, `vectorIndexVersion`, role/industry/seniority va CV da redact PII.
 - Thieu `approved=true` hoac `status=approved` mac dinh la khong duoc dung.
-- Khi phan tich CV moi, backend goi Firestore native `find_nearest`, khong stream toan collection.
+- Khi phan tich CV moi, backend goi PostgreSQL native `find_nearest`, khong stream toan collection.
 - Neu similarity vuot `RAG_SIMILARITY_THRESHOLD`, backend dua few-shot example vao prompt.
 - Neu khong dat nguong, pipeline chay zero-shot.
 
@@ -169,7 +169,7 @@ Cach tinh:
 
 - Embed CV/query.
 - Tai su dung cung CV vector cho RAG va enrichment; JD vector chi tao mot lan/batch.
-- Production lay vector record tu Firestore; JSON chi hop le neu co dung vector contract.
+- Production lay vector record tu PostgreSQL; JSON chi hop le neu co dung vector contract.
 - Tinh cosine similarity.
 - Lay top matches.
 - Doi average similarity thanh bonus points.

@@ -10,4 +10,8 @@ __pycache__/
 .codegraph/
 *.db
 *.log
-*-firebase-adminsdk-*.json
+*adminsdk-*.json
+*service-account*.json
+Resources/releases/
+Resources/reference-images/
+Resources/store-listing/

@@ -4,7 +4,7 @@ Snapshot: 2026-07-22. Source of truth: `Software/Web/BE` code and rendered runti
 
 ## Executive summary
 
-SupportHR backend is a modular FastAPI monolith with a broad recruiter workflow, Firebase/Firestore
+SupportHR backend is a modular FastAPI monolith with a broad recruiter workflow, Supabase/PostgreSQL
 persistence, Gemini, OCR, local classifier, RAG and Redis cache. Runtime inspection after this scale pass
 shows 87 HTTP routes. The existing functional breadth is strong, but production maturity is uneven:
 background execution, containerization and Kubernetes baseline are now implemented; observability,
@@ -40,13 +40,13 @@ flowchart LR
     API2 --> RS
     RS --> W1["Analysis worker 1"]
     RS --> WN["Analysis worker N"]
-    API1 --> FS["Cloud Firestore"]
+    API1 --> FS["Supabase PostgreSQL"]
     API2 --> FS
     W1 --> FS
     WN --> FS
     W1 --> GEM["Gemini / embedding"]
     WN --> GEM
-    API1 --> EXT["Firebase / Drive / email providers"]
+    API1 --> EXT["Supabase / Drive / email providers"]
 ```
 
 Runtime rules:
@@ -54,7 +54,7 @@ Runtime rules:
 - API pods do not own durable job execution.
 - Redis Stream consumer groups provide pending messages, acknowledgement and stale-job reclaim.
 - API and worker use the same immutable image but different commands.
-- Firestore remains the system of record; Redis stores queue payloads, short-lived job state, cache and distributed limits.
+- PostgreSQL remains the system of record; Redis stores queue payloads, short-lived job state, cache and distributed limits.
 - `ANALYSIS_JOB_MODE=in_process` remains for local/Render compatibility; Docker/Kubernetes use `redis`.
 
 ## Gap matrix
@@ -69,12 +69,12 @@ Runtime rules:
 | P1 | No metrics/tracing/SLO | Audit logger exists; no Prometheus/OpenTelemetry endpoint, dashboard or alerts | Add request/job metrics, provider latency/quota metrics, traces, error budget and alerts before production scale | High |
 | P1 | Worker HPA is resource-based only | `autoscaling/v2` uses CPU/memory | Add KEDA/external metric for Redis pending/lag; keep CPU/memory as safety metrics | High |
 | P1 | At-least-once delivery needs idempotency proof | Redis Stream can redeliver a reclaimed job | Add idempotency keys and tests around history/cache/email writes; deduplicate by `job_id` | High |
-| P1 | Tenant and role boundary is user-only | Firebase identity is mapped to `uid`; no organization/role policy layer is visible | Add organization, recruiter/admin roles, ownership policy and audit authorization before multi-company use | High |
+| P1 | Tenant and role boundary is user-only | Supabase identity is mapped to `uid`; no organization/role policy layer is visible | Add organization, recruiter/admin roles, ownership policy and audit authorization before multi-company use | High |
 | P1 | PII retention and deletion are incomplete | CV/JD source text is persisted in job/history flows; no retention scheduler/runbook is present | Define retention, delete/export workflows, encryption/key policy and log redaction | High |
 | P1 | API has no explicit version namespace | Public paths use `/api/...` | Introduce compatibility/version policy before breaking schema changes; publish deprecation windows | High |
-| P2 | List endpoints and Firestore queries lack one uniform pagination contract | Account modules use route-specific limits/shapes | Standardize cursor pagination, maximum page size and indexes; add query cost tests | Medium |
+| P2 | List endpoints and PostgreSQL queries lack one uniform pagination contract | Account modules use route-specific limits/shapes | Standardize cursor pagination, maximum page size and indexes; add query cost tests | Medium |
 | P2 | Provider resilience is partial | Gemini key/model fallback exists, but no global circuit breaker or provider SLO is defined | Add bounded retries with jitter, circuit breakers, per-provider timeouts and fallback telemetry | Medium |
-| P2 | No load/chaos/recovery suite | Unit/API tests exist; no Locust/k6 or worker-crash test is present | Add capacity test, pod-kill recovery test, Redis outage test and Firestore/Gemini degradation scenarios | High |
+| P2 | No load/chaos/recovery suite | Unit/API tests exist; no Locust/k6 or worker-crash test is present | Add capacity test, pod-kill recovery test, Redis outage test and PostgreSQL/Gemini degradation scenarios | High |
 | P2 | Ingress and production storage are intentionally placeholders | Ingress file is example-only; local Redis is not HA | Choose ingress class, WAF/rate limit, managed Redis topology, backup and multi-zone policy | High |
 
 ## Implemented scale baseline
@@ -104,7 +104,7 @@ Exit gate: both rollouts ready, `/health/ready` healthy, one queued analysis sur
 
 1. Add structured request/job logs with request ID and `job_id` correlation.
 2. Expose Prometheus metrics and OpenTelemetry traces.
-3. Track queue lag, pending count, processing time, Gemini latency/quota, Firestore errors and cache hit rate.
+3. Track queue lag, pending count, processing time, Gemini latency/quota, PostgreSQL errors and cache hit rate.
 4. Add CI/CD gates and progressive rollout.
 
 Suggested initial SLOs: API availability 99.9%; non-AI p95 under 500 ms; job acceptance p95 under 1 s;
@@ -114,7 +114,7 @@ completed-job success above 99%; no pending job older than its reclaim/alert thr
 
 1. Add KEDA/external metrics for Redis Stream lag/pending jobs.
 2. Add idempotency keys and job retry/dead-letter policy.
-3. Test Redis failover, worker crash, pod drain, provider timeout and Firestore throttling.
+3. Test Redis failover, worker crash, pod drain, provider timeout and PostgreSQL throttling.
 4. Tune worker memory/CPU using measured CV batch sizes, not guesses.
 
 ### Stage 3 - Multi-tenant governance

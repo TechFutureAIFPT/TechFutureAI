@@ -7,8 +7,8 @@ Preflight đọc trực tiếp ngày 2026-07-22 ghi nhận 44 Auth users, 978 Fi
 Đã triển khai trong mã nguồn:
 
 - SQL schema, index HNSW, RLS và Supabase Realtime tại `Software/Web/BE/supabase/migrations`.
-- Bộ xuất/import/đối soát idempotent tại `Software/Web/BE/api_server/scripts/firebase_supabase_migration.py`.
-- Backend có `AUTH_PROVIDER=firebase|supabase` và `DATA_PROVIDER=firestore|supabase`; mặc định vẫn là Firebase/Firestore cho tới khi đạt đủ gate.
+- Bộ xuất/import/đối soát idempotent được cô lập tại `Software/Web/BE/api_server/scripts/legacy_source_supabase_migration.py`; dependency của importer nằm trong `requirements-legacy-import.txt`, không vào image production.
+- Backend runtime là Supabase-only; provider flags và Firebase/Firestore runtime fallback đã bị loại bỏ.
 - Backend xác minh Supabase JWT qua JWKS và dùng PostgreSQL pool qua Supavisor.
 - Token Google Drive được mã hóa AES-GCM; plaintext không được lưu trong JSONB.
 - Android đã dùng `@supabase/supabase-js` cho Auth, PostgreSQL/RLS và Realtime; Firebase SDK đã được loại khỏi dependency runtime.
@@ -21,11 +21,9 @@ Chưa thể thực hiện từ checkout hiện tại:
 
 ## Biến môi trường
 
-Backend triển khai trước ở chế độ an toàn:
+Backend chỉ nhận cấu hình Supabase:
 
 ```text
-AUTH_PROVIDER=firebase
-DATA_PROVIDER=firestore
 MAINTENANCE_MODE=false
 ```
 
@@ -59,16 +57,17 @@ Không đưa Supabase secret/service-role key vào Web hoặc Android.
 
 ```powershell
 cd "D:\Support HR\Software\Web\BE\api_server"
-python scripts/firebase_supabase_migration.py preflight
-python scripts/firebase_supabase_migration.py export --output "E:\SupportHR-Migration-Backups\supporthr-rehearsal.enc"
+python -m pip install -r requirements-legacy-import.txt
+python scripts/legacy_source_supabase_migration.py preflight
+python scripts/legacy_source_supabase_migration.py export --output "E:\SupportHR-Migration-Backups\supporthr-rehearsal.enc"
 ```
 
 6. Import, tạo vector runtime 768 chiều và đối soát:
 
 ```powershell
-python scripts/firebase_supabase_migration.py import --archive "E:\SupportHR-Migration-Backups\supporthr-rehearsal.enc"
-python scripts/firebase_supabase_migration.py reembed
-python scripts/firebase_supabase_migration.py reconcile --archive "E:\SupportHR-Migration-Backups\supporthr-rehearsal.enc"
+python scripts/legacy_source_supabase_migration.py import --archive "E:\SupportHR-Migration-Backups\supporthr-rehearsal.enc"
+python scripts/legacy_source_supabase_migration.py reembed
+python scripts/legacy_source_supabase_migration.py reconcile --archive "E:\SupportHR-Migration-Backups\supporthr-rehearsal.enc"
 ```
 
 7. Chạy backend tests, Android typecheck/release check, Web FE build, RLS canary và Supabase Security/Performance Advisor.
@@ -76,10 +75,10 @@ python scripts/firebase_supabase_migration.py reconcile --archive "E:\SupportHR-
 ## Cutover và rollback
 
 - Đặt `MAINTENANCE_MODE=true`, dừng worker và khóa ghi trong Firebase Security Rules; chạy export/import/reconcile cuối.
-- Chỉ đổi cả hai provider sang `supabase` sau khi count, checksum, owner, secret và vector gate đều đạt.
+- Backend/Android hiện đã là Supabase-only; chỉ phát hành khi count, checksum, owner, secret và vector gate đều đạt.
 - Phát hành Web/Android và buộc người dùng đăng nhập lại một lần.
 - Khóa ghi Firebase client và giữ 30 ngày.
-- Trước khi Supabase nhận ghi mới, rollback bằng cách đổi provider về Firebase. Sau khi Supabase đã nhận ghi, dùng PITR; không mở ghi song song hai nguồn.
+- Trước khi Supabase nhận ghi mới, rollback kỹ thuật dùng commit runtime cũ và dữ liệu nguồn đang được giữ nguyên. Sau khi Supabase đã nhận ghi, dùng PITR; không mở ghi song song hai nguồn.
 
 ## Acceptance bắt buộc
 

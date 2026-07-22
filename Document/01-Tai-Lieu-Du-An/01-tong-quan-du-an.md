@@ -42,7 +42,7 @@ Gioi thieu SupportHR, quy trinh, bang so sanh va loi ich. Khi nguoi dung bat dau
 
 ### 2. Dang nhap
 
-Frontend dung Firebase Auth de lang nghe trang thai dang nhap. Backend nhan `Bearer token` va verify bang Firebase Admin SDK.
+Frontend dung Supabase Auth de lang nghe trang thai dang nhap. Backend nhan `Bearer token` va verify bang Supabase JWT/JWKS.
 
 ### 3. Nhap JD
 
@@ -99,7 +99,7 @@ Sau khi co ket qua, he thong co the:
 
 - Goi `/api/interview/questions` de sinh cau hoi.
 - Dung chatbot de hoi goi y tren danh sach ung vien.
-- Luu chatbot session len Firestore.
+- Luu chatbot session len PostgreSQL.
 
 ### 9. Feedback loop
 
@@ -118,7 +118,7 @@ SupportHR khong chi la mot form "upload CV roi hoi AI". He thong co kien truc da
 - FE tach rieng UI, route, state va service goi API.
 - BE tach route, schema, service, repository va integration.
 - AI pipeline co cache, fallback, language normalization, RAG va scoring repair.
-- Firestore luu user profile, history, cache, uploaded files, JD templates, chatbot, feedback.
+- PostgreSQL luu user profile, history, cache, uploaded files, JD templates, chatbot, feedback.
 - ML pipeline doc lap giup train classifier `.pkl`.
 - Hipo Tool/Android la ung dung mobile dong hanh cho thao tac nhanh va dong bo voi workflow SupportHR Web.
 

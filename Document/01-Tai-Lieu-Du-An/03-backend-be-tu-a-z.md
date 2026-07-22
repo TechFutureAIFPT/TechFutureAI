@@ -1,6 +1,6 @@
 # 03 - Backend BE tu A-Z
 
-> Backend hiện hỗ trợ hai provider. `AUTH_PROVIDER` chọn Firebase hoặc Supabase JWT/JWKS; `DATA_PROVIDER` chọn Firestore hoặc PostgreSQL. Mặc định vẫn là Firebase/Firestore để deploy code trước và cutover dữ liệu sau.
+> Backend chạy Supabase-only: Supabase Auth/JWKS cho danh tính, PostgreSQL/RLS cho dữ liệu và pgvector cho RAG. Không còn provider flag hoặc fallback runtime sang nguồn cũ.
 
 Backend nam tai:
 
@@ -13,8 +13,8 @@ Cong nghe chinh:
 - FastAPI.
 - Uvicorn.
 - Pydantic.
-- Firebase Admin SDK.
-- Cloud Firestore.
+- Supabase JWT/JWKS.
+- Supabase PostgreSQL.
 - PostgreSQL/Supabase, psycopg pool và pgvector.
 - Google Gemini.
 - Google Drive OAuth/API.
@@ -58,9 +58,10 @@ api_server/
 |  |- core/
 |  |  `- config.py
 |  |- integrations/
-|  |  `- firebase_admin.py
+|  |  |- supabase_auth.py
+|  |  `- postgres.py
 |  |- repositories/
-|  |  `- firestore/
+|  |  `- postgres/
 |  |- schemas/
 |  |- services/
 |  |  |- account/
@@ -97,9 +98,9 @@ Nhom bien quan trong:
 - `FRONTEND_ORIGIN`: domain frontend.
 - `GEMINI_MODEL`, `GEMINI_CV_ANALYSIS_MODEL`, `GEMINI_EMBEDDING_MODEL`.
 - `GEMINI_API_KEY_1`, `GEMINI_API_KEY_2`, `GEMINI_API_KEY`.
-- Firebase Admin: `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`, `FIREBASE_SERVICE_ACCOUNT_JSON`.
+- Supabase: `SUPABASE_URL`, `SUPABASE_JWT_AUDIENCE`, `DATABASE_URL`, `DATA_ENCRYPTION_KEY`.
 - Google Drive OAuth: `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_OAUTH_REDIRECT_URI`.
-- Vector/RAG: `VECTOR_STORE_PROVIDER`, `VECTOR_STORE_FIRESTORE_COLLECTION`, `APPROVED_EXEMPLARS_COLLECTION`, `RAG_SIMILARITY_THRESHOLD`.
+- Vector/RAG: `VECTOR_STORE_COLLECTION`, `APPROVED_EXEMPLARS_COLLECTION`, `RAG_SIMILARITY_THRESHOLD`.
 - Classifier: `LOCAL_CLASSIFIER_MODE`, `LOCAL_CLASSIFIER_REMOTE_CLASSIFY_URL`, `LOCAL_CLASSIFIER_CONFIDENCE_THRESHOLD`.
 
 ## Router AI
@@ -196,10 +197,10 @@ app/api/deps.py
 
 Co 2 dependency:
 
-- `get_current_user`: bat buoc co `Authorization: Bearer <firebase_id_token>`.
+- `get_current_user`: bat buoc co `Authorization: Bearer <supabase_access_token>`.
 - `get_optional_current_user`: co token thi verify, khong co thi van cho tiep tuc.
 
-Backend dung `verify_firebase_token` trong `integrations/firebase_admin.py`.
+Backend dung `verify_supabase_token` trong `integrations/supabase_auth.py`, kiem tra signature, issuer, audience va expiry.
 
 Y nghia khi thuyet trinh:
 
@@ -276,11 +277,11 @@ Luong xu ly:
 1. Khoi tao metadata pipeline: cache, RAG, model, warning.
 2. Resolve rubric `v2`: template mac dinh theo 8 role hoac recruiter override, tong trong so bat buoc bang 100.
 3. Tao cache key theo hash noi dung CV/JD, weights, hard filters, rubric, prompt, classifier va pipeline version.
-4. Neu co user, doc cache tu Firestore.
+4. Neu co user, doc cache tu PostgreSQL.
 5. Voi CV chua co cache (toi da 4 CV tien xu ly song song):
    - Chuan hoa ngon ngu.
    - Chay classifier mot lan va embedding mot lan; routing/RAG/enrichment tai su dung ket qua.
-   - Tim approved RAG exemplars bang Firestore native vector search.
+   - Tim approved RAG exemplars bang PostgreSQL native vector search.
    - Goi Gemini phan tich core.
    - Neu Gemini loi, dung rule-based fallback.
 6. Enrich ung vien bang `candidate_enrichment_service` va tai su dung CV vector.
@@ -288,7 +289,7 @@ Luong xu ly:
 8. Gan `finalScore`, `rankGrade`: A >= 75, B >= 50, con lai C (quick/full dung chung policy).
 9. Attach `advancedScoreBreakdown`.
 10. Ghi cache theo lo, cleanup/refresh view mot lan.
-11. Luu history vao Firestore neu user hop le.
+11. Luu history vao PostgreSQL neu user hop le.
 12. Sort candidates theo diem giam dan.
 
 ## Async analysis job
@@ -306,7 +307,7 @@ Y tuong:
 - Che do local/Render tuong thich co the chay `asyncio.create_task`.
 - Che do scale ghi job vao Redis Stream va worker xu ly bang consumer group.
 - Frontend poll `GET /api/analysis/status/{job_id}`.
-- Neu user dang nhap, job snapshot duoc luu vao Firestore `analysisJobs`.
+- Neu user dang nhap, job snapshot duoc luu vao PostgreSQL `analysisJobs`.
 
 Trong Docker/Kubernetes, Redis giu payload va state ngan han, consumer group giu message pending, worker khac
 co the reclaim job bi bo do sau lease. Gioi han dong thoi theo user cung nam tren Redis thay vi bo dem tung process.
@@ -398,8 +399,8 @@ File lien quan:
 
 Y tuong:
 
-- He thong co the doc vector tu JSON hoac Firestore.
-- Production dung Firestore `find_nearest`; JSON/scan cuc bo chi chap nhan vector cung contract va dung cho local/test.
+- He thong co the doc vector tu JSON hoac PostgreSQL.
+- Production dung PostgreSQL `find_nearest`; JSON/scan cuc bo chi chap nhan vector cung contract va dung cho local/test.
 - Neu similarity vuot nguong, dua exemplar vao prompt de AI cham on dinh hon.
 - `approvedExemplars` phai co `approved=true`, `status=approved`, rubric/model/dimension/index version dung.
 - Contract hien tai: `gemini-embedding-2`, 768 chieu, `gemini-embedding-2-768-v1`, rubric `v2`.
@@ -412,12 +413,12 @@ Y tuong:
 - `rubric_service.py` chon template theo JD/hard filters; weights rong dung template, weights gui len la override.
 - Override phai co tong 100 va pipeline ghi `overrideDiff` de HR audit.
 
-## Firestore repository
+## PostgreSQL repository
 
 File:
 
 ```text
-app/repositories/firestore/account_repository.py
+app/repositories/postgres/account_repository.py
 ```
 
 Cac collection dang dung:
@@ -438,7 +439,7 @@ Cac collection dang dung:
 ## Diem manh backend de noi voi ban giam khao
 
 - Code co chia tang ro: route, schema, service, repository, integration.
-- API key va Firebase Admin nam o backend, khong day het len frontend.
+- API key, pooled database URL va khoa ma hoa nam o backend, khong day len frontend.
 - Pipeline co cache, async job va fallback neu AI loi.
 - Co explainability: diem khong chi la con so ma co bang chung va missing requirements.
-- Co kha nang mo rong: classifier local/remote, vector store JSON/Firestore, RAG approved exemplars.
+- Co kha nang mo rong: classifier local/remote, pgvector HNSW va RAG approved exemplars.

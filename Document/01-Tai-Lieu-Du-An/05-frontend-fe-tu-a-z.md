@@ -53,7 +53,7 @@ Frontend local mặc định là `http://localhost:3000`. Backend local mặc đ
 | Tích hợp/đồng bộ | `/integrations/google-drive`, `/inbox` |
 | Quản trị | `/quality/feedback`, `/notifications`, `/settings` |
 
-Website công khai giới thiệu giá trị, quy trình, bảng giá, tài liệu, tích hợp, đội ngũ và nguyên tắc AI rồi dẫn vào workspace hoặc form đặt lịch demo. Các trang bảo mật, quyền riêng tư và điều khoản được tách route; nội dung pháp lý cần được doanh nghiệp/luật sư duyệt lại trước khi đưa lên production. Login/onboarding không được tính là trang chức năng trong bộ đặc tả backend. Các endpoint account vẫn yêu cầu Firebase Bearer token. Bản hiện tại đọc token từ khóa local `supporthr.firebaseToken`; bước tích hợp Firebase auth shell production còn phải hoàn tất trước release.
+Website công khai giới thiệu giá trị, quy trình, bảng giá, tài liệu, tích hợp, đội ngũ và nguyên tắc AI rồi dẫn vào workspace hoặc form đặt lịch demo. Các trang bảo mật, quyền riêng tư và điều khoản được tách route; nội dung pháp lý cần được doanh nghiệp/luật sư duyệt lại trước khi đưa lên production. Các endpoint account yêu cầu Supabase access token. Thư mục `Software/Web/FE` hiện phải được khôi phục trước khi có thể xác minh và hoàn tất auth shell phía Web.
 
 ## Contract dữ liệu
 
@@ -75,11 +75,11 @@ Website công khai giới thiệu giá trị, quy trình, bảng giá, tài li�
 
 ## Trạng thái triển khai hiện tại
 
-Đã có đủ route và giao diện cho 19 trang chức năng cùng 18 route công khai/tài liệu/pháp lý. Các trang dữ liệu dùng API contract thật để kiểm tra kết nối nhưng hiển thị dataset xem trước khi chưa có Firebase session. Ba luồng gọi API trực tiếp đã có: chuẩn hóa JD, chấm nhanh CV text và phân tích lương. Thiết kế nguồn được lưu tại Figma `SupportHR Web Redesign 2026`.
+Đã có đủ route và giao diện cho 19 trang chức năng cùng 18 route công khai/tài liệu/pháp lý. Các trang dữ liệu dùng API contract thật để kiểm tra kết nối nhưng hiển thị dataset xem trước khi chưa có Supabase session. Ba luồng gọi API trực tiếp đã có: chuẩn hóa JD, chấm nhanh CV text và phân tích lương. Thiết kế nguồn được lưu tại Figma `SupportHR Web Redesign 2026`.
 
 Các phần còn thiếu trước production:
 
-1. Firebase client auth/App Check và route guard production.
+1. Supabase client auth/App Check và route guard production.
 2. State workflow bền vững giữa JD → CV → config → analysis.
 3. Polling job thật có backoff/idempotency và lưu job đang chạy qua refresh.
 4. CRUD/data mapping thật cho toàn bộ trang account thay cho preview dataset.

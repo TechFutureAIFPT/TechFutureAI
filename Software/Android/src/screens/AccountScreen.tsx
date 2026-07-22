@@ -173,7 +173,7 @@ function LoginHistoryPanel({ entries }: { entries: LoginHistoryEntry[] }) {
             deviceLabel: "Thiết bị hiện tại",
             id: "current-session",
             platformLabel: "Android",
-            provider: "Firebase" as const,
+            provider: "Supabase" as const,
             signedInAt: Date.now()
           }
         ];
@@ -258,7 +258,7 @@ function LoginHistoryPanelV2({ entries }: { entries: LoginHistoryEntry[] }) {
             deviceLabel: "Thiết bị hiện tại",
             id: "current-session",
             platformLabel: "Android",
-            provider: "Firebase" as const,
+            provider: "Supabase" as const,
             signedInAt: Date.now()
           }
         ];
@@ -405,7 +405,7 @@ export function AccountScreen() {
     if (googleResponse.type === "success") {
       const idToken = googleResponse.params.id_token || googleResponse.authentication?.idToken;
       if (!idToken) {
-        setAuthNotice("Google chưa trả về id_token. Kiểm tra Android OAuth Client ID và SHA-1 trong Firebase.");
+        setAuthNotice("Google chưa trả về id_token. Kiểm tra Android OAuth Client ID và redirect URL trong Supabase.");
         return;
       }
 
@@ -414,7 +414,7 @@ export function AccountScreen() {
     }
 
     if (googleResponse.type === "error") {
-      setAuthNotice("Google đăng nhập lỗi. Kiểm tra OAuth Client ID, SHA-1 và cấu hình Firebase.");
+      setAuthNotice("Google đăng nhập lỗi. Kiểm tra OAuth Client ID và cấu hình Google provider trong Supabase.");
     }
   }, [googleResponse, loginGoogleToken]);
 

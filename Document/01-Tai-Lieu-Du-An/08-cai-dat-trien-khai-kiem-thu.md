@@ -66,18 +66,12 @@ Chi tiet va lenh rollout nam trong `deploy/kubernetes/README.md`.
 
 ## Bien moi truong backend toi thieu
 
-Can co Firebase va Gemini:
+Can co Supabase:
 
 ```text
-FIREBASE_SERVICE_ACCOUNT_JSON
-```
-
-Hoac bo:
-
-```text
-FIREBASE_PROJECT_ID
-FIREBASE_CLIENT_EMAIL
-FIREBASE_PRIVATE_KEY
+SUPABASE_URL
+DATABASE_URL
+DATA_ENCRYPTION_KEY
 ```
 
 Can Gemini:
@@ -158,7 +152,7 @@ Cau hinh:
 Can set secret env vars tren Render dashboard:
 
 - Gemini keys.
-- Firebase Admin credentials.
+- Supabase URL, Supavisor pooled database URL va data encryption key.
 - Google OAuth credentials.
 - Google API keys.
 
@@ -169,7 +163,7 @@ GEMINI_EMBEDDING_MODEL=gemini-embedding-2
 GEMINI_EMBEDDING_DIMENSION=768
 VECTOR_INDEX_VERSION=gemini-embedding-2-768-v1
 RUBRIC_VERSION=v2
-VECTOR_STORE_PROVIDER=firestore
+VECTOR_STORE_COLLECTION=vectorLibraryRecords
 AI_PREPROCESS_CONCURRENCY=4
 REQUIRE_CLASSIFIER_READY=true
 ```
@@ -247,17 +241,11 @@ python ml_pipeline/seed_exemplars.py --data-csv D:/datasets/job_resume_fit.csv -
 Sau recruiter review moi dung `--status approved --allow-approved`. Tat ca exemplar cu cua
 `gemini-embedding-001` phai re-embed; backend se bo qua record khac version/dimension.
 
-Tao Firestore composite vector index cho collection `approvedExemplars`:
+Tao HNSW cosine index cho bang `approved_exemplars`:
 
-```bash
-gcloud firestore indexes composite create \
-  --collection-group=approvedExemplars \
-  --query-scope=COLLECTION \
-  --field-config=field-path=status,order=ASCENDING \
-  --field-config=field-path=approved,order=ASCENDING \
-  --field-config=field-path=rubricVersion,order=ASCENDING \
-  --field-config=field-path=vectorIndexVersion,order=ASCENDING \
-  --field-config=field-path=embedding,vector-config='{"dimension":"768","flat":"{}"}'
+```sql
+create index concurrently if not exists approved_exemplars_embedding_hnsw
+on public.approved_exemplars using hnsw (embedding vector_cosine_ops);
 ```
 
 Neu index dang build, backend chi scan toi `RAG_CANDIDATE_LIMIT=100` record va van ap dung strict contract.
@@ -326,7 +314,7 @@ Truoc khi thuyet trinh:
 
 - Backend `/health` tra `ok`.
 - Frontend chay duoc.
-- Dang nhap Firebase duoc.
+- Dang nhap Supabase duoc.
 - Upload mot JD va mot CV mau duoc.
 - `/api/files/extract-text` tra text.
 - Analysis job ve `completed`.
@@ -336,17 +324,17 @@ Truoc khi thuyet trinh:
 
 ## Loi thuong gap
 
-### Backend 401 Firebase
+### Backend 401 Supabase
 
 Nguyen nhan:
 
-- Thieu service account.
+- Thieu `SUPABASE_URL` hoac JWKS/redirect config sai.
 - Token frontend het han.
-- Domain/cau hinh Firebase sai.
+- Domain/cau hinh Supabase sai.
 
 Huong xu ly:
 
-- Kiem tra env Firebase backend.
+- Kiem tra env Supabase backend.
 - Dang xuat/dang nhap lai.
 - Kiem tra `Authorization` header.
 
