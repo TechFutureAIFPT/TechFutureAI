@@ -1,0 +1,182 @@
+# 02 - Kien truc he thong
+
+> Migration Supabase đã được triển khai sau feature flag. Firebase/Firestore vẫn là provider mặc định trước cutover; sau khi đối soát, Supabase Auth + PostgreSQL/pgvector + Realtime trở thành source of truth. Xem `13-supabase-migration-runbook.md`.
+
+## Tong quan thu muc
+
+```text
+D:\Support HR\
+|- Document\
+`- Software\
+   |- Web\
+   |  |- FE\
+   |  |- BE\
+   |  |  |- api_server\
+   |  |  `- ml_pipeline\
+   |  `- ml_pipeline\ (workspace du lieu cu, khong deploy)
+   `- Android\
+```
+
+Trong `Software`:
+
+- `Web/FE`: React 19 + Vite + TypeScript + Tailwind, deploy tren Vercel.
+- `Web/BE/api_server`: FastAPI, deploy tren Render.
+- `Web/BE/ml_pipeline`: ma train/seed canonical, chay offline; chi artifact + manifest duoc deploy.
+- `Web/ml_pipeline`: workspace dataset cu de doi chieu/chuyen du lieu, khong phai runtime production.
+- `Android`: Expo/React Native companion app.
+
+## Kien truc tong the
+
+```mermaid
+flowchart LR
+    U["Nguoi dung HR"] --> FE["Frontend React/Vite"]
+    FE --> API["FastAPI Backend"]
+
+    API --> OCR["File extraction / OCR"]
+    API --> AI["Gemini AI services"]
+    API --> CLS["Local/remote CV classifier"]
+    API --> RAG["RAG + vector similarity"]
+    API --> AUTH["Firebase Auth verify"]
+    API --> DB["Cloud Firestore"]
+    API --> REDIS["Redis Stream / cache / distributed limits"]
+    REDIS --> WORKER["Analysis workers"]
+    WORKER --> AI
+    WORKER --> DB
+    API --> GD["Google Drive API"]
+
+    ML["BE/ml_pipeline train offline"] --> ART[".pkl + manifest checksum"]
+    ART --> CLS
+```
+
+## Luong chay khi phan tich CV
+
+```mermaid
+sequenceDiagram
+    participant User as HR/User
+    participant FE as Frontend
+    participant BE as Backend
+    participant OCR as File Extraction
+    participant AI as Gemini
+    participant DB as Firestore
+
+    User->>FE: Nhap JD + upload CV
+    FE->>BE: POST /api/files/extract-text
+    BE->>OCR: Doc PDF/DOCX/Image/TXT/CSV
+    OCR-->>BE: Text da lam sach
+    BE-->>FE: extracted text
+
+    FE->>BE: POST /api/jd/structure
+    BE->>AI: Chuan hoa JD
+    AI-->>BE: JD co cau truc
+    BE-->>FE: structured_text
+
+    FE->>BE: POST /api/cv/analyze-core-async
+    BE->>DB: Kiem cache/history neu co user
+    BE->>BE: Classifier 1 lan + embedding 1 lan/CV (bounded concurrency)
+    BE->>DB: Firestore vector nearest-neighbor, chi exemplar approved v2
+    BE->>AI: Cham diem CV theo JD
+    AI-->>BE: Ket qua core
+    BE->>BE: Enrich + advanced breakdown + ranking
+    BE->>DB: Luu cache/history
+    FE->>BE: GET /api/analysis/status/{job_id}
+    BE-->>FE: candidates + pipeline
+```
+
+## Kien truc backend
+
+```mermaid
+flowchart TB
+    MAIN["app/main.py"] --> ROUTES["app/api/routes"]
+    ROUTES --> SCHEMAS["app/schemas"]
+    ROUTES --> SERVICES["app/services"]
+    SERVICES --> REPOS["app/repositories"]
+    SERVICES --> INTEG["app/integrations"]
+    REPOS --> FIRESTORE["Cloud Firestore"]
+    INTEG --> FIREBASE["Firebase Admin"]
+    SERVICES --> GEMINI["Gemini API"]
+    SERVICES --> DRIVE["Google Drive API"]
+```
+
+Vai tro tung tang:
+
+- `app/main.py`: tao FastAPI app, cau hinh CORS, mount router.
+- `app/api/routes`: dinh nghia endpoint HTTP.
+- `app/schemas`: Pydantic request/response model.
+- `app/services`: business logic, AI, OCR, scoring, account.
+- `app/repositories`: helper truy cap Firestore collection.
+- `app/integrations`: ket noi provider ngoai nhu Firebase Admin.
+
+## Kien truc frontend
+
+```mermaid
+flowchart TB
+    APP["src/app/App.tsx"] --> ROUTER["React Router"]
+    APP --> STATE["Workflow state"]
+    ROUTER --> PAGES["pages"]
+    PAGES --> FEATURES["features/components"]
+    FEATURES --> SERVICES["src/services"]
+    SERVICES --> API["renderClient.ts"]
+    SERVICES --> FIREBASE["firebase.ts"]
+    API --> BACKEND["FastAPI Backend"]
+    FIREBASE --> AUTH["Firebase Auth/Firestore"]
+```
+
+Frontend giu cac state chinh:
+
+- `jdText`, `jobPosition`.
+- `weights`.
+- `hardFilters`.
+- `cvFiles`.
+- `analysisResults`.
+- `activeAnalysisContext`.
+- `completedSteps`.
+- `currentUser`, `isLoggedIn`.
+
+## Cac he thong ngoai
+
+### Gemini
+
+Dung cho:
+
+- Generate text.
+- Chuan hoa JD.
+- Rut hard filters.
+- Phan tich CV.
+- OCR anh/PDF scan.
+- Embedding text.
+
+### Firebase
+
+Dung cho:
+
+- Dang nhap tren frontend.
+- Verify token tren backend.
+- Luu Firestore data.
+
+### Google Drive
+
+Dung cho:
+
+- OAuth ket noi Drive.
+- Liet ke file.
+- Tai/export file.
+- Dua file vao cung pipeline OCR nhu upload local.
+
+### Render va Vercel
+
+- Backend co `render.yaml`, start bang `uvicorn app.main:app --host 0.0.0.0 --port $PORT`.
+- Frontend co `vercel.json`, rewrite SPA ve `index.html`.
+
+## Vi sao tach FE/BE/ML?
+
+Tach nhu vay giup:
+
+- Frontend nhe, chi lo giao dien va trai nghiem.
+- Backend bao ve API key, Firebase Admin, Google OAuth secret.
+- Ma ML nam cung repo backend de dong bo contract, nhung train/seed luon chay offline va data raw bi Git ignore.
+- Render chi nap `.pkl` da duyet; startup kiem checksum, nhan, schema va scikit-learn version.
+- Backend la modular monolith; chua tach classifier service khi chua co nhu cau scale doc lap.
+- API va analysis worker dung chung mot image nhung chay thanh hai process/Deployment rieng.
+- Docker Compose chay API + worker + Redis cho local; Kubernetes scale API va worker doc lap.
+- FE len Vercel; Render van co the chay che do `in_process`, con Kubernetes production dung Redis Stream.
+- Firestore native vector search la RAG production.
