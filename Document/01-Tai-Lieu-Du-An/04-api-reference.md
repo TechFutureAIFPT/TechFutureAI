@@ -1,6 +1,6 @@
 # 04 - API reference de thuyet trinh
 
-> Tai lieu nay la ban giai thich API phuc vu demo, khong thay the OpenAPI/runtime source. Da doi chieu nhom route ngay 2026-07-16 tai `Software/Web/BE/api_server/app/api/routes`. Khi route, auth hoac schema thay doi, cap nhat file nay theo `11-MA-TRAN-TRUY-VET.md`.
+> Tai lieu nay la ban giai thich API phuc vu demo, khong thay the OpenAPI/runtime source. Da doi chieu nhom route ngay 2026-07-22 tai `Software/Web/BE/api_server/app/api/routes`. Khi route, auth hoac schema thay doi, cap nhat file nay theo `11-MA-TRAN-TRUY-VET.md`.
 
 Ngoai cac luong cot loi ben duoi, backend hien con co nhom quick CV, candidate chat, mobile JD, salary, notifications va email. Tra source route khi can danh sach day du nhat.
 
@@ -326,7 +326,16 @@ Tat ca route account nam sau:
 /api/account
 ```
 
-Và thường cần `Authorization: Bearer <access_token>`; issuer là Supabase trước cutover và Supabase sau cutover, còn route/request/response giữ nguyên.
+Và thường cần `Authorization: Bearer <access_token>`; issuer là Supabase, còn route/request/response giữ nguyên.
+
+### Settings va dong bo an toan
+
+- `GET /api/account/settings`: tra `ETag`; `If-None-Match` khop revision tra `304`.
+- `PATCH /api/account/settings`: nen gui `If-Match: <etag>`; revision cu tra `412 Precondition Failed`.
+- `POST /api/account/settings/reset`: cung ho tro `If-Match`; lock ghi dang ban tra `409` kem `Retry-After`.
+
+Response API expose `ETag`, `X-Data-Revision`, `X-Cache-Status`, `Server-Timing` va
+`X-Process-Time-Ms`. JSON lon duoc gzip khi client gui `Accept-Encoding: gzip`.
 
 ### Profile
 
@@ -352,6 +361,7 @@ Và thường cần `Authorization: Bearer <access_token>`; issuer là Supabase 
 
 - `POST /api/account/history`
 - `GET /api/account/history`
+- `GET /api/account/history/page?page_size=50&cursor=...&fields=id,jobPosition,updatedAt`
 - `POST /api/account/history/manual-snapshot`
 - `GET /api/account/history/manual`
 - `POST /api/account/history/feedback`
@@ -365,6 +375,7 @@ Và thường cần `Authorization: Bearer <access_token>`; issuer là Supabase 
 - `POST /api/account/uploaded-files/batch`
 - `POST /api/account/uploaded-files/vector-index/rebuild`
 - `GET /api/account/uploaded-files`
+- `GET /api/account/uploaded-files/page?page_size=50&cursor=...&fields=id,fileName,fileType,updatedAt`
 - `GET /api/account/uploaded-files/by-type/{file_type}`
 - `GET /api/account/uploaded-files/by-session/{session_id}`
 - `DELETE /api/account/uploaded-files/{file_id}`
@@ -376,10 +387,14 @@ Và thường cần `Authorization: Bearer <access_token>`; issuer là Supabase 
 ### JD templates
 
 - `GET /api/account/jd-templates`
+- `GET /api/account/jd-templates/page?page_size=50&cursor=...&fields=id,name,jobPosition,updatedAt`
 - `POST /api/account/jd-templates`
 - `PATCH /api/account/jd-templates/{template_id}`
 - `DELETE /api/account/jd-templates/{template_id}`
 - `POST /api/account/jd-templates/seed-defaults`
+
+Ba route `/page` dung keyset cursor `(updated_at, id)`, khong dung offset o bang lon. `fields` chi nhan
+allowlist va database chi tao JSON voi cac field da chon; `page_size` toi da 200.
 
 ### Chatbot
 

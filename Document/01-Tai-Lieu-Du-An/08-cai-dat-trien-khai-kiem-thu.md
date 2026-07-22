@@ -305,6 +305,37 @@ Tests trong repo dang tap trung vao:
 - Local classifier service.
 - Model manifest/checksum va 8 rubric tong 100.
 - Cache invalidation theo CV/scoring/model version.
+
+## Performance configuration va load gate
+
+Bien can tune theo quota Supabase/Redis va so process:
+
+```text
+POSTGRES_POOL_MIN_SIZE=1
+POSTGRES_POOL_MAX_SIZE=15
+POSTGRES_POOL_MAX_WAITING=60
+POSTGRES_POOL_TIMEOUT_SECONDS=5
+POSTGRES_STATEMENT_TIMEOUT_MS=15000
+REDIS_MAX_CONNECTIONS=50
+SETTINGS_CACHE_TTL_SECONDS=600
+MAX_PAGE_SIZE=200
+GZIP_MINIMUM_SIZE=1024
+GZIP_COMPRESSION_LEVEL=5
+```
+
+Render Blueprint bay gio co hai service: web API va `supporthr-analysis-worker`; ca hai dung
+`ANALYSIS_JOB_MODE=redis`. Khong chay queue production ma thieu worker.
+
+Chay contract test va load test doc an toan:
+
+```powershell
+cd Software\Web\BE\api_server
+.\venv\Scripts\python.exe -m pytest -q
+k6 run -e BASE_URL=http://127.0.0.1:8000 -e ACCESS_TOKEN=<supabase_access_token> loadtests\k6-critical-api.js
+```
+
+Gate mac dinh k6: error < 1%, check > 99%, p95 < 750 ms va p99 < 1500 ms. Day chi la gate ban dau;
+can chay tren staging cung quota/data gan production truoc khi thay doi pool/HPA.
 - Exemplar pending-by-default va vector contract.
 - Feedback API.
 

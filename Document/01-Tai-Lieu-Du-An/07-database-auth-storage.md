@@ -231,3 +231,15 @@ Nen noi:
 - Them role admin neu can dashboard quan tri.
 - Ma hoa them mot so field nhay cam neu dua vao production lon.
 - Them object storage rieng neu muon luu file goc.
+
+## Database performance contract 2026-07-22
+
+- Runtime dung Supavisor pooled URL qua psycopg `ConnectionPool`; moi process co gioi han pool, waiting queue,
+  acquire timeout, max idle/lifetime va PostgreSQL statement timeout. Tong `pool_max * so process` phai nam
+  duoi quota connection cua project Supabase.
+- Migration `202607220002_api_performance_indexes.sql` backfill typed timestamp va tao composite index
+  `(owner_id, coalesce(source_updated_at, updated_at) desc, id desc)` cho keyset pagination.
+- Cac filter thuong dung co index rieng: uploaded `file_type`/`analysisSessionId`, feedback `action` va cac ID
+  lien ket, sync cache `cacheKey`, chatbot `jobPosition`.
+- JSONB `source_payload` van bao toan payload goc, nhung filter/order quan trong dung typed column/index.
+- Merge Settings la atomic UPSERT; write-through Redis chi la cache, PostgreSQL van la source of truth.

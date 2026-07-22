@@ -436,6 +436,19 @@ Cac collection dang dung:
 - `approvedExemplars`
 - `analysisJobs`
 
+### Performance contract 2026-07-22
+
+- Pool psycopg duoc gioi han bang `POSTGRES_POOL_MIN_SIZE`, `POSTGRES_POOL_MAX_SIZE`,
+  `POSTGRES_POOL_MAX_WAITING`, `POSTGRES_POOL_TIMEOUT_SECONDS`, max idle/lifetime va statement timeout.
+- `set(..., merge=True)` la mot cau `INSERT ... ON CONFLICT DO UPDATE`; khong doc document truoc khi ghi.
+- Statistics dung grouped aggregate thay cho mot query dem cho moi action/type. Cleanup dung batch delete.
+- Settings dung Redis cache-aside + write-through, distributed lock va revision `ETag`. Client gui `If-Match`
+  khi PATCH/reset de khong ghi de thay doi moi hon; GET co `If-None-Match` co the tra `304`.
+- Cac list lon co cursor page va projection JSONB tai database: history, uploaded files va JD templates.
+- Response JSON tren nguong `GZIP_MINIMUM_SIZE` duoc gzip; `Server-Timing`, `X-Process-Time-Ms` va
+  `X-Cache-Status` ho tro do thuc te.
+- AI analysis chay durable Redis Stream worker va API tra `202`; Render, Docker va Kubernetes deu tach web/worker.
+
 ## Diem manh backend de noi voi ban giam khao
 
 - Code co chia tang ro: route, schema, service, repository, integration.

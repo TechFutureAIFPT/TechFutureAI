@@ -55,7 +55,8 @@ Runtime rules:
 - Redis Stream consumer groups provide pending messages, acknowledgement and stale-job reclaim.
 - API and worker use the same immutable image but different commands.
 - PostgreSQL remains the system of record; Redis stores queue payloads, short-lived job state, cache and distributed limits.
-- `ANALYSIS_JOB_MODE=in_process` remains for local/Render compatibility; Docker/Kubernetes use `redis`.
+- `ANALYSIS_JOB_MODE=in_process` remains only for local compatibility; Render, Docker and Kubernetes use `redis`
+  with a separate worker.
 
 ## Gap matrix
 
@@ -72,9 +73,9 @@ Runtime rules:
 | P1 | Tenant and role boundary is user-only | Supabase identity is mapped to `uid`; no organization/role policy layer is visible | Add organization, recruiter/admin roles, ownership policy and audit authorization before multi-company use | High |
 | P1 | PII retention and deletion are incomplete | CV/JD source text is persisted in job/history flows; no retention scheduler/runbook is present | Define retention, delete/export workflows, encryption/key policy and log redaction | High |
 | P1 | API has no explicit version namespace | Public paths use `/api/...` | Introduce compatibility/version policy before breaking schema changes; publish deprecation windows | High |
-| P2 | List endpoints and PostgreSQL queries lack one uniform pagination contract | Account modules use route-specific limits/shapes | Standardize cursor pagination, maximum page size and indexes; add query cost tests | Medium |
+| Addressed | Large account lists lacked one scalable pagination contract | History, uploaded files and JD templates now expose cursor pages with field allowlists | Keyset SQL, max page size 200, query-level JSONB projection and composite indexes; retain legacy bounded routes for compatibility | Medium |
 | P2 | Provider resilience is partial | Gemini key/model fallback exists, but no global circuit breaker or provider SLO is defined | Add bounded retries with jitter, circuit breakers, per-provider timeouts and fallback telemetry | Medium |
-| P2 | No load/chaos/recovery suite | Unit/API tests exist; no Locust/k6 or worker-crash test is present | Add capacity test, pod-kill recovery test, Redis outage test and PostgreSQL/Gemini degradation scenarios | High |
+| P2 | Chaos/recovery suite is incomplete | k6 critical-read load gate now exists; unit/API contracts cover pool, gzip, cursor and atomic merge | Run staging capacity baseline, pod-kill recovery, Redis outage and PostgreSQL/Gemini degradation scenarios | High |
 | P2 | Ingress and production storage are intentionally placeholders | Ingress file is example-only; local Redis is not HA | Choose ingress class, WAF/rate limit, managed Redis topology, backup and multi-zone policy | High |
 
 ## Implemented scale baseline
@@ -87,6 +88,11 @@ Runtime rules:
 - Kubernetes API/worker Deployments, ClusterIP Service, HPA, PDB, NetworkPolicy, probes, resource requests/limits,
   rolling update policy, topology spread and read-only root filesystem.
 - Local and production Kustomize overlays; production deliberately requires a real image tag and secret.
+- Bounded psycopg/Redis pools, atomic JSONB merge, batch cleanup and grouped aggregates remove hot-path query fan-out.
+- Settings cache uses Redis stampede lock, write-through invalidation and optimistic concurrency through ETag/If-Match.
+- Cursor pagination and database-side field projection are available for the three largest account list families.
+- Gzip plus timing/cache headers provide payload reduction and lightweight latency visibility.
+- `loadtests/k6-critical-api.js` defines the initial p95/p99/error guardrail; production capacity is not inferred from unit tests.
 
 ## Scale roadmap
 
@@ -142,6 +148,12 @@ because Kubernetes is available.
 - Metrics/HPA: official Metrics Server 0.8.1 is Ready; `kubectl top` returns pod metrics and both HPAs show valid
   CPU/memory targets. The kind-only insecure kubelet TLS flag is documented and excluded from production.
 - Kubernetes queue smoke: one consumer, lag 0, pending 0 after malformed-message handling.
+- Performance contract tests: 81 backend tests pass, including atomic Settings merge, cursor projection, bounded pool,
+  gzip, conditional ETag and Redis worker dispatch for analysis/vector rebuild.
+- Local TestClient payload check: `/openapi.json` changed from 107,413 bytes identity to 10,422 bytes gzip
+  (90.3% smaller). This is a payload check, not a production throughput claim.
+- k6 critical-read scenario and thresholds are committed, but k6 was not installed on this workstation and no
+  production/staging capacity result is claimed.
 
 Therefore both Docker Compose and Kubernetes are verified locally. A cloud production deployment is not yet a verified
 fact because no production cluster/registry/DNS/TLS/secret-manager credentials were provided.

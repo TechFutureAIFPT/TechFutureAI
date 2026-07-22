@@ -13,7 +13,7 @@ Ma trận này giúp thay đổi code kéo theo đúng tài liệu, và tài li�
 | Auth/dữ liệu | `07-database-auth-storage.md` | `BE/api_server/app/repositories`, Supabase config | Đổi collection, ownership, auth hoặc retention |
 | Legacy source -> Supabase | `13-supabase-migration-runbook.md` | `BE/supabase/migrations`, `BE/api_server/scripts/legacy_source_supabase_migration.py`, `BE/api_server/app/integrations`, `Android/src/services` | Đổi schema, RLS, importer, cutover hoặc rollback |
 | Chạy/deploy/test | `08-cai-dat-trien-khai-kiem-thu.md` | `package.json`, `render.yaml`, `BE/api_server/Dockerfile`, `BE/docker-compose.yml`, `BE/deploy/kubernetes`, `vercel.json`, `eas.json` | Đổi lệnh, biến môi trường, platform hoặc release gate |
-| Backend scale audit | `12-backend-scale-audit.md` | `BE/api_server/app`, `BE/deploy/kubernetes`, `BE/docker-compose.yml` | Đổi queue, worker, autoscaling, observability hoặc production gap |
+| Backend scale audit | `12-backend-scale-audit.md` | `BE/api_server/app`, `BE/api_server/loadtests`, `BE/supabase/migrations`, `BE/deploy/kubernetes`, `BE/docker-compose.yml` | Đổi pool, cache, pagination, queue, worker, compression, autoscaling, observability hoặc production gap |
 | Demo | `09-kich-ban-thuyet-trinh-demo.md` | FE routes và dữ liệu demo đã kiểm tra | Luồng demo hoặc màn hình thay đổi |
 | Phản biện | `10-cau-hoi-phan-bien.md` | Code/config chứng minh câu trả lời | Một tuyên bố kỹ thuật không còn đúng |
 
