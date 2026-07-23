@@ -20,7 +20,7 @@ D:\Support HR\
 Trong `Software`:
 
 - `Web/FE`: React 19 + Vite + TypeScript + Tailwind, deploy tren Vercel.
-- `Web/BE/api_server`: FastAPI, deploy tren Render.
+- `Web/BE/api_server`: FastAPI, dong goi OCI image va deploy tren VPS Docker Compose hoac K3s.
 - `Web/BE/ml_pipeline`: ma train/seed canonical, chay offline; chi artifact + manifest duoc deploy.
 - `Web/ml_pipeline`: workspace dataset cu de doi chieu/chuyen du lieu, khong phai runtime production.
 - `Android`: Expo/React Native companion app.
@@ -36,6 +36,7 @@ flowchart LR
     API --> AI["Gemini AI services"]
     API --> CLS["Local/remote CV classifier"]
     API --> RAG["RAG + vector similarity"]
+    API --> GRAPH["GraphRAG approved facts (shadow/advisory)"]
     API --> AUTH["Supabase Auth verify"]
     API --> DB["Supabase PostgreSQL"]
     API --> REDIS["Redis Stream / cache / distributed limits"]
@@ -45,7 +46,9 @@ flowchart LR
     API --> GD["Google Drive API"]
 
     ML["BE/ml_pipeline train offline"] --> ART[".pkl + manifest checksum"]
+    ML --> GART["approved graph facts + provenance"]
     ART --> CLS
+    GART --> GRAPH
 ```
 
 ## Luong chay khi phan tich CV
@@ -74,7 +77,8 @@ sequenceDiagram
     BE->>DB: Kiem cache/history neu co user
     BE->>BE: Classifier 1 lan + embedding 1 lan/CV (bounded concurrency)
     BE->>DB: PostgreSQL vector nearest-neighbor, chi exemplar approved v2
-    BE->>AI: Cham diem CV theo JD
+    BE->>BE: Truy van approved GraphRAG facts o shadow mode
+    BE->>AI: Cham diem CV theo JD; GraphRAG khong thay doi scoring
     AI-->>BE: Ket qua core
     BE->>BE: Enrich + advanced breakdown + ranking
     BE->>DB: Luu cache/history
@@ -162,9 +166,11 @@ Dung cho:
 - Tai/export file.
 - Dua file vao cung pipeline OCR nhu upload local.
 
-### Render va Vercel
+### Self-hosted backend va Vercel
 
-- Backend co `render.yaml`, start bang `uvicorn app.main:app --host 0.0.0.0 --port $PORT`.
+- Backend dung mot image GHCR da kien truc; Docker Compose la duong production mot VPS, K3s la duong nang cap.
+- Caddy cap HTTPS va reverse proxy cho Compose; Traefik ingress phuc vu overlay K3s OCI Free.
+- `render.yaml` chi duoc giu tam trong giai doan cutover de rollback, khong con la runtime chinh.
 - Frontend co `vercel.json`, rewrite SPA ve `index.html`.
 
 ## Vi sao tach FE/BE/ML?
@@ -174,9 +180,11 @@ Tach nhu vay giup:
 - Frontend nhe, chi lo giao dien va trai nghiem.
 - Backend bao ve API key, Supabase service role, Google OAuth secret.
 - Ma ML nam cung repo backend de dong bo contract, nhung train/seed luon chay offline va data raw bi Git ignore.
-- Render chi nap `.pkl` da duyet; startup kiem checksum, nhan, schema va scikit-learn version.
+- Container runtime chi nap `.pkl` da duyet; startup kiem checksum, nhan, schema va scikit-learn version.
 - Backend la modular monolith; chua tach classifier service khi chua co nhu cau scale doc lap.
 - API va analysis worker dung chung mot image nhung chay thanh hai process/Deployment rieng.
-- Docker Compose chay API + worker + Redis cho local; Kubernetes scale API va worker doc lap.
-- FE len Vercel; Render van co the chay che do `in_process`, con Kubernetes production dung Redis Stream.
+- Docker Compose production chay API + worker + Redis + Caddy; Kubernetes scale API va worker doc lap.
+- FE len Vercel; Docker Compose va Kubernetes deu dung Redis Stream va worker rieng.
 - PostgreSQL native vector search la RAG production.
+- GraphRAG phase 1 doc artifact da duyet, chi tra bang chung advisory voi
+  `decisionImpact=none`; shadow mode khong dua fact vao prompt, diem hoac xep hang.

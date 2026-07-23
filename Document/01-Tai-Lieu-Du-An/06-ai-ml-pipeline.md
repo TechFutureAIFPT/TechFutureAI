@@ -17,6 +17,7 @@ Phan AI/ML cua SupportHR co nhieu lop, khong chi goi mot API duy nhat.
 9. Candidate enrichment.
 10. Advanced score breakdown.
 11. Feedback loop.
+12. GraphRAG approved-fact retrieval o shadow/advisory mode.
 
 ## OCR va file extraction
 
@@ -76,6 +77,12 @@ Script:
 ```text
 train_classifier.py
 seed_exemplars.py
+prepare_dataset.py
+acquire_hf_dataset.py
+prepare_skill_benchmark.py
+integrate_hf_datasets.py
+build_graph_candidates.py
+validate_graph_release.py
 ```
 
 Muc dich:
@@ -84,8 +91,10 @@ Muc dich:
 - Xuat artifact `.pkl`.
 - Audit label, duplicate va conflicting-label text.
 - Gate holdout macro-F1 truoc khi release.
+- Group split theo `entityGroupId` de exact/near duplicate khong ro ri qua train/test.
 - Xuat artifact vao `BE/api_server/app/models` kem manifest SHA-256.
-- Yeu cau `--dataset-license` khi train release.
+- Yeu cau `--source-id`; source phai duoc phep `classifier_training`, checksum file va
+  `--dataset-license` (neu truyen) phai khop dataset registry.
 
 Cong nghe:
 
@@ -106,6 +115,32 @@ ml_pipeline/artifacts/evaluation.json
 `ml_pipeline/data` va `ml_pipeline/artifacts` bi Git ignore. Docker/Render build context la `api_server`, vi
 vay ma train va data raw khong vao production image. Workspace `Software/Web/ml_pipeline` cu chi la nguon
 du lieu legacy; khong con la code train canonical.
+
+### Data registry va quality gate
+
+- `ml_pipeline/configs/datasets.json` pin license, commit/revision, intended use va prohibited use.
+- Bon source Hugging Face hien tai duoc tach contract:
+  - TechWolf ESCO: benchmark `evaluation_only`, 584 dong sau khi loai 4 duplicate.
+  - `opensporks/resumes`: byte-identical voi Resume Dataset canonical, khong cong them dong train.
+  - `batuhanmtl/job-skill-set`: quarantine; 1.167 JD va 4.960 skill candidate chi audit vi license
+    cua nhan RecAI phai duoc xac minh rieng. Artifact JD chi luu `skillIds`; label skill luu mot lan
+    trong candidate catalog; 24 bien the khac dau cau/chu hoa da duoc hop nhat. 15 cap JD near-duplicate
+    duoc gan chung `entityGroupId`, khong bi tach qua train/evaluation fold.
+  - `siddharth5151/job-compatibility`: 436 cap sach dung cho prompt regression; khong co numeric
+    ground truth va khong duoc cham diem production. Toan bo 437 CV raw trung voi Resume Dataset;
+    artifact chi luu resume reference. 40 JD unique duoc tach rieng, loai 396 lan lap trong 436 cap sach.
+- `integrate_hf_datasets.py` redact PII, deduplicate, chuan hoa tung contract va ghi
+  `artifacts/hf_integration/dataset-routing-report.json`; khong tu dong thay model runtime.
+- Raw data la immutable; output sach luu rieng o curated/quarantine.
+- PII redaction xu ly email, phone, URL, ten ca nhan, dia chi, ngay sinh, identifier va social handle.
+- Exact duplicate bi loai; near duplicate duoc gan chung entity group.
+- TechWolf HOUSE/TECH/TECHWOLF duoc pin commit, tai offline va chi duoc dung lam evaluation.
+- TechWolf TECHWOLF con 326 cau unique; 258 dong lap cau la annotation ESCO da nhan va duoc giu co chu
+  dich, trong khi 4 cap sentence-label trung hoan toan bi quarantine.
+- `job_resume_fit` bi quarantine vi license chua xac minh, 104 header rong, 230 dong thieu category va
+  category co du lieu bi truot cot; khong duoc dung lam ground truth hay approved exemplar.
+- Resume Dataset sach con 2.481/2.484 dong, 2 duplicate bi loai, 1 dong rong bi quarantine.
+- Candidate LinearSVC hien dat macro-F1 `0.665980`, duoi gate `0.70`, nen runtime model khong bi ghi de.
 
 ## Classifier trong backend
 
@@ -299,6 +334,21 @@ Sau nay co the dung feedback de:
 - Dieu chinh rubric.
 - Danh gia model.
 - Cai tien prompt.
+
+## GraphRAG phase 1
+
+Offline pipeline tao relation candidate `Occupation -> ASSOCIATED_WITH_SKILL -> Skill` tu cac quan sat
+da redact. Tat ca candidate co `status=pending`, `approved=false`, `decisionImpact=none`; khong co raw CV
+snippet trong graph. Human reviewer phai bo sung reviewer/reviewedAt va phe duyet truoc khi
+`validate_graph_release.py` cho phep dong goi.
+
+Runtime service `graph_rag_service.py`:
+
+- Chi doc schema `supporthr-graph-fact-v1`.
+- Loai fact pending, thieu reviewer/provenance hoac co `decisionImpact` khac `none`.
+- Dung lexical graph retrieval de dua evidence vao `pipelineMetadata.graphRag`.
+- Shadow mode khong dua graph fact vao Gemini prompt, deterministic scoring hoac rank.
+- `GET /api/cv/graphrag-status` cung cap trang thai feature flag va artifact.
 
 ## Cach noi ngan gon voi ban giam khao
 

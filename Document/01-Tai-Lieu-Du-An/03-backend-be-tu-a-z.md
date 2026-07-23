@@ -79,7 +79,7 @@ api_server/
 |- tests/
 |- requirements.txt
 |- .env.example
-`- render.yaml
+`- Dockerfile
 ```
 
 ## Config va bien moi truong
@@ -304,7 +304,7 @@ Y tuong:
 
 - Frontend gui request phan tich lon.
 - Backend tra ve ngay `202 Accepted` va `job_id`.
-- Che do local/Render tuong thich co the chay `asyncio.create_task`.
+- Che do local tuong thich co the chay `asyncio.create_task`; production khong dung che do nay.
 - Che do scale ghi job vao Redis Stream va worker xu ly bang consumer group.
 - Frontend poll `GET /api/analysis/status/{job_id}`.
 - Neu user dang nhap, job snapshot duoc luu vao PostgreSQL `analysisJobs`.
@@ -323,10 +323,13 @@ Trang thai:
 ## Docker va Kubernetes
 
 - `docker-compose.yml`: API, worker va Redis local co healthcheck va startup dependency.
+- `compose.production.yaml`: API, worker, Redis AOF va Caddy HTTPS cho mot VPS.
 - `api_server/Dockerfile`: multi-stage image, user non-root, cung image cho API/worker.
+- `.github/workflows/container-image.yml`: build/push GHCR cho ca `linux/amd64` va `linux/arm64`, kem SBOM/provenance.
 - `deploy/kubernetes/base`: Deployment API/worker, Service, HPA, PDB, NetworkPolicy va probes.
 - `deploy/kubernetes/overlays/local`: Redis noi bo va image `supporthr-backend:local`.
 - `deploy/kubernetes/overlays/production`: namespace va image registry/tag can duoc chot khi release.
+- `deploy/kubernetes/overlays/oci-free`: mot node K3s ARM64, Redis StatefulSet/PVC, Traefik ingress va tai nguyen giam.
 - Production phai dung managed Redis, secret manager, Metrics Server va ingress/TLS cua cluster thuc te.
 
 ## Core CV analysis
@@ -358,8 +361,6 @@ app/services/candidate_enrichment_service.py
 Nhiem vu:
 
 - Kiem tra bias risk tu hard filters.
-- Phan tich soft skills.
-- Tinh career velocity.
 - Tinh company tier.
 - Tinh industry/classifier fit.
 - Tim embedding similarity.
@@ -387,6 +388,7 @@ nhung khong san sang.
 Endpoint lien quan:
 
 - `GET /api/cv/classifier-status`
+- `GET /api/cv/graphrag-status`
 - `POST /api/cv/classify-industry`
 
 ## Vector store va RAG
@@ -405,6 +407,20 @@ Y tuong:
 - `approvedExemplars` phai co `approved=true`, `status=approved`, rubric/model/dimension/index version dung.
 - Contract hien tai: `gemini-embedding-2`, 768 chieu, `gemini-embedding-2-768-v1`, rubric `v2`.
 - Record thieu trang thai duyet hoac khac embedding space bi loai, khong fallback thanh approved.
+
+## GraphRAG advisory
+
+Service:
+
+```text
+app/services/graph_rag_service.py
+```
+
+GraphRAG phase 1 doc artifact JSONL tu `api_server/data/graphrag`. Runtime chi nap fact dung
+`supporthr-graph-fact-v1`, `approved=true`, `status=approved`, `decisionImpact=none`, co reviewer va
+source checksum. `GRAPH_RAG_ENABLED=false` la mac dinh; khi bat, nen giu
+`GRAPH_RAG_SHADOW_MODE=true` de fact chi xuat hien trong `pipelineMetadata.graphRag`, khong chen vao
+prompt, diem hay rank. `GET /api/cv/graphrag-status` cho biet artifact va so approved fact da nap.
 
 ## Rubric cham diem
 
@@ -447,7 +463,7 @@ Cac collection dang dung:
 - Cac list lon co cursor page va projection JSONB tai database: history, uploaded files va JD templates.
 - Response JSON tren nguong `GZIP_MINIMUM_SIZE` duoc gzip; `Server-Timing`, `X-Process-Time-Ms` va
   `X-Cache-Status` ho tro do thuc te.
-- AI analysis chay durable Redis Stream worker va API tra `202`; Render, Docker va Kubernetes deu tach web/worker.
+- AI analysis chay durable Redis Stream worker va API tra `202`; Docker Compose va Kubernetes deu tach web/worker.
 
 ## Diem manh backend de noi voi ban giam khao
 

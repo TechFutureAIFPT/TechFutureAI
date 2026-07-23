@@ -264,6 +264,22 @@ Output:
 }
 ```
 
+### `GET /api/cv/graphrag-status`
+
+Muc dich: kiem tra feature flag, shadow mode, duong dan artifact va so approved graph fact runtime da nap.
+GraphRAG phase 1 luon tra `decisionImpact=none`.
+
+```json
+{
+  "enabled": false,
+  "shadowMode": true,
+  "decisionImpact": "none",
+  "artifactPath": ".../data/graphrag/approved_graph_facts.jsonl",
+  "approvedFactCount": 0,
+  "error": ""
+}
+```
+
 ### `POST /api/cv/classify-industry`
 
 Muc dich: phan loai nganh nghe CV.
