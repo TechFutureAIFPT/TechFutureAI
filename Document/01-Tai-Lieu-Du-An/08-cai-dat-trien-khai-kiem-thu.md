@@ -52,6 +52,7 @@ Kiem tra offline:
 ```bash
 kubectl kustomize deploy/kubernetes/overlays/local
 kubectl kustomize deploy/kubernetes/overlays/production
+kubectl kustomize deploy/kubernetes/overlays/oci-free
 ```
 
 Local cluster:
@@ -61,7 +62,8 @@ docker build -t supporthr-backend:local ./api_server
 kubectl apply -k deploy/kubernetes/overlays/local
 ```
 
-Production can image tag bat bien, `supporthr-backend-secrets`, managed Redis, Metrics Server, ingress va TLS.
+Production multi-node can image tag bat bien, `supporthr-backend-secrets`, managed Redis, Metrics Server, ingress va TLS.
+Overlay `oci-free` danh cho mot node K3s ARM64, co Redis AOF/PVC noi bo va bo HPA/PDB khong co gia tri tren mot node.
 Chi tiet va lenh rollout nam trong `deploy/kubernetes/README.md`.
 
 ## Bien moi truong backend toi thieu
@@ -132,24 +134,31 @@ Script trong `package.json`:
 
 Nghia la build se check TypeScript truoc, roi Vite build sau.
 
-## Deploy backend Render
+## Deploy backend khong phu thuoc Render
 
-File:
+Duong production mac dinh cho VPS mien phi la Docker image chay bang K3s:
 
 ```text
-Software/Web/BE/render.yaml
+Software/Web/BE/.github/workflows/container-image.yml
+Software/Web/BE/.github/workflows/deploy-vps.yml
+Software/Web/BE/deploy/kubernetes/overlays/oci-free
+Software/Web/BE/deploy/vps/bootstrap-k3s-ubuntu.sh
+Software/Web/BE/deploy/vps/deploy-k3s.sh
+Software/Web/BE/deploy/vps/rollback-k3s.sh
 ```
 
-Cau hinh:
+Cau hinh gom:
 
-- Service type: `web`.
-- Runtime: Python.
-- Root dir: `api_server`.
-- Build: `pip install -r requirements.txt`.
-- Start: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`.
-- Python version: `3.11.11`.
+- GitHub Actions build image `linux/amd64` va `linux/arm64`, publish GHCR voi tag `main`, `latest`, `sha-*` va semver.
+- K3s dung containerd de chay dung image GHCR; khong chay Docker Compose song song tren node production.
+- Mot pod API, mot worker, Redis StatefulSet/PVC, Traefik va cert-manager HTTPS.
+- Bootstrap cai K3s stable, ma hoa Kubernetes Secret at rest, Fail2ban, UFW va security update.
+- Deploy chi chap nhan tag bat bien `sha-*`, cho rollout/HTTPS readiness va tu tra API/worker ve image cu neu loi.
+- Secret ung dung luu tai `/opt/supporthr/shared/supporthr-secret.env` tren VPS; GitHub chi giu SSH inputs.
+- `compose.production.yaml` va cac script Compose duoc giu lam phuong an break-glass, khong phai runtime mac dinh.
 
-Can set secret env vars tren Render dashboard:
+Tao `/opt/supporthr/shared/supporthr-secret.env` tu `deploy/vps/k3s-secret.env.example` va dat quyen `chmod 600`.
+Sau do chay `deploy/vps/prepare-k3s-secrets.sh`. Can set:
 
 - Gemini keys.
 - Supabase URL, Supavisor pooled database URL va data encryption key.
@@ -168,8 +177,22 @@ AI_PREPROCESS_CONCURRENCY=4
 REQUIRE_CLASSIFIER_READY=true
 ```
 
-Render build chi lay `api_server`; `BE/ml_pipeline/data`, artifacts va source train khong vao image. Startup
+Image build chi lay `api_server`; `BE/ml_pipeline/data`, artifacts va source train khong vao image. Startup
 kiem model manifest. Sau deploy, `/health` phai tra `classifier.ready=true`, model version va 24 labels.
+
+Khoi tao VPS Ubuntu/OCI:
+
+```bash
+scp -r deploy/vps ubuntu@YOUR_VPS_IP:/tmp/supporthr-vps
+ssh ubuntu@YOUR_VPS_IP 'sudo bash /tmp/supporthr-vps/bootstrap-k3s-ubuntu.sh'
+```
+
+GitHub environment `production` can secrets `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`, `VPS_KNOWN_HOSTS`, tuy chon
+`VPS_PORT`, va variables `API_DOMAIN`, `ACME_EMAIL`. Chi bat `ENABLE_K3S_DEPLOY=true` sau khi VM, DNS,
+runtime secret va `ghcr-pull` da san sang. Build `main` thanh cong se tu deploy tag `sha-*`.
+
+`render.yaml` duoc giu tam trong giai doan cutover. Sau khi endpoint K3s dat du smoke test, FE/Android da doi API URL
+va rollback da duoc thu, xoa service Render va blueprint legacy.
 
 ## Deploy frontend Vercel
 
@@ -323,7 +346,7 @@ GZIP_MINIMUM_SIZE=1024
 GZIP_COMPRESSION_LEVEL=5
 ```
 
-Render Blueprint bay gio co hai service: web API va `supporthr-analysis-worker`; ca hai dung
+Docker Compose/K3s production luon co web API va `supporthr-analysis-worker`; ca hai dung
 `ANALYSIS_JOB_MODE=redis`. Khong chay queue production ma thieu worker.
 
 Chay contract test va load test doc an toan:
