@@ -4,7 +4,7 @@ import { CheckCircle2, Monitor, Radio, Smartphone, Wifi, WifiOff, Zap } from "lu
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AppHeader, BottomNav } from "../components/AppChrome";
-import { sendSessionCommand } from "../services/supabaseStore";
+import { sendSessionCommand } from "../services/firebaseStore";
 import { useRecruiterStore } from "../store/useRecruiterStore";
 import { useAppTheme } from "../theme/ThemeContext";
 
@@ -285,7 +285,7 @@ export function PCConnectScreen() {
             <View className="gap-3">
               <View className="flex-row items-center justify-between">
                 <Text className="text-[13px]" style={{ color: colors.textSecondary }}>Phương thức</Text>
-                <Text className="text-[13px] font-semibold" style={{ color: colors.textPrimary }}>Supabase Realtime</Text>
+                <Text className="text-[13px] font-semibold" style={{ color: colors.textPrimary }}>Firestore Realtime</Text>
               </View>
               <View className="h-px" style={{ backgroundColor: colors.border }} />
               <View className="flex-row items-center justify-between">

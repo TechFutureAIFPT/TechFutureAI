@@ -1,20 +1,20 @@
 # 07 - Database, auth va luu tru
 
-> Runtime hiện là Supabase Auth + PostgreSQL/RLS + Realtime duy nhất. Schema hybrid giữ field typed/indexed cùng `source_payload JSONB`, ID nguồn và SHA-256; công cụ import nguồn cũ được tách khỏi dependency production.
+> Runtime hiện là Firebase Authentication + Cloud Firestore/Security Rules + Realtime duy nhất. Schema hybrid giữ field typed/indexed cùng `source_payload JSONB`, ID nguồn và SHA-256; công cụ import nguồn cũ được tách khỏi dependency production.
 
 ## Auth tong quan
 
-Frontend dung Supabase Auth. Backend dung Supabase JWT/JWKS de verify token.
+Frontend dung Firebase Authentication. Backend dung Firebase Admin ID-token verification de verify token.
 
 Luong:
 
 ```mermaid
 sequenceDiagram
     participant FE as Frontend
-    participant FA as Supabase Auth
+    participant FA as Firebase Authentication
     participant BE as Backend
-    participant JWKS as Supabase JWKS
-    participant DB as PostgreSQL
+    participant JWKS as Firebase JWKS
+    participant DB as Cloud Firestore
 
     FE->>FA: Dang nhap
     FA-->>FE: access token
@@ -28,17 +28,17 @@ sequenceDiagram
 
 Neu chi tin email tu frontend thi nguoi dung co the gia mao. Backend verify token de chac chan:
 
-- Token do Supabase cap.
+- Token do Firebase cap.
 - Token con hop le.
 - `uid` dung la user that.
 - Moi du lieu ghi/doc deu gan voi `uid`.
 
-## PostgreSQL repository
+## Cloud Firestore repository
 
 File:
 
 ```text
-app/repositories/postgres/account_repository.py
+app/repositories/firestore/account_repository.py
 ```
 
 File nay khong phai ORM phuc tap. No chu yeu tra ve collection reference va helper CRUD co ban.
@@ -207,7 +207,7 @@ SupportHR khong luu file goc Drive vao backend nhu object storage. Backend:
 2. List file.
 3. Download/export file.
 4. Trich text.
-5. Luu metadata va extracted text vao PostgreSQL neu can.
+5. Luu metadata va extracted text vao Cloud Firestore neu can.
 
 Y nghia:
 
@@ -218,7 +218,7 @@ Y nghia:
 
 Nen noi:
 
-- Backend verify Supabase token truoc khi doc/ghi du lieu ca nhan.
+- Backend verify Firebase token truoc khi doc/ghi du lieu ca nhan.
 - Moi history/cache/file gan voi `uid`.
 - API key, database URL va khoa ma hoa nam o bien moi truong backend.
 - `.env.example` chi la template, khong chua secret.
@@ -235,11 +235,11 @@ Nen noi:
 ## Database performance contract 2026-07-22
 
 - Runtime dung Supavisor pooled URL qua psycopg `ConnectionPool`; moi process co gioi han pool, waiting queue,
-  acquire timeout, max idle/lifetime va PostgreSQL statement timeout. Tong `pool_max * so process` phai nam
-  duoi quota connection cua project Supabase.
+  acquire timeout, max idle/lifetime va Cloud Firestore statement timeout. Tong `pool_max * so process` phai nam
+  duoi quota connection cua project Firebase.
 - Migration `202607220002_api_performance_indexes.sql` backfill typed timestamp va tao composite index
   `(owner_id, coalesce(source_updated_at, updated_at) desc, id desc)` cho keyset pagination.
 - Cac filter thuong dung co index rieng: uploaded `file_type`/`analysisSessionId`, feedback `action` va cac ID
   lien ket, sync cache `cacheKey`, chatbot `jobPosition`.
 - JSONB `source_payload` van bao toan payload goc, nhung filter/order quan trong dung typed column/index.
-- Merge Settings la atomic UPSERT; write-through Redis chi la cache, PostgreSQL van la source of truth.
+- Merge Settings la atomic UPSERT; write-through Redis chi la cache, Cloud Firestore van la source of truth.

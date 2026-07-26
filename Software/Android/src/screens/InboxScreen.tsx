@@ -170,7 +170,7 @@ export function InboxScreen() {
               />
             ) : (
               <EmptyState
-                description="Ứng dụng không dùng dữ liệu mẫu làm nguồn chính. Đăng nhập để lấy lịch sử thật từ Supabase."
+                description="Ứng dụng không dùng dữ liệu mẫu làm nguồn chính. Đăng nhập để lấy lịch sử thật từ Firebase."
                 title="Cần đăng nhập"
               />
             )}

@@ -1,31 +1,72 @@
 import { Platform } from "react-native";
-import type { User } from "@supabase/supabase-js";
+import { getApps, initializeApp } from "firebase/app";
+import {
+  createUserWithEmailAndPassword,
+  getAuth,
+  GoogleAuthProvider,
+  onAuthStateChanged,
+  sendPasswordResetEmail,
+  signInWithCredential,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  signOut,
+  type User
+} from "firebase/auth";
 
 import type { AuthUser } from "../types";
 import { fetchRenderUserProfile, upsertRenderUserProfile } from "./renderStore";
-import { isSupabaseConfigured, supabase } from "./supabase";
 
+const defaultFirebaseConfig = {
+  apiKey: "AIzaSyCddND9ciUpeL3xTpWTUMyQ0TG9FyUCdiU",
+  authDomain: "gen-lang-client-0595612537.firebaseapp.com",
+  databaseURL: "https://gen-lang-client-0595612537-default-rtdb.firebaseio.com",
+  projectId: "gen-lang-client-0595612537",
+  storageBucket: "gen-lang-client-0595612537.firebasestorage.app",
+  messagingSenderId: "1022447215307",
+  appId: "1:1022447215307:web:5fbf39694b90d420d2314e",
+  measurementId: "G-9YGZ8Z594C"
+};
 
-export { isSupabaseConfigured };
+const firebaseConfig = {
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY || defaultFirebaseConfig.apiKey,
+  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN || defaultFirebaseConfig.authDomain,
+  databaseURL: process.env.EXPO_PUBLIC_FIREBASE_DATABASE_URL || defaultFirebaseConfig.databaseURL,
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || defaultFirebaseConfig.projectId,
+  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET || defaultFirebaseConfig.storageBucket,
+  messagingSenderId:
+    process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || defaultFirebaseConfig.messagingSenderId,
+  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID || defaultFirebaseConfig.appId,
+  measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID || defaultFirebaseConfig.measurementId
+};
+
+export const isFirebaseConfigured = Boolean(
+  firebaseConfig.apiKey &&
+    firebaseConfig.authDomain &&
+    firebaseConfig.projectId &&
+    firebaseConfig.appId
+);
+
+export const firebaseApp = isFirebaseConfigured
+  ? getApps()[0] ?? initializeApp(firebaseConfig)
+  : null;
+
+export const auth = firebaseApp ? getAuth(firebaseApp) : null;
 
 function mapUser(user: User | null): AuthUser | null {
   if (!user) return null;
-  const metadata = user.user_metadata || {};
   return {
-    uid: user.id,
+    uid: user.uid,
     email: user.email || "",
-    displayName: metadata.full_name || metadata.name || metadata.display_name || null,
-    photoUrl: metadata.avatar_url || metadata.picture || null
+    displayName: user.displayName,
+    photoUrl: user.photoURL
   };
 }
 
 async function mapUserWithProfile(user: User | null): Promise<AuthUser | null> {
   const mapped = mapUser(user);
-  if (!user || !mapped || !supabase) return mapped;
+  if (!user || !mapped) return mapped;
   try {
-    const { data } = await supabase.auth.getSession();
-    const token = data.session?.access_token;
-    if (!token) return mapped;
+    const token = await user.getIdToken();
     let profile = await fetchRenderUserProfile(token);
     if (!profile) profile = await upsertRenderUserProfile(token, mapped);
     return {
@@ -43,87 +84,75 @@ function syncRenderProfileInBackground(user: User): void {
   void mapUserWithProfile(user);
 }
 
-function requireSupabase() {
-  if (!supabase) {
-    throw new Error("Supabase chưa được cấu hình cho ứng dụng mobile.");
+function requireFirebaseAuth() {
+  if (!auth) {
+    throw new Error("Firebase chưa được cấu hình cho ứng dụng mobile.");
   }
-  return supabase;
+  return auth;
 }
 
 export function subscribeAuth(callback: (user: AuthUser | null) => void) {
-  if (!supabase) {
+  if (!auth) {
     callback(null);
     return () => undefined;
   }
-  void supabase.auth.getSession().then(({ data }) => callback(mapUser(data.session?.user ?? null)));
-  const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-    const user = session?.user ?? null;
+  return onAuthStateChanged(auth, (user) => {
     callback(mapUser(user));
     if (user) syncRenderProfileInBackground(user);
   });
-  return () => data.subscription.unsubscribe();
 }
 
 export async function getAuthToken(): Promise<string | null> {
-  if (!supabase) return null;
-  const { data, error } = await supabase.auth.getSession();
-  if (error) throw error;
-  return data.session?.access_token ?? null;
+  if (!auth?.currentUser) return null;
+  return auth.currentUser.getIdToken();
 }
 
 export async function loginWithEmail(email: string, password: string): Promise<AuthUser> {
-  const client = requireSupabase();
-  const { data, error } = await client.auth.signInWithPassword({ email: email.trim(), password });
-  if (error) throw error;
-  const mapped = mapUser(data.user);
-  if (!mapped || !data.user) throw new Error("Không thể đọc thông tin đăng nhập.");
-  syncRenderProfileInBackground(data.user);
+  const client = requireFirebaseAuth();
+  const credential = await signInWithEmailAndPassword(client, email.trim(), password);
+  const mapped = mapUser(credential.user);
+  if (!mapped) throw new Error("Không thể đọc thông tin đăng nhập.");
+  syncRenderProfileInBackground(credential.user);
   return mapped;
 }
 
 export async function registerWithEmail(email: string, password: string): Promise<AuthUser> {
-  const client = requireSupabase();
-  const { data, error } = await client.auth.signUp({ email: email.trim(), password });
-  if (error) throw error;
-  const mapped = mapUser(data.user);
-  if (!mapped || !data.user) throw new Error("Không thể đọc thông tin tài khoản mới.");
-  if (data.session) syncRenderProfileInBackground(data.user);
+  const client = requireFirebaseAuth();
+  const credential = await createUserWithEmailAndPassword(client, email.trim(), password);
+  const mapped = mapUser(credential.user);
+  if (!mapped) throw new Error("Không thể đọc thông tin tài khoản mới.");
+  syncRenderProfileInBackground(credential.user);
   return mapped;
 }
 
 export async function resetPasswordEmail(email: string): Promise<void> {
-  const client = requireSupabase();
-  const redirectTo = process.env.EXPO_PUBLIC_PASSWORD_RESET_REDIRECT_URL?.trim();
-  const { error } = await client.auth.resetPasswordForEmail(email.trim(), redirectTo ? { redirectTo } : undefined);
-  if (error) throw error;
+  await sendPasswordResetEmail(requireFirebaseAuth(), email.trim());
 }
 
 export async function loginWithGoogle(): Promise<AuthUser> {
-  const client = requireSupabase();
+  const client = requireFirebaseAuth();
   if (Platform.OS !== "web") {
     throw new Error("Đăng nhập Google trên Android sử dụng Google ID token của ứng dụng.");
   }
-  const redirectTo = typeof window !== "undefined" ? window.location.origin : undefined;
-  const { error } = await client.auth.signInWithOAuth({
-    provider: "google",
-    options: { redirectTo, queryParams: { prompt: "select_account" } }
-  });
-  if (error) throw error;
-  return new Promise<AuthUser>(() => undefined);
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: "select_account" });
+  const credential = await signInWithPopup(client, provider);
+  const mapped = mapUser(credential.user);
+  if (!mapped) throw new Error("Không thể đọc thông tin đăng nhập Google.");
+  syncRenderProfileInBackground(credential.user);
+  return mapped;
 }
 
 export async function loginWithGoogleIdToken(idToken: string): Promise<AuthUser> {
-  const client = requireSupabase();
-  const { data, error } = await client.auth.signInWithIdToken({ provider: "google", token: idToken });
-  if (error) throw error;
-  const mapped = mapUser(data.user);
-  if (!mapped || !data.user) throw new Error("Không thể đọc thông tin đăng nhập Google.");
-  syncRenderProfileInBackground(data.user);
+  const client = requireFirebaseAuth();
+  const credential = GoogleAuthProvider.credential(idToken);
+  const userCredential = await signInWithCredential(client, credential);
+  const mapped = mapUser(userCredential.user);
+  if (!mapped) throw new Error("Không thể đọc thông tin đăng nhập Google.");
+  syncRenderProfileInBackground(userCredential.user);
   return mapped;
 }
 
 export async function logout(): Promise<void> {
-  if (!supabase) return;
-  const { error } = await supabase.auth.signOut();
-  if (error) throw error;
+  if (auth) await signOut(auth);
 }

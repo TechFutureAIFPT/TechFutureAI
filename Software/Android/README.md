@@ -17,14 +17,15 @@ npm run web
 
 ## Environment
 
-The app uses Supabase Auth, PostgreSQL/RLS and Realtime:
+The app uses Firebase Authentication, Cloud Firestore security rules and realtime listeners:
 
 ```bash
-EXPO_PUBLIC_SUPABASE_URL=...
-EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=...
+EXPO_PUBLIC_FIREBASE_API_KEY=...
+EXPO_PUBLIC_FIREBASE_PROJECT_ID=gen-lang-client-0595612537
+EXPO_PUBLIC_FIREBASE_APP_ID=...
 EXPO_PUBLIC_PASSWORD_RESET_REDIRECT_URL=supporthr://reset-password
 ```
 
-The mobile app reads owner-scoped tables through Supabase RLS and keeps the existing backend HTTP API for AI and account workflows. The publishable key is safe for the client; never place the service-role key in this app.
+The mobile app reads owner-scoped collections through Firestore security rules and keeps the backend HTTP API for AI and account workflows. Firebase client configuration is public; never place a Firebase Admin service-account key in this app.
 
 Voice-to-text uses `@react-native-voice/voice` on native dev builds. On web it falls back to browser speech recognition when available, otherwise the typed feedback note remains available.

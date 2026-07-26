@@ -1,4 +1,18 @@
-import { supabase } from "./supabase";
+import {
+  addDoc,
+  collection,
+  doc,
+  getDocs,
+  getFirestore,
+  onSnapshot,
+  query,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+  where
+} from "firebase/firestore";
+
+import { auth, firebaseApp } from "./auth";
 import { mapHistoryToInbox } from "./candidateMapper";
 import type {
   CandidateInbox,
@@ -12,16 +26,19 @@ import type {
 } from "../types";
 import type { DecisionAction } from "../theme/tokens";
 
-export const SUPABASE_TABLES = {
-  users: "profiles",
-  cvHistory: "cv_history",
-  syncedAnalysisHistory: "synced_analysis_history",
-  userJDTemplates: "jd_templates",
-  manualHistory: "manual_history",
-  analysisFeedback: "analysis_feedback",
-  desktopSessions: "desktop_sessions",
-  userSyncState: "user_sync_state"
+export const FIRESTORE_COLLECTIONS = {
+  users: "users",
+  cvHistory: "cvHistory",
+  syncedAnalysisHistory: "syncedAnalysisHistory",
+  userJDTemplates: "userJDTemplates",
+  manualHistory: "CLdl7JGuaOGIuijiDZeG",
+  analysisFeedback: "analysisFeedback",
+  desktopSessions: "desktopSessions",
+  userSyncState: "userSyncState",
+  sessionCommands: "sessionCommands"
 } as const;
+
+const db = firebaseApp ? getFirestore(firebaseApp) : null;
 
 export type DesktopSession = {
   status: "analyzing" | "done" | "idle";
@@ -42,43 +59,35 @@ export function subscribeDesktopSession(
   uid: string,
   onUpdate: (session: DesktopSession | null) => void
 ): () => void {
-  if (!supabase) return () => {};
-  const emit = (raw: unknown) => {
-    const data = asRecord(asRecord(raw).payload || raw) as DesktopSession;
+  if (!db) return () => {};
+  return onSnapshot(doc(db, FIRESTORE_COLLECTIONS.desktopSessions, uid), (snapshot) => {
+    if (!snapshot.exists()) {
+      onUpdate(null);
+      return;
+    }
+    const data = snapshot.data() as DesktopSession;
     const isStale = data.lastHeartbeat && Date.now() - data.lastHeartbeat > 60_000;
     onUpdate(isStale ? null : data);
-  };
-  void supabase.from(SUPABASE_TABLES.desktopSessions).select("payload").eq("id", uid).maybeSingle()
-    .then(({ data }) => data ? emit(data) : onUpdate(null));
-  const channel = supabase.channel(`desktop-session:${uid}`).on(
-    "postgres_changes",
-    { event: "*", schema: "public", table: SUPABASE_TABLES.desktopSessions, filter: `owner_id=eq.${uid}` },
-    (change) => change.eventType === "DELETE" ? onUpdate(null) : emit(change.new)
-  ).subscribe();
-  return () => { void supabase?.removeChannel(channel); };
+  });
 }
 
 export function subscribeUserSyncState(
   uid: string,
   onUpdate: (state: UserSyncState | null) => void
 ): () => void {
-  if (!supabase) return () => {};
-  const emit = (raw: unknown) => {
-    const data = asRecord(asRecord(raw).payload || raw) as Partial<UserSyncState>;
+  if (!db) return () => {};
+  return onSnapshot(doc(db, FIRESTORE_COLLECTIONS.userSyncState, uid), (snapshot) => {
+    if (!snapshot.exists()) {
+      onUpdate(null);
+      return;
+    }
+    const data = snapshot.data() as Partial<UserSyncState>;
     onUpdate({
       latestRevision: String(data.latestRevision || ""),
       lastUpdatedAt: Number(data.lastUpdatedAt || 0),
       lastSource: typeof data.lastSource === "string" ? data.lastSource : undefined
     });
-  };
-  void supabase.from(SUPABASE_TABLES.userSyncState).select("payload").eq("id", uid).maybeSingle()
-    .then(({ data }) => data ? emit(data) : onUpdate(null));
-  const channel = supabase.channel(`user-sync-state:${uid}`).on(
-    "postgres_changes",
-    { event: "*", schema: "public", table: SUPABASE_TABLES.userSyncState, filter: `owner_id=eq.${uid}` },
-    (change) => change.eventType === "DELETE" ? onUpdate(null) : emit(change.new)
-  ).subscribe();
-  return () => { void supabase?.removeChannel(channel); };
+  });
 }
 
 export async function sendSessionCommand(
@@ -86,38 +95,29 @@ export async function sendSessionCommand(
   command: "approve_all_a" | "view_results" | "ping",
   payload?: Record<string, unknown>
 ): Promise<void> {
-  if (!supabase) return;
-  const commandPayload = {
+  if (!db) return;
+  await setDoc(doc(db, FIRESTORE_COLLECTIONS.sessionCommands, uid), {
     command,
     payload: payload ?? {},
     sentAt: Date.now(),
     source: "mobile"
-  };
-  const { error } = await supabase.from("session_commands").upsert({
-    id: uid,
-    owner_id: uid,
-    payload: commandPayload,
-    source_payload: commandPayload,
-    updated_at: new Date().toISOString()
   });
-  if (error) throw error;
 }
 
 async function requireUser() {
-  if (!supabase) throw new Error("Supabase chưa được cấu hình cho ứng dụng mobile.");
-  const { data, error } = await supabase.auth.getUser();
-  const user = data.user;
-  if (error || !user) {
-    throw new Error("Bạn cần đăng nhập Supabase để đọc dữ liệu.");
+  const user = auth?.currentUser;
+  if (!db || !user) {
+    throw new Error("Bạn cần đăng nhập Firebase để đọc dữ liệu.");
   }
   return user;
 }
 
-async function fetchPayloadRows(table: string, uid: string): Promise<Array<{ id: string; payload: unknown }>> {
-  if (!supabase) return [];
-  const { data, error } = await supabase.from(table).select("id,payload").eq("owner_id", uid);
-  if (error) throw error;
-  return (data || []) as Array<{ id: string; payload: unknown }>;
+async function fetchDocumentRows(collectionName: string, uid: string): Promise<Array<{ id: string; payload: unknown }>> {
+  if (!db) return [];
+  const snapshot = await getDocs(
+    query(collection(db, collectionName), where("uid", "==", uid))
+  );
+  return snapshot.docs.map((item) => ({ id: item.id, payload: item.data() }));
 }
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -365,7 +365,7 @@ function normalizeManualHistoryEntry(raw: unknown, id: string): HistoryEntry {
 
 async function fetchManualHistoryEntries(userUid: string): Promise<HistoryEntry[]> {
   try {
-    const rows = await fetchPayloadRows(SUPABASE_TABLES.manualHistory, userUid);
+    const rows = await fetchDocumentRows(FIRESTORE_COLLECTIONS.manualHistory, userUid);
     return rows.map((item) => normalizeManualHistoryEntry(item.payload, item.id));
   } catch (error) {
     console.warn("Không thể đọc collection lịch sử thủ công trên mobile.", error);
@@ -416,12 +416,12 @@ function normalizeTemplate(raw: unknown, id: string): UserJDTemplate {
   };
 }
 
-export async function fetchSupabaseFilterHistory(limitCount = 12): Promise<FilterHistorySession[]> {
+export async function fetchFirestoreFilterHistory(limitCount = 12): Promise<FilterHistorySession[]> {
   const user = await requireUser();
   const [cvRows, syncRows, manualEntries] = await Promise.all([
-    fetchPayloadRows(SUPABASE_TABLES.cvHistory, user.id),
-    fetchPayloadRows(SUPABASE_TABLES.syncedAnalysisHistory, user.id),
-    fetchManualHistoryEntries(user.id)
+    fetchDocumentRows(FIRESTORE_COLLECTIONS.cvHistory, user.uid),
+    fetchDocumentRows(FIRESTORE_COLLECTIONS.syncedAnalysisHistory, user.uid),
+    fetchManualHistoryEntries(user.uid)
   ]);
 
   const entries = [
@@ -433,12 +433,12 @@ export async function fetchSupabaseFilterHistory(limitCount = 12): Promise<Filte
   return normalizeFilterHistory(entries).slice(0, limitCount);
 }
 
-export async function fetchSupabaseCandidateInbox(limitCount = 30): Promise<CandidateInbox> {
+export async function fetchFirestoreCandidateInbox(limitCount = 30): Promise<CandidateInbox> {
   const user = await requireUser();
   const [cvRows, syncRows, manualEntries] = await Promise.all([
-    fetchPayloadRows(SUPABASE_TABLES.cvHistory, user.id),
-    fetchPayloadRows(SUPABASE_TABLES.syncedAnalysisHistory, user.id),
-    fetchManualHistoryEntries(user.id)
+    fetchDocumentRows(FIRESTORE_COLLECTIONS.cvHistory, user.uid),
+    fetchDocumentRows(FIRESTORE_COLLECTIONS.syncedAnalysisHistory, user.uid),
+    fetchManualHistoryEntries(user.uid)
   ]);
 
   const entries = [
@@ -452,68 +452,53 @@ export async function fetchSupabaseCandidateInbox(limitCount = 30): Promise<Cand
   return mapHistoryToInbox(entries);
 }
 
-export async function fetchSupabaseJDTemplates(): Promise<UserJDTemplate[]> {
+export async function fetchFirestoreJDTemplates(): Promise<UserJDTemplate[]> {
   const user = await requireUser();
-  const rows = await fetchPayloadRows(SUPABASE_TABLES.userJDTemplates, user.id);
+  const rows = await fetchDocumentRows(FIRESTORE_COLLECTIONS.userJDTemplates, user.uid);
   return rows
     .map((item) => normalizeTemplate(item.payload, item.id))
     .sort((left, right) => toMillis(right.updatedAt) - toMillis(left.updatedAt));
 }
 
-export async function createSupabaseJDTemplate(input: JDTemplateInput): Promise<UserJDTemplate> {
+export async function createFirestoreJDTemplate(input: JDTemplateInput): Promise<UserJDTemplate> {
   const user = await requireUser();
-  const now = new Date().toISOString();
-  const id = `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
   const payload = {
-    uid: user.id,
+    uid: user.uid,
     name: input.name,
     category: input.category,
     jobPosition: input.jobPosition,
     jdText: input.jdText,
     hardFilters: input.hardFilters || {},
-    createdAt: now,
-    updatedAt: now
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
   };
-  const { error } = await supabase!.from(SUPABASE_TABLES.userJDTemplates).insert({
-    id,
-    owner_id: user.id,
-    payload,
-    source_payload: payload,
-    source_collection: "mobile-runtime",
-    source_document_id: id
-  });
-  if (error) throw error;
-  return normalizeTemplate(payload, id);
+  const reference = await addDoc(collection(db!, FIRESTORE_COLLECTIONS.userJDTemplates), payload);
+  return normalizeTemplate({ ...payload, createdAt: Date.now(), updatedAt: Date.now() }, reference.id);
 }
 
-export async function updateSupabaseJDTemplate(
+export async function updateFirestoreJDTemplate(
   templateId: string,
   input: Partial<JDTemplateInput>
 ): Promise<boolean> {
-  const user = await requireUser();
-  const { data: current, error: readError } = await supabase!.from(SUPABASE_TABLES.userJDTemplates)
-    .select("payload").eq("id", templateId).eq("owner_id", user.id).single();
-  if (readError) throw readError;
-  const payload = { ...asRecord(current?.payload), ...input, uid: user.id, updatedAt: new Date().toISOString() };
-  const { error } = await supabase!.from(SUPABASE_TABLES.userJDTemplates)
-    .update({ payload, updated_at: new Date().toISOString() })
-    .eq("id", templateId).eq("owner_id", user.id);
-  if (error) throw error;
+  await requireUser();
+  await updateDoc(doc(db!, FIRESTORE_COLLECTIONS.userJDTemplates, templateId), {
+    ...input,
+    updatedAt: serverTimestamp()
+  });
   return true;
 }
 
-export async function saveSupabaseDecisionFeedback(
+export async function saveFirestoreDecisionFeedback(
   candidate: CandidateView,
   action: DecisionAction,
   notes: string
 ): Promise<string> {
   const user = await requireUser();
-  const id = `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
   const feedbackPayload = {
-    uid: user.id,
+    uid: user.uid,
     userEmail: user.email || "",
-    displayName: String(user.user_metadata?.full_name || user.user_metadata?.name || ""),
-    photoUrl: String(user.user_metadata?.avatar_url || user.user_metadata?.picture || ""),
+    displayName: user.displayName || "",
+    photoUrl: user.photoURL || "",
     sessionId: candidate.sessionId || null,
     historyId: candidate.sourceHistoryId || null,
     syncHistoryId: candidate.syncHistoryId || null,
@@ -531,23 +516,13 @@ export async function saveSupabaseDecisionFeedback(
     notes: notes.trim(),
     metadata: {
       source: "support-hr-mobile-v2",
-      storage: "supabase-direct",
+      storage: "firestore-direct",
       decisionMode: "one-touch",
       voiceNote: notes.trim().length > 0
     },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
   };
-  const { error } = await supabase!.from(SUPABASE_TABLES.analysisFeedback).insert({
-    id,
-    owner_id: user.id,
-    action,
-    job_position: candidate.jobPosition || candidate.jobTitle,
-    payload: feedbackPayload,
-    source_payload: feedbackPayload,
-    source_collection: "mobile-runtime",
-    source_document_id: id
-  });
-  if (error) throw error;
-  return id;
+  const reference = await addDoc(collection(db!, FIRESTORE_COLLECTIONS.analysisFeedback), feedbackPayload);
+  return reference.id;
 }

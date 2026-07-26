@@ -4,8 +4,9 @@ import path from "node:path";
 const envFiles = [".env", ".env.local", ".env.production"];
 const required = [
   "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID",
-  "EXPO_PUBLIC_SUPABASE_URL",
-  "EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
+  "EXPO_PUBLIC_FIREBASE_API_KEY",
+  "EXPO_PUBLIC_FIREBASE_PROJECT_ID",
+  "EXPO_PUBLIC_FIREBASE_APP_ID"
 ];
 const recommended = ["EXPO_PUBLIC_API_URL", "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID"];
 const fileValues = new Map();
@@ -42,7 +43,7 @@ const missingRecommended = recommended.filter((key) => !valueFor(key));
 
 if (missing.length > 0) {
   console.error(`Missing release env: ${missing.join(", ")}`);
-  console.error("Android release requires Supabase credentials and the Google OAuth client ID for com.supporthr.companion.");
+  console.error("Android release requires Firebase client configuration and the Google OAuth client ID for com.supporthr.companion.");
   process.exit(1);
 }
 

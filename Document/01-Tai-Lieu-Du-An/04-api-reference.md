@@ -342,7 +342,7 @@ Tat ca route account nam sau:
 /api/account
 ```
 
-Và thường cần `Authorization: Bearer <access_token>`; issuer là Supabase, còn route/request/response giữ nguyên.
+Và thường cần `Authorization: Bearer <access_token>`; issuer là Firebase, còn route/request/response giữ nguyên.
 
 ### Settings va dong bo an toan
 

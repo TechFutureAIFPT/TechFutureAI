@@ -19,7 +19,7 @@
 | Backend | [`Software/Web/BE/api_server/app/main.py`](../../Software/Web/BE/api_server/app/main.py) | FastAPI app, middleware và router registration |
 | Backend routes | [`Software/Web/BE/api_server/app/api/routes`](../../Software/Web/BE/api_server/app/api/routes) | `/api/files`, AI/CV/JD, account, mobile JD và salary |
 | Backend logic | [`Software/Web/BE/api_server/app/services`](../../Software/Web/BE/api_server/app/services) | AI, OCR, scoring, feedback và workflow services |
-| Data layer | [`Software/Web/BE/api_server/app/repositories`](../../Software/Web/BE/api_server/app/repositories) | PostgreSQL/persistence boundaries |
+| Data layer | [`Software/Web/BE/api_server/app/repositories`](../../Software/Web/BE/api_server/app/repositories) | Cloud Firestore/persistence boundaries |
 | ML pipeline | [`Software/Web/ml_pipeline`](../../Software/Web/ml_pipeline) | Dataset, training scripts và artifacts |
 | Android | [`Software/Android/src/App.tsx`](../../Software/Android/src/App.tsx) | App shell và navigation mobile |
 | Android screens | [`Software/Android/src/screens`](../../Software/Android/src/screens) | Quick CV, JD standardizer, advisor, inbox, records, templates và tools |
@@ -28,9 +28,9 @@
 ## Stack hiện tại
 
 - Web: React 19 + TypeScript + Vite 6.
-- Backend: FastAPI + Pydantic + Supabase service role + Gemini integrations.
+- Backend: FastAPI + Pydantic + Firebase Admin service account + Gemini integrations.
 - Mobile: Expo/React Native, package `com.supporthr.companion`.
-- Data/auth: Supabase Auth và PostgreSQL, cùng cache/integration tùy môi trường.
+- Data/auth: Firebase Authentication và Cloud Firestore, cùng cache/integration tùy môi trường.
 
 ## Ranh giới Git
 

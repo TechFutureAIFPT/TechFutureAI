@@ -339,7 +339,7 @@ export async function upsertRenderUserProfile(authToken: string, user: AuthUser)
       email: user.email,
       displayName: user.displayName || user.email.split("@")[0] || "",
       avatar: user.photoUrl || "",
-      provider: "supabase-auth"
+      provider: "firebase-auth"
     },
     { authToken }
   );

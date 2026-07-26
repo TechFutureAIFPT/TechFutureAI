@@ -1,0 +1,71 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // users â€” doc ID is the owner's uid, stores recruiter profile fields
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // candidateSchedules â€” doc ID is "{uid}_{candidateId}"
+    match /candidateSchedules/{docId} {
+      allow read, write: if request.auth != null && resource.data.uid == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
+    }
+
+    // desktopSessions â€” doc ID is the owner's uid
+    // Web writes session state; mobile reads the same session
+    match /desktopSessions/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // sessionCommands â€” doc ID is the owner's uid
+    // Mobile writes commands; web reads and executes them
+    match /sessionCommands/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // userSyncState - backend updates revision, clients subscribe for lightweight refresh triggers
+    match /userSyncState/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // userJDTemplates â€” uid field on each document
+    // Web reads as fallback when backend is down; mobile reads and writes
+    match /userJDTemplates/{docId} {
+      allow read: if request.auth != null && resource.data.uid == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if request.auth != null && resource.data.uid == request.auth.uid;
+    }
+
+    // cvHistory â€” uid field, read-only from clients (backend writes via Admin SDK)
+    match /cvHistory/{docId} {
+      allow read: if request.auth != null && resource.data.uid == request.auth.uid;
+      allow write: if false;
+    }
+
+    // syncedAnalysisHistory â€” uid field, read-only from clients
+    match /syncedAnalysisHistory/{docId} {
+      allow read: if request.auth != null && resource.data.uid == request.auth.uid;
+      allow write: if false;
+    }
+
+    // manualHistory (obfuscated ID) â€” uid field, read-only from clients
+    match /CLdl7JGuaOGIuijiDZeG/{docId} {
+      allow read: if request.auth != null && resource.data.uid == request.auth.uid;
+      allow write: if false;
+    }
+
+    // analysisFeedback â€” mobile creates feedback, uid must match caller
+    match /analysisFeedback/{docId} {
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
+      allow read, update, delete: if false;
+    }
+
+    // All other collections are backend-only (Admin SDK bypasses rules)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

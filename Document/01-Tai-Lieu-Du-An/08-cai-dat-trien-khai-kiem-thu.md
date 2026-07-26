@@ -1,6 +1,6 @@
 # 08 - Cai dat, trien khai va kiem thu
 
-> Quy trình release Supabase, rehearsal, cutover, PITR và rollback nằm tại `13-supabase-migration-runbook.md`. Không bật provider Supabase nếu chưa có Web FE, Auth import, SQL/RLS và reconciliation thành công.
+> Quy trình khôi phục Firebase và loại bỏ provider cũ nằm tại `13-firebase-restoration-runbook.md`.
 
 ## Chay backend local
 
@@ -68,10 +68,12 @@ Chi tiet va lenh rollout nam trong `deploy/kubernetes/README.md`.
 
 ## Bien moi truong backend toi thieu
 
-Can co Supabase:
+Can co Firebase:
 
 ```text
-SUPABASE_URL
+FIREBASE_PROJECT_ID
+FIREBASE_SERVICE_ACCOUNT_JSON
+FIREBASE_SERVICE_ACCOUNT_JSON
 DATABASE_URL
 DATA_ENCRYPTION_KEY
 ```
@@ -99,11 +101,10 @@ Thu muc:
 Software/Web/FE
 ```
 
-Lenh:
+Frontend là static SPA, không cần cài dependency hoặc build. Serve thư mục tại cổng đã nằm trong CORS allowlist của backend:
 
-```bash
-npm install
-npm run dev
+```powershell
+python -m http.server 5173
 ```
 
 Frontend local thuong la:
@@ -112,27 +113,16 @@ Frontend local thuong la:
 http://localhost:5173
 ```
 
-Neu can tro FE vao backend rieng:
+Muốn đổi backend hoặc cấu hình Firebase Authentication, sửa public config:
 
 ```text
-VITE_API_URL=http://localhost:8000
+Software/Web/FE/config.js
 ```
 
 ## Build frontend
 
-```bash
-npm run build
-```
-
-Script trong `package.json`:
-
-```json
-{
-  "build": "tsc && vite build"
-}
-```
-
-Nghia la build se check TypeScript truoc, roi Vite build sau.
+Không có bước build. Artifact deploy chính là `index.html`, `config.js`, `assets/`, `images/`, `robots.txt` và `sitemap.xml`.
+Kiểm tra bằng static server, route smoke test, console errors, responsive và API contract.
 
 ## Deploy backend khong phu thuoc Render
 
@@ -161,7 +151,7 @@ Tao `/opt/supporthr/shared/supporthr-secret.env` tu `deploy/vps/k3s-secret.env.e
 Sau do chay `deploy/vps/prepare-k3s-secrets.sh`. Can set:
 
 - Gemini keys.
-- Supabase URL, Supavisor pooled database URL va data encryption key.
+- Firebase project ID, Supavisor pooled database URL va data encryption key.
 - Google OAuth credentials.
 - Google API keys.
 
@@ -191,27 +181,38 @@ GitHub environment `production` can secrets `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY
 `VPS_PORT`, va variables `API_DOMAIN`, `ACME_EMAIL`. Chi bat `ENABLE_K3S_DEPLOY=true` sau khi VM, DNS,
 runtime secret va `ghcr-pull` da san sang. Build `main` thanh cong se tu deploy tag `sha-*`.
 
-`render.yaml` duoc giu tam trong giai doan cutover. Sau khi endpoint K3s dat du smoke test, FE/Android da doi API URL
-va rollback da duoc thu, xoa service Render va blueprint legacy.
+`Software/Web/BE/render.yaml` hien la kenh demo tam thoi tren Render Free: mot web service, health check
+`/health/live`, va `ANALYSIS_JOB_MODE=in_process`; blueprint khong tao worker hoac Redis tra phi.
+Can nap secret runtime tren Render va `/health/ready` phai pass truoc khi noi day la backend day du.
+K3s/VPS van la dich production. Sau khi endpoint K3s dat du smoke test, FE/Android da doi API URL va rollback
+da duoc thu, co the xoa service Render va blueprint tam thoi.
 
-## Deploy frontend Vercel
+### Cau hinh demo Render/Firebase hien tai
 
-File:
+- Render service: `backendsupporthr`, region Singapore, API public `https://backendsupporthr.onrender.com`.
+- Firebase project: `gen-lang-client-0595612537`.
+- Database runtime dung Supavisor session pooler; khong commit connection string hoac mat khau database.
+- Firebase Authentication cho phep redirect tai domain production, Vercel cu va localhost da liet ke trong dashboard.
+- Google OAuth và Firebase Authentication phải cho phép các domain frontend production.
+- Sau moi lan thay env, phai deploy lai va xac nhan `/health/live=200`, `/health/ready=200` truoc khi noi FE vao.
 
-```text
-Software/Web/FE/vercel.json
-```
+Xac nhan demo ngay 2026-07-25:
 
-Rewrite:
+- Render deploy `67425aa` da live; `/health/live`, `/health/ready` va `/health` deu tra HTTP 200.
+- Classifier `cv-industry-24-v1` san sang voi 24 nhan; queue chay `in_process`.
+- Cloud Firestore pooler ket noi thanh cong; schema public co 29 bang va co `pgcrypto`, `vector`.
+- Firebase JWKS dung ES256; Email va Google Auth deu bat. Google OAuth khong con `redirect_uri_mismatch`.
 
-- `/privacy-policy` -> `/privacy-policy.html`
-- `/terms` -> `/terms.html`
-- Tat ca route khac khong phai `/api/` -> `/index.html`
+## Deploy frontend Cloudflare Pages
 
-Y nghia:
+Frontend là static site nên không cần file cấu hình platform hoặc bước build:
 
-- React Router co the refresh truc tiep o `/analysis`, `/dashboard`, ...
-- Vercel khong bi 404 khi SPA route.
+- Framework preset: `None`.
+- Build command: để trống hoặc `exit 0`.
+- Build output directory: thư mục gốc repo (`.`).
+- Không tạo `404.html`; Cloudflare Pages tự fallback các route như `/analysis`, `/workspace`, ... về `index.html`.
+
+Direct Upload có thể nhận trực tiếp thư mục `Software/Web/FE`.
 
 ## Train ML pipeline
 
@@ -331,7 +332,7 @@ Tests trong repo dang tap trung vao:
 
 ## Performance configuration va load gate
 
-Bien can tune theo quota Supabase/Redis va so process:
+Bien can tune theo quota Firebase/Redis va so process:
 
 ```text
 POSTGRES_POOL_MIN_SIZE=1
@@ -354,7 +355,7 @@ Chay contract test va load test doc an toan:
 ```powershell
 cd Software\Web\BE\api_server
 .\venv\Scripts\python.exe -m pytest -q
-k6 run -e BASE_URL=http://127.0.0.1:8000 -e ACCESS_TOKEN=<supabase_access_token> loadtests\k6-critical-api.js
+k6 run -e BASE_URL=http://127.0.0.1:8000 -e ACCESS_TOKEN=<firebase_id_token> loadtests\k6-critical-api.js
 ```
 
 Gate mac dinh k6: error < 1%, check > 99%, p95 < 750 ms va p99 < 1500 ms. Day chi la gate ban dau;
@@ -368,7 +369,7 @@ Truoc khi thuyet trinh:
 
 - Backend `/health` tra `ok`.
 - Frontend chay duoc.
-- Dang nhap Supabase duoc.
+- Dang nhap Firebase duoc.
 - Upload mot JD va mot CV mau duoc.
 - `/api/files/extract-text` tra text.
 - Analysis job ve `completed`.
@@ -378,17 +379,17 @@ Truoc khi thuyet trinh:
 
 ## Loi thuong gap
 
-### Backend 401 Supabase
+### Backend 401 Firebase
 
 Nguyen nhan:
 
-- Thieu `SUPABASE_URL` hoac JWKS/redirect config sai.
+- Thieu `FIREBASE_PROJECT_ID` hoac JWKS/redirect config sai.
 - Token frontend het han.
-- Domain/cau hinh Supabase sai.
+- Domain/cau hinh Firebase sai.
 
 Huong xu ly:
 
-- Kiem tra env Supabase backend.
+- Kiem tra env Firebase backend.
 - Dang xuat/dang nhap lai.
 - Kiem tra `Authorization` header.
 

@@ -186,7 +186,7 @@ export function HomeShowcase() {
           </View>
           <View className="p-4">
             {[
-              ["Trần Tuấn A", "React, Supabase, kiến trúc rõ ràng", "A"],
+              ["Trần Tuấn A", "React, Firebase, kiến trúc rõ ràng", "A"],
               ["Nguyễn Minh B", "UI component, JavaScript hiện đại", "B"]
             ].map(([name, desc, rank]) => (
               <View

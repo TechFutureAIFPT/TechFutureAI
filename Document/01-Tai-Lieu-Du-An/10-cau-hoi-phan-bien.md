@@ -8,7 +8,7 @@ Khong. SupportHR la cong cu ho tro, khong phai nguoi ra quyet dinh cuoi cung. He
 
 Vi backend giup:
 
-- Bao ve API key va Supabase service role credentials.
+- Bao ve API key va Firebase Admin service account credentials.
 - Verify token nguoi dung an toan.
 - Luu history/cache/feedback theo user.
 - Chay OCR, classifier, RAG va scoring phuc tap.
@@ -74,15 +74,15 @@ RAG dung de dua cac exemplar da duyet vao context khi cham CV moi. Neu CV moi ga
 
 ## 9. Vector database da co chua?
 
-Hien code co vector store service va co the doc vector tu JSON/PostgreSQL. Day la vector library/vector search noi bo bang cosine similarity, chua phai vector DB chuyen dung nhu Pinecone/Qdrant/pgvector. Sau nay co the thay tang luu tru bang vector DB that ma van giu logic nghiep vu.
+Hien code co vector store service va co the doc vector tu JSON/Cloud Firestore. Day la vector library/vector search noi bo bang cosine similarity, chua phai vector DB chuyen dung nhu Pinecone/Qdrant/Firestore vector search. Sau nay co the thay tang luu tru bang vector DB that ma van giu logic nghiep vu.
 
 ## 10. Du lieu nguoi dung co an toan khong?
 
 Nhung diem an toan hien co:
 
-- Supabase Auth dang nhap.
+- Firebase Authentication dang nhap.
 - Backend verify Bearer token.
-- Du lieu PostgreSQL gan theo `uid`.
+- Du lieu Cloud Firestore gan theo `uid`.
 - Secret nam trong env backend.
 - `.env.example` khong chua key that.
 
@@ -112,11 +112,11 @@ Co muc fallback co ban. Neu Gemini analysis loi, backend co `build_rule_based_fa
 
 Backend luu hash cho JD, weights va filters. Neu cac dau vao thay doi, cache key/hash se khac, tranh dung lai ket qua cu khong phu hop.
 
-## 14. Tai sao dung PostgreSQL?
+## 14. Tai sao dung Cloud Firestore?
 
-PostgreSQL phu hop vi:
+Cloud Firestore phu hop vi:
 
-- De ket hop Supabase Auth.
+- De ket hop Firebase Authentication.
 - Luu document JSON linh hoat.
 - Phu hop history/cache/chatbot/feedback.
 - Khong can setup database server rieng khi demo/deploy nhanh.
@@ -175,7 +175,7 @@ Diem manh la du an co pipeline tu dau den cuoi:
 - OCR va Google Drive import.
 - AI scoring co giai thich.
 - Classifier va RAG bo tro.
-- PostgreSQL luu history/cache/feedback.
+- Cloud Firestore luu history/cache/feedback.
 - Co test cho cac phan quan trong.
 
 ## Cau ket khi bi hoi kho

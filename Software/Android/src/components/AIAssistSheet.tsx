@@ -75,7 +75,7 @@ export function AIAssistSheet({
               <View className="min-w-0 flex-1">
                 <Text className="text-2xl font-semibold" style={{ color: colors.textPrimary }}>AI Assist</Text>
                 <MutedText className="mt-1">
-                  Câu hỏi phỏng vấn và gợi ý lương từ dữ liệu Supabase đã đồng bộ.
+                  Câu hỏi phỏng vấn và gợi ý lương từ dữ liệu Firebase đã đồng bộ.
                 </MutedText>
               </View>
             </View>

@@ -4,16 +4,16 @@ Ma trận này giúp thay đổi code kéo theo đúng tài liệu, và tài li�
 
 | Năng lực | Tài liệu giải thích | Code anchors | Cập nhật tài liệu khi |
 | --- | --- | --- | --- |
-| Tổng quan sản phẩm | `01-tong-quan-du-an.md` | `Web/FE/src/app/App.tsx`, `Android/src/App.tsx` | Thêm/bỏ workflow hoặc đổi vai trò Web/Mobile |
-| Kiến trúc | `02-kien-truc-he-thong.md` | `BE/api_server/app/main.py`, `FE/src/app/App.tsx`, `Android/src` | Thêm service, integration, runtime hoặc thay boundary |
+| Tổng quan sản phẩm | `01-tong-quan-du-an.md` | `Web/FE/assets/js/{app,pages,content}.js`, `Android/src/App.tsx` | Thêm/bỏ workflow hoặc đổi vai trò Web/Mobile |
+| Kiến trúc | `02-kien-truc-he-thong.md` | `BE/api_server/app/main.py`, `FE/{index.html,assets/js}`, `Android/src` | Thêm service, integration, runtime hoặc thay boundary |
 | Backend | `03-backend-be-tu-a-z.md` | `BE/api_server/app/{api,services,repositories,integrations}` | Đổi cấu trúc layer hoặc trách nhiệm service |
 | API | `04-api-reference.md` | `BE/api_server/app/api/routes` | Thêm, xóa, đổi path, auth hoặc schema endpoint |
-| Frontend | `05-frontend-fe-tu-a-z.md` | `FE/src/{app,pages,features,services}` | Đổi route, AppStep, state hoặc API client |
+| Frontend | `05-frontend-fe-tu-a-z.md` | `FE/{README.md,index.html,config.js,assets/css,assets/js}`, `Frontend/{README.md,index.html,pages/{app,functions,information},css,js}` | Đổi route, workflow, state, API client hoặc nội dung trang |
 | AI/ML | `06-ai-ml-pipeline.md` | `BE/api_server/app/{core,services,models}`, `BE/ml_pipeline` | Đổi model, prompt pipeline, scoring, RAG hoặc artifact |
-| Auth/dữ liệu | `07-database-auth-storage.md` | `BE/api_server/app/repositories`, Supabase config | Đổi collection, ownership, auth hoặc retention |
-| Legacy source -> Supabase | `13-supabase-migration-runbook.md` | `BE/supabase/migrations`, `BE/api_server/scripts/legacy_source_supabase_migration.py`, `BE/api_server/app/integrations`, `Android/src/services` | Đổi schema, RLS, importer, cutover hoặc rollback |
-| Chạy/deploy/test | `08-cai-dat-trien-khai-kiem-thu.md` | `package.json`, `render.yaml`, `BE/api_server/Dockerfile`, `BE/docker-compose.yml`, `BE/deploy/kubernetes`, `vercel.json`, `eas.json` | Đổi lệnh, biến môi trường, platform hoặc release gate |
-| Backend scale audit | `12-backend-scale-audit.md` | `BE/api_server/app`, `BE/api_server/loadtests`, `BE/supabase/migrations`, `BE/deploy/kubernetes`, `BE/docker-compose.yml` | Đổi pool, cache, pagination, queue, worker, compression, autoscaling, observability hoặc production gap |
+| Auth/dữ liệu | `07-database-auth-storage.md` | `BE/api_server/app/repositories`, Firebase config | Đổi collection, ownership, auth hoặc retention |
+| Firebase source of truth | `13-firebase-restoration-runbook.md` | `Project-Rules/firebase`, `BE/api_server/app/integrations`, `BE/api_server/app/repositories/firestore`, `Android/src/services` | Đổi schema, Security Rules, auth, cutover hoặc rollback |
+| Chạy/deploy/test | `08-cai-dat-trien-khai-kiem-thu.md` | `FE/{README.md,index.html,config.js}`, `BE/api_server/Dockerfile`, `BE/docker-compose.yml`, `BE/compose.production.yaml`, `BE/.github/workflows/{container-image,deploy-vps}.yml`, `BE/deploy/{vps,kubernetes}`, `eas.json` | Đổi lệnh, biến môi trường, platform hoặc release gate |
+| Backend scale audit | `12-backend-scale-audit.md` | `BE/api_server/app`, `BE/api_server/loadtests`, `Project-Rules/firebase`, `BE/deploy/{vps,kubernetes}`, `BE/{docker-compose.yml,compose.production.yaml}` | Đổi cache, pagination, queue, worker, compression, autoscaling, observability hoặc production gap |
 | Demo | `09-kich-ban-thuyet-trinh-demo.md` | FE routes và dữ liệu demo đã kiểm tra | Luồng demo hoặc màn hình thay đổi |
 | Phản biện | `10-cau-hoi-phan-bien.md` | Code/config chứng minh câu trả lời | Một tuyên bố kỹ thuật không còn đúng |
 

@@ -25,7 +25,7 @@ import { NotificationsScreen } from "./screens/NotificationsScreen";
 import { JDStandardizerScreen } from "./screens/JDStandardizerScreen";
 import { JDStandardizerResultScreen } from "./screens/JDStandardizerResultScreen";
 import { subscribeAuth } from "./services/auth";
-import { subscribeDesktopSession, subscribeUserSyncState } from "./services/supabaseStore";
+import { subscribeDesktopSession, subscribeUserSyncState } from "./services/firebaseStore";
 import { ThemeProvider, useAppTheme } from "./theme/ThemeContext";
 import { useRecruiterStore } from "./store/useRecruiterStore";
 import type { JDStandardizeResponse } from "./types";
