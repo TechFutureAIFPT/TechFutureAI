@@ -41,3 +41,32 @@ __pycache__/
 # Misc
 *.local
 tmpclaude-*
+
+# Local agent worktrees, skills, and governance configs (Private/Sensitive)
+.agents/
+.claude/
+.cursorrules
+Software/.agents/
+configs/
+.git_subrepos_backup/
+~$*
+**/~$*
+
+# Sensitive project documentation & competition reports (Private/Sensitive)
+Document/
+
+# Hidden local mirror retained only while Windows locks the migrated legacy rules
+Software/Project-Rules/
+
+# Trash and generated test artifacts
+.codex-trash/
+**/tests/artifacts/
+**/screenshots/
+*.log
+.vscode/
+.vercel/
+config.local.js
+.venv/
+venv/
+*.pyc
+

@@ -1,0 +1,436 @@
+/* ============================================================
+   CV Match — Motion library
+   Nguyên tắc: animation tinh tế, không che trạng thái dữ liệu,
+   không làm chậm workflow, tôn trọng prefers-reduced-motion.
+   ============================================================ */
+
+/* ---------- Keyframes ---------- */
+
+@keyframes shr-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes shr-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes shr-rise-sm {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes shr-slide-left {
+  from {
+    opacity: 0;
+    transform: translate3d(16px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes shr-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shr-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-4px);
+  }
+  40% {
+    transform: translateX(4px);
+  }
+  60% {
+    transform: translateX(-2px);
+  }
+  80% {
+    transform: translateX(2px);
+  }
+}
+
+@keyframes shr-shimmer {
+  0% {
+    background-position: -420px 0;
+  }
+  100% {
+    background-position: 420px 0;
+  }
+}
+
+@keyframes shr-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes shr-pulse-ring {
+  0% {
+    transform: scale(0.85);
+    opacity: 0.7;
+  }
+  70% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+@keyframes shr-progress-stripes {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 32px 0;
+  }
+}
+
+@keyframes shr-count-tick {
+  0% {
+    transform: translateY(40%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes shr-bar-grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes shr-toast-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 16px, 0) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes shr-toast-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0) scale(0.98);
+  }
+}
+
+@keyframes shr-scrim-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes shr-modal-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 20px, 0) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes shr-drawer-in {
+  from {
+    transform: translate3d(-100%, 0, 0);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes shr-marquee-dot {
+  0%,
+  80%,
+  100% {
+    transform: scale(0.6);
+    opacity: 0.4;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes shr-sheen {
+  0% {
+    transform: translateX(-120%) skewX(-18deg);
+  }
+  100% {
+    transform: translateX(320%) skewX(-18deg);
+  }
+}
+
+/* ---------- Applied helpers ---------- */
+
+.anim-fade {
+  animation: shr-fade-in var(--d-base) var(--ease-standard) both;
+}
+.anim-rise {
+  animation: shr-rise var(--d-slow) var(--ease-out) both;
+}
+.anim-rise-sm {
+  animation: shr-rise-sm var(--d-base) var(--ease-out) both;
+}
+.anim-pop {
+  animation: shr-pop var(--d-base) var(--ease-spring) both;
+}
+.anim-slide-left {
+  animation: shr-slide-left var(--d-slow) var(--ease-out) both;
+}
+
+/* Stagger: đặt --i trên phần tử con để tạo hiệu ứng cascade */
+[style*="--i"] {
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+
+.stagger > * {
+  animation: shr-rise-sm var(--d-slow) var(--ease-out) both;
+}
+.stagger > *:nth-child(1) { animation-delay: 20ms; }
+.stagger > *:nth-child(2) { animation-delay: 65ms; }
+.stagger > *:nth-child(3) { animation-delay: 110ms; }
+.stagger > *:nth-child(4) { animation-delay: 155ms; }
+.stagger > *:nth-child(5) { animation-delay: 200ms; }
+.stagger > *:nth-child(6) { animation-delay: 245ms; }
+.stagger > *:nth-child(7) { animation-delay: 290ms; }
+.stagger > *:nth-child(8) { animation-delay: 335ms; }
+.stagger > *:nth-child(n + 9) { animation-delay: 380ms; }
+
+/* Page transition — router gắn class này lên #view khi đổi route */
+.view-enter {
+  animation: shr-rise var(--d-slow) var(--ease-out) both;
+}
+.view-leave {
+  animation: shr-fade-in var(--d-fast) var(--ease-in) reverse both;
+}
+
+/* Route progress bar (top của viewport) */
+.route-progress {
+  position: fixed;
+  inset: 0 auto auto 0;
+  height: 3px;
+  width: 0;
+  background: linear-gradient(90deg, #3b82f6, #6366f1, #2563eb);
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.75), 0 0 4px rgba(99, 102, 241, 0.5);
+  z-index: 9999;
+  opacity: 0;
+  transition: width 350ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 200ms ease;
+  pointer-events: none;
+}
+.route-progress.is-active {
+  opacity: 1;
+  width: 78%;
+}
+.route-progress.is-done {
+  opacity: 0;
+  width: 100%;
+  transition: width 150ms ease-out,
+    opacity 250ms ease 120ms;
+}
+
+/* Spinner */
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: shr-spin 720ms linear infinite;
+  vertical-align: -3px;
+}
+.spinner--lg {
+  width: 28px;
+  height: 28px;
+  border-width: 3px;
+}
+
+/* Live dots — dùng cho job đang chạy */
+.live-dots {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+}
+.live-dots i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: shr-marquee-dot 1.2s var(--ease-standard) infinite;
+}
+.live-dots i:nth-child(2) {
+  animation-delay: 160ms;
+}
+.live-dots i:nth-child(3) {
+  animation-delay: 320ms;
+}
+
+/* Pulse ring — chỉ báo trạng thái đang chạy */
+.pulse {
+  position: relative;
+  display: inline-flex;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: 0 0 auto;
+}
+.pulse::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  animation: shr-pulse-ring 1.8s var(--ease-out) infinite;
+}
+
+/* Skeleton shimmer */
+.sk {
+  display: block;
+  border-radius: var(--r-sm);
+  background: linear-gradient(
+    100deg,
+    var(--c-neutral-050) 20%,
+    var(--c-neutral-100) 42%,
+    var(--c-neutral-050) 64%
+  );
+  background-size: 840px 100%;
+  animation: shr-shimmer 1.4s linear infinite;
+}
+.sk--text {
+  height: 12px;
+  margin: 6px 0;
+}
+.sk--title {
+  height: 20px;
+  width: 42%;
+  margin-bottom: var(--s-4);
+}
+.sk--line-70 { width: 70%; }
+.sk--line-50 { width: 50%; }
+.sk--line-90 { width: 90%; }
+.sk--block {
+  height: 84px;
+  border-radius: var(--r-surface);
+}
+.sk--row {
+  height: 52px;
+  border-radius: var(--r-control);
+  margin-bottom: var(--s-2);
+}
+.sk--avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+}
+
+/* Sheen sweep cho CTA chính */
+.sheen {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.sheen::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  bottom: -50%;
+  left: 0;
+  width: 42px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.28),
+    transparent
+  );
+  transform: translateX(-120%) skewX(-18deg);
+  pointer-events: none;
+}
+.sheen:hover::after {
+  animation: shr-sheen 900ms var(--ease-out);
+}
+
+/* Number roll-in cho KPI */
+.tick {
+  display: inline-block;
+  animation: shr-count-tick var(--d-slow) var(--ease-out) both;
+}
+
+/* Reduced motion: tắt toàn bộ animation trang trí, giữ lại trạng thái cuối */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+  .spinner,
+  .sk,
+  .live-dots i,
+  .pulse::after {
+    animation: none !important;
+  }
+  .spinner {
+    border-right-color: currentColor;
+    opacity: 0.5;
+  }
+  .sk {
+    background: var(--c-neutral-100);
+  }
+  .pulse::after {
+    display: none;
+  }
+}

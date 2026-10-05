@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: supporthr-backend-config
+data:
+  REDIS_URL: redis://redis:6379/0
+  REDIS_INTERNAL_URL: redis://redis:6379/0
+  REDIS_MAX_CONNECTIONS: "30"
+  ANALYSIS_JOB_MAX_CONCURRENCY_PER_USER: "2"

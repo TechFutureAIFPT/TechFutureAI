@@ -1,0 +1,618 @@
+from __future__ import annotations
+
+import importlib
+import importlib.util
+import sys
+import types
+import unittest
+
+
+def _module_available(name: str) -> bool:
+    if name in sys.modules:
+        return True
+    try:
+        return importlib.util.find_spec(name) is not None
+    except (ImportError, ValueError):
+        return False
+
+
+def _install_dependency_stubs() -> None:
+    if not _module_available("dotenv"):
+        dotenv_module = types.ModuleType("dotenv")
+        dotenv_module.load_dotenv = lambda *args, **kwargs: None
+        sys.modules["dotenv"] = dotenv_module
+
+    if not _module_available("pydantic"):
+        pydantic_module = types.ModuleType("pydantic")
+
+        class BaseModel:
+            def __init__(self, *args, **kwargs) -> None:
+                pass
+
+            @classmethod
+            def model_validate(cls, value):
+                return value
+
+            def model_dump(self, *args, **kwargs):
+                return {}
+
+        class RootModel:
+            @classmethod
+            def __class_getitem__(cls, item):
+                return cls
+
+        def Field(*args, default=None, default_factory=None, **kwargs):
+            if default_factory is not None:
+                return default_factory()
+            return default
+
+        pydantic_module.BaseModel = BaseModel
+        pydantic_module.ConfigDict = dict
+        pydantic_module.Field = Field
+        pydantic_module.RootModel = RootModel
+        sys.modules["pydantic"] = pydantic_module
+
+    if not _module_available("fastapi"):
+        fastapi_module = types.ModuleType("fastapi")
+
+        class HTTPException(Exception):
+            def __init__(self, status_code: int, detail: str) -> None:
+                super().__init__(detail)
+                self.status_code = status_code
+                self.detail = detail
+
+        fastapi_module.HTTPException = HTTPException
+        sys.modules["fastapi"] = fastapi_module
+
+    if not _module_available("google"):
+        sys.modules["google"] = types.ModuleType("google")
+
+    if not _module_available("google.genai"):
+        google_genai_module = types.ModuleType("google.genai")
+
+        class _FakeResponse:
+            text = ""
+
+        class _FakeModels:
+            def generate_content(self, *args, **kwargs):
+                return _FakeResponse()
+
+        class Client:
+            def __init__(self, api_key: str | None = None) -> None:
+                self.models = _FakeModels()
+
+        google_genai_module.Client = Client
+        sys.modules["google.genai"] = google_genai_module
+        sys.modules["google"].genai = google_genai_module  # type: ignore[attr-defined]
+
+    if not _module_available("google.generativeai"):
+        google_generativeai_module = types.ModuleType("google.generativeai")
+        google_generativeai_module.configure = lambda *args, **kwargs: None
+        google_generativeai_module.embed_content = lambda *args, **kwargs: {"embedding": [1.0, 0.0]}
+        sys.modules["google.generativeai"] = google_generativeai_module
+
+
+_install_dependency_stubs()
+cv_analysis_service = importlib.import_module("app.services.cv_analysis_service")
+candidate_enrichment_service = importlib.import_module("app.services.candidate_enrichment_service")
+candidate_screening_service = importlib.import_module("app.services.candidate_screening_service")
+hr_summary_service = importlib.import_module("app.services.hr_summary_service")
+role_profile_service = importlib.import_module("app.services.role_profile_service")
+
+
+class AnalysisQualityTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.original_embed_text = candidate_enrichment_service.embed_text
+        self.original_search = candidate_enrichment_service.search_similar_records
+
+    def tearDown(self) -> None:
+        candidate_enrichment_service.embed_text = self.original_embed_text
+        candidate_enrichment_service.search_similar_records = self.original_search
+
+    def test_resolve_role_profile_prefers_explicit_job_position(self) -> None:
+        profile = role_profile_service.resolve_role_profile(
+            jd_text="Xay dung REST API, toi uu database va deploy Docker len AWS.",
+            job_position="Backend Developer",
+            hard_filters={"industry": "IT"},
+        )
+
+        self.assertEqual(profile["roleKey"], "backend_developer")
+        self.assertIn("Database/API", profile["uiSections"])
+
+    def test_create_analysis_prompt_includes_role_profile_summary(self) -> None:
+        prompt = cv_analysis_service._create_analysis_prompt(
+            "Backend Developer can Python FastAPI, PostgreSQL, Docker va REST API.",
+            {"jobFit": {"name": "Phu hop JD", "weight": 30}},
+            {"industry": "IT", "jobTitle": "Backend Developer"},
+            context_notes="Khong co.",
+        )
+
+        self.assertIn("HỒ SƠ VỊ TRÍ MỤC TIÊU", prompt)
+        self.assertIn("Backend Developer", prompt)
+        self.assertIn("REST API / GraphQL", prompt)
+
+    def test_attach_advanced_score_breakdown_repairs_generic_reasoning(self) -> None:
+        candidate = {
+            "fileName": "candidate-a.pdf",
+            "analysis": {
+                "Tong diem": 52,
+                "Chi tiet": [
+                    {
+                        "Tieu chi": "Ky nang",
+                        "Diem": "4/10",
+                        "Cong thuc": "10d trong so",
+                        "Dan chung": "Python, FastAPI; REST API",
+                        "Giai thich": "CV kha phu hop.",
+                    }
+                ],
+            },
+        }
+
+        updated = cv_analysis_service.attach_advanced_score_breakdowns(
+            [candidate],
+            {"candidate-a.pdf": "Backend engineer with Python, FastAPI and REST API experience."},
+            "Can Python FastAPI Docker va REST API.",
+        )[0]
+
+        detail = updated["analysis"]["Chi tiet"][0]
+        breakdown = detail["advancedBreakdown"]
+
+        self.assertEqual(breakdown["verdict"], "weak")
+        self.assertEqual(breakdown["evidence_quality"], "strong")
+        self.assertIn("Docker", breakdown["missing_requirements"])
+        self.assertIn("Python", breakdown["matched_signals"])
+        self.assertIn("Bổ sung bằng chứng cụ thể", breakdown["improvement_suggestion"])
+        self.assertIn("Docker", detail["Giai thich"])
+        self.assertIn("Python", detail["Dan chung"])
+        self.assertIn("=", detail["Cong thuc"])
+        self.assertTrue(updated["analysis"]["Diem yeu CV"])
+
+    def test_candidate_name_from_collapsed_vietnamese_cv_text(self) -> None:
+        text = (
+            "CV - L\u00ea Chi\u1ebfn Th\u00f4ng tin c\u00e1 nh\u00e2n "
+            "H\u1ecd t\u00ean: L\u00ea Chi\u1ebfn Gi\u1edbi t\u00ednh: Nam "
+            "Email: lechien@example.com Kinh nghi\u1ec7m: Java Spring Boot"
+        )
+
+        self.assertEqual(
+            cv_analysis_service._candidate_name_from_text("CV_CNTT1.docx", text),
+            "L\u00ea Chi\u1ebfn",
+        )
+
+    def test_candidate_name_from_full_name_label_in_long_line(self) -> None:
+        text = (
+            "Th\u00f4ng tin c\u00e1 nh\u00e2n Full name: Ng\u00f4 Th\u1ecb H\u1ed3ng V\u00e2n "
+            "Date of birth: 1998 Email: hongvan@example.com"
+        )
+
+        self.assertEqual(
+            cv_analysis_service._candidate_name_from_text("CV_CNTT5.docx", text),
+            "Ng\u00f4 Th\u1ecb H\u1ed3ng V\u00e2n",
+        )
+
+    def test_attach_breakdowns_replaces_file_stem_candidate_name(self) -> None:
+        text = (
+            "Th\u00f4ng tin c\u00e1 nh\u00e2n H\u1ecd t\u00ean: Ph\u1ea1m Th\u1ecb Mai Anh "
+            "Email: maianh@example.com Kinh nghi\u1ec7m: Java Spring Boot"
+        )
+        candidate = {"fileName": "CV_CNTT3.docx", "candidateName": "CV_CNTT3", "analysis": {"Chi tiet": []}}
+
+        updated = cv_analysis_service.attach_advanced_score_breakdowns(
+            [candidate],
+            {"CV_CNTT3.docx": text},
+            "Java Developer",
+        )[0]
+
+        self.assertEqual(
+            updated["candidateName"],
+            "Ph\u1ea1m Th\u1ecb Mai Anh",
+        )
+
+    def test_candidate_enrichment_normalizes_mojibake_output_payload(self) -> None:
+        def vi(*codepoints: int) -> str:
+            return "".join(chr(codepoint) for codepoint in codepoints)
+
+        source_key = "Ti" + chr(0x00EA) + "u ch" + chr(0x00ED)
+        source_value = "Ph" + chr(0x00F9) + " h" + chr(0x1EE3) + "p JD"
+        source_evidence = (
+            "K" + chr(0x1EF9) + " n" + chr(0x0103) + "ng kh" + chr(0x1EDB) + "p: Java; "
+            "C" + chr(0x00F2) + "n thi" + chr(0x1EBF) + "u: H" + chr(0x00E0) + " N" + chr(0x1ED9) + "i"
+        )
+        bad_payload = {
+            source_key.encode("utf-8").decode("latin-1"): source_value.encode("utf-8").decode("latin-1"),
+            vi(0x0044, 0x1EAB, 0x006E, 0x0020, 0x0063, 0x0068, 0x1EE9, 0x006E, 0x0067)
+            .encode("utf-8")
+            .decode("latin-1"): source_evidence.encode("utf-8").decode("latin-1"),
+        }
+
+        normalized = candidate_enrichment_service._normalize_output_payload(bad_payload)
+
+        self.assertEqual(normalized["Ti\u00eau ch\u00ed"], "Ph\u00f9 h\u1ee3p JD")
+        self.assertEqual(
+            normalized["D\u1eabn ch\u1ee9ng"],
+            "K\u1ef9 n\u0103ng kh\u1edbp: Java; C\u00f2n thi\u1ebfu: H\u00e0 N\u1ed9i",
+        )
+
+    def test_stage_decision_blocks_high_score_when_mandatory_filter_fails(self) -> None:
+        candidate = {
+            "analysis": {"Tong diem": 82},
+            "hardFilterFailureReason": "Địa điểm không khớp yêu cầu Hà Nội.",
+            "locationMatch": False,
+        }
+
+        decision = candidate_enrichment_service._build_stage_decision(
+            candidate,
+            {"autoAdvanceThreshold": 75},
+        )
+
+        self.assertEqual(decision["status"], "hold")
+        self.assertFalse(decision["autoAdvance"])
+        self.assertEqual(decision["recommendedStage"], "Ứng tuyển")
+        self.assertTrue(decision["blockingReasons"])
+
+    def test_stage_decision_marks_strong_candidate_ready_to_advance(self) -> None:
+        candidate = {
+            "analysis": {"Tong diem": 82},
+            "locationMatch": True,
+        }
+
+        decision = candidate_enrichment_service._build_stage_decision(
+            candidate,
+            {"autoAdvanceThreshold": 75},
+        )
+
+        self.assertEqual(decision["status"], "ready_to_advance")
+        self.assertTrue(decision["autoAdvance"])
+        self.assertEqual(decision["recommendedStage"], "Vòng tiếp theo")
+
+    def test_stage_decision_reviews_when_mandatory_screening_lacks_data(self) -> None:
+        candidate = {
+            "analysis": {"Tong diem": 88},
+            "screeningSummary": {
+                "age": {
+                    "status": "review",
+                    "mandatory": True,
+                    "reason": "Thiếu dữ liệu tuổi để đối chiếu.",
+                }
+            },
+        }
+
+        decision = candidate_enrichment_service._build_stage_decision(
+            candidate,
+            {"autoAdvanceThreshold": 75},
+        )
+
+        self.assertEqual(decision["status"], "review")
+        self.assertFalse(decision["autoAdvance"])
+        self.assertIn("Thiếu dữ liệu tuổi", decision["blockingReasons"][0])
+
+    def test_candidate_profile_extracts_age_education_and_timeline(self) -> None:
+        cv_text = """
+        Họ tên: Nguyễn Văn A
+        Năm sinh: 1998
+        Địa chỉ: Hà Nội
+        Cử nhân Quản trị kinh doanh - Đại học Kinh tế Quốc dân
+        Sales Executive | 2021-2023 | quản lý khách hàng doanh nghiệp
+        Account Manager | 03/2023 - Present | phát triển kinh doanh và chăm sóc khách hàng
+        """
+
+        profile = candidate_screening_service.build_candidate_profile(
+            {},
+            cv_text,
+            "Tuyển Sales Executive tại Hà Nội, ưu tiên ngành quản trị kinh doanh.",
+            {"industry": "Sales"},
+        )
+
+        self.assertEqual(profile["birthYear"], 1998)
+        self.assertEqual(profile["currentLocation"], "Ha Noi")
+        self.assertEqual(profile["educationLevel"], "Bachelor")
+        self.assertIn("business-administration", profile["educationMajors"])
+        self.assertGreaterEqual(profile["totalExperienceMonths"], 36)
+        self.assertTrue(profile["workPeriods"])
+
+    def test_screening_summary_holds_when_location_or_major_mismatch(self) -> None:
+        profile = {
+            "age": 28,
+            "currentLocation": "Thanh pho Ho Chi Minh",
+            "educationLevel": "Bachelor",
+            "educationMajors": ["information-technology"],
+            "inferredKnowledgeAreas": ["software development"],
+            "totalExperienceMonths": 48,
+            "relevantExperienceMonths": 48,
+            "experienceDomains": ["tech"],
+            "workPeriods": [],
+            "extractionWarnings": [],
+        }
+
+        summary, auto_reject_reasons = candidate_screening_service.build_screening_summary(
+            profile,
+            "Tuyển nhân viên kinh doanh tại Hà Nội.",
+            {
+                "location": "Ha Noi",
+                "locationMandatory": True,
+                "majorGroups": ["business-administration"],
+                "majorMandatory": True,
+                "education": "Bachelor",
+                "educationMandatory": True,
+                "minExp": "3",
+                "minExpMandatory": True,
+            },
+        )
+
+        self.assertEqual(summary["location"]["status"], "fail")
+        self.assertEqual(summary["major"]["status"], "fail")
+        self.assertTrue(auto_reject_reasons)
+
+    def test_extract_hard_filters_supports_age_and_major_groups(self) -> None:
+        workflow_service = importlib.import_module("app.services.workflow_service")
+        original_generate_content = workflow_service.generate_content
+        workflow_service.generate_content = lambda *args, **kwargs: '{"education":"Bachelor","location":"Ha Noi","age":"22-30 tuổi","majorGroups":["Quản trị kinh doanh","Kinh tế"]}'
+        try:
+            filters = workflow_service.extract_hard_filters(
+                "Yêu cầu ứng viên 22-30 tuổi, tốt nghiệp đại học khối kinh tế hoặc quản trị kinh doanh."
+            )
+        finally:
+            workflow_service.generate_content = original_generate_content
+
+        self.assertEqual(filters["education"], "Bachelor")
+        self.assertEqual(filters["age"]["min"], 22)
+        self.assertIn("business-administration", filters["majorGroups"])
+
+    def test_hr_summary_marks_missing_skill_without_inventing_evidence(self) -> None:
+        summary = hr_summary_service.build_hr_summary(
+            {
+                "candidateName": "Nguyễn Văn A",
+                "analysis": {"Tong diem": 72},
+            },
+            "Ứng viên đã làm Python và FastAPI trong hệ thống nội bộ.",
+            "Yêu cầu Python, FastAPI, Docker.",
+            {"minExp": "3"},
+            profile={"relevantExperienceMonths": 30, "totalExperienceMonths": 30},
+            screening_summary={},
+        )
+
+        docker_item = next(item for item in summary["danh_gia_ky_nang"] if item["ten_ky_nang"] == "Docker")
+        self.assertEqual(docker_item["muc_do_dap_ung"], "Không đạt")
+        self.assertEqual(docker_item["bang_chung_tu_cv"], "Không tìm thấy trong CV")
+
+    def test_hr_summary_flags_location_mismatch(self) -> None:
+        summary = hr_summary_service.build_hr_summary(
+            {
+                "candidateName": "Nguyễn Văn B",
+                "hardFilterFailureReason": "Địa điểm hiện tại không khớp yêu cầu vị trí.",
+                "analysis": {"Tong diem": 61},
+            },
+            "Địa chỉ: TP. Hồ Chí Minh. Kinh nghiệm sales 4 năm.",
+            "Tuyển nhân viên kinh doanh tại Hà Nội.",
+            {"location": "Ha Noi", "minExp": "3"},
+            profile={"currentLocation": "Thanh pho Ho Chi Minh", "relevantExperienceMonths": 48, "totalExperienceMonths": 48},
+            screening_summary={"location": {"status": "fail", "reason": "Địa điểm hiện tại không khớp yêu cầu vị trí."}},
+        )
+
+        self.assertTrue(summary["canh_bao_red_flag"])
+        self.assertIn("Địa điểm", summary["canh_bao_red_flag"][0])
+
+    def test_enrich_candidates_adds_classifier_backed_industry_fit(self) -> None:
+        candidate_enrichment_service.embed_text = lambda text, model=None: [1.0, 0.0]
+        candidate_enrichment_service.search_similar_records = (
+            lambda industry, cv_text, top_k=3, min_similarity=0.0, owner_uid=None, exclude_file_names=None, query_vector=None: {
+                "provider": "json",
+                "collectionKey": "it",
+                "queryModel": "gemini-embedding-001",
+                "recordCount": 4,
+                "averageSimilarity": 0.86,
+                "topMatches": [
+                    {
+                        "id": "backend-1",
+                        "name": "Backend CV",
+                        "role": "Backend Engineer",
+                        "relativePath": "",
+                        "metadata": {},
+                        "similarity": 0.86,
+                    }
+                ],
+                "bonusPoints": 3.5,
+            }
+        )
+
+        enriched = candidate_enrichment_service.enrich_candidates(
+            candidates=[
+                {
+                    "fileName": "candidate-b.pdf",
+                    "jobTitle": "Backend Developer",
+                    "industry": "IT",
+                    "department": "Engineering",
+                    "pipelineMetadata": {
+                        "collectionKeys": ["it"],
+                        "classifier": {
+                            "confidence": 0.82,
+                            "top_predictions": [
+                                {"label": "INFORMATION-TECHNOLOGY", "score": 0.82},
+                            ],
+                            "model_source": "local://classifier",
+                        },
+                    },
+                    "analysis": {
+                        "Tong diem": 50.0,
+                        "Tổng điểm": 50.0,
+                        "Chi tiết": [],
+                    },
+                }
+            ],
+            cv_text_map={"candidate-b.pdf": "Python FastAPI Docker backend engineer with REST API experience."},
+            jd_text="Backend developer can Python FastAPI Docker va xay dung REST API.",
+            hard_filters={"industry": "IT"},
+            owner_uid="user-123",
+        )
+
+        candidate = enriched[0]
+        self.assertIn("industryFitInsights", candidate)
+        self.assertGreater(candidate["industryFitInsights"]["classifierScore"], 0)
+        self.assertGreater(candidate["industryFitInsights"]["finalScore"], 0)
+        self.assertIn("embeddingInsights", candidate)
+        self.assertGreater(candidate["analysis"]["Tổng điểm"], 50.0)
+
+        self.assertIn("hrSummary", candidate)
+        self.assertIn("tong_diem_phu_hop", candidate["hrSummary"])
+
+        detail = next(
+            (
+                item
+                for item in candidate["analysis"]["Chi tiết"]
+                if "Classifier" in candidate_enrichment_service._get_record_value(item, ["Dan chung", "Dẫn chứng"])
+            ),
+            None,
+        )
+        self.assertIsNotNone(detail)
+        assert detail is not None
+        score_text = candidate_enrichment_service._get_record_value(detail, ["Diem", "Điểm"])
+        evidence_text = candidate_enrichment_service._get_record_value(detail, ["Dan chung", "Dẫn chứng"])
+        self.assertIn("/5", score_text)
+        self.assertIn("Classifier", evidence_text)
+
+    def test_enrich_candidates_preserves_existing_core_details(self) -> None:
+        candidate_enrichment_service.embed_text = lambda text, model=None: [1.0, 0.0]
+        candidate_enrichment_service.search_similar_records = (
+            lambda industry, cv_text, top_k=3, min_similarity=0.0, owner_uid=None, exclude_file_names=None, query_vector=None: None
+        )
+
+        enriched = candidate_enrichment_service.enrich_candidates(
+            candidates=[
+                {
+                    "fileName": "candidate-core-details.pdf",
+                    "jobTitle": "Backend Developer",
+                    "industry": "IT",
+                    "department": "Engineering",
+                    "analysis": {
+                        "Tong diem": 42.0,
+                        "Chi tiet": [
+                            {
+                                "Tieu chi": "Kinh nghiem",
+                                "Diem": "10/20",
+                                "Cong thuc": "10/20",
+                                "Dan chung": "3 nam Python FastAPI Docker",
+                                "Giai thich": "Co kinh nghiem backend phu hop",
+                            }
+                        ],
+                    },
+                }
+            ],
+            cv_text_map={
+                "candidate-core-details.pdf": "Python FastAPI Docker backend engineer with REST API experience.",
+            },
+            jd_text="Backend developer can Python FastAPI Docker va xay dung REST API.",
+            hard_filters={},
+            owner_uid="user-123",
+        )
+
+        candidate = enriched[0]
+        details = candidate["analysis"].get("Chi tiet") or []
+        criterion_names = [
+            candidate_enrichment_service._get_record_value(item, ["Tieu chi", "TiÃªu chÃ­"])
+            for item in details
+            if isinstance(item, dict)
+        ]
+
+        self.assertIn("Kinh nghiem", criterion_names)
+        self.assertGreaterEqual(len(details), 2)
+
+    def test_rule_based_fallback_candidates_are_successful(self) -> None:
+        candidates = cv_analysis_service.build_rule_based_fallback_candidates(
+            "Backend Developer can Python FastAPI PostgreSQL Docker REST API. Minimum 2 years experience.",
+            {
+                "positionRelevance": {"name": "Phu hop JD", "weight": 30},
+                "experience": {"name": "Kinh nghiem", "weight": 25},
+                "skills": {"name": "Ky nang", "weight": 25},
+                "education": {"name": "Hoc van", "weight": 10},
+                "achievements": {"name": "Thanh tich", "weight": 10},
+            },
+            {"minExp": "2", "industry": "IT"},
+            [
+                {
+                    "file_name": "sample_backend_cv.txt",
+                    "text": (
+                        "Nguyen Van A\nBackend Developer with 4 years experience building REST API "
+                        "using Python, FastAPI, PostgreSQL and Docker. Bachelor of Computer Science."
+                    ),
+                }
+            ],
+            failure_reason="provider unavailable",
+        )
+
+        self.assertEqual(len(candidates), 1)
+        candidate = candidates[0]
+        self.assertEqual(candidate["status"], "SUCCESS")
+        self.assertTrue(candidate["pipelineMetadata"]["aiFallback"])
+        self.assertGreater(candidate["analysis"]["Tong diem"], 0)
+        self.assertGreaterEqual(len(candidate["analysis"]["Chi tiet"]), 5)
+
+    def test_enrich_candidates_builds_role_specific_jd_cv_insights(self) -> None:
+        candidate_enrichment_service.embed_text = lambda text, model=None: [1.0, 0.0]
+        candidate_enrichment_service.search_similar_records = (
+            lambda industry, cv_text, top_k=3, min_similarity=0.0, owner_uid=None, exclude_file_names=None, query_vector=None: None
+        )
+
+        enriched = candidate_enrichment_service.enrich_candidates(
+            candidates=[
+                {
+                    "fileName": "candidate-role-fit.pdf",
+                    "jobTitle": "Backend Developer",
+                    "industry": "IT",
+                    "department": "Engineering",
+                    "analysis": {
+                        "Tong diem": 40.0,
+                        "Chi tiet": [],
+                    },
+                }
+            ],
+            cv_text_map={
+                "candidate-role-fit.pdf": (
+                    "Backend engineer with Python FastAPI, REST API, PostgreSQL, Docker and JWT authentication. "
+                    "Built internal services and deployed to AWS."
+                ),
+            },
+            jd_text="Backend Developer can Python FastAPI, REST API, PostgreSQL, Docker, AWS va JWT.",
+            hard_filters={"industry": "IT", "jobTitle": "Backend Developer"},
+            owner_uid="user-123",
+        )
+
+        candidate = enriched[0]
+        insight = candidate["jdCvMatchInsights"]
+        self.assertEqual(insight["roleKey"], "backend_developer")
+        self.assertIn("Backend language/framework", insight["matchedRequirements"])
+        self.assertIn("Database/API", [item["section"] for item in insight["evidenceMatches"]])
+        self.assertNotIn("Responsive / Accessibility", [item["requirement"] for item in insight["evidenceMatches"]])
+
+    def test_enrich_candidates_falls_back_to_generic_for_unknown_role(self) -> None:
+        candidate_enrichment_service.embed_text = lambda text, model=None: [1.0, 0.0]
+        candidate_enrichment_service.search_similar_records = (
+            lambda industry, cv_text, top_k=3, min_similarity=0.0, owner_uid=None, exclude_file_names=None, query_vector=None: None
+        )
+
+        enriched = candidate_enrichment_service.enrich_candidates(
+            candidates=[
+                {
+                    "fileName": "candidate-generic.pdf",
+                    "jobTitle": "Operations Specialist",
+                    "industry": "Operations",
+                    "department": "Operations",
+                    "analysis": {
+                        "Tong diem": 35.0,
+                        "Chi tiet": [],
+                    },
+                }
+            ],
+            cv_text_map={
+                "candidate-generic.pdf": "Operations specialist with reporting, coordination and vendor management experience.",
+            },
+            jd_text="Operations specialist can quan ly quy trinh, lam viec voi vendor va bao cao.",
+            hard_filters={"industry": "Operations", "jobTitle": "Operations Specialist"},
+            owner_uid="user-123",
+        )
+
+        candidate = enriched[0]
+        self.assertEqual(candidate["jdCvMatchInsights"]["roleKey"], "generic")
+        self.assertIsInstance(candidate["jdCvMatchInsights"]["evidenceMatches"], list)
+
+if __name__ == "__main__":
+    unittest.main()

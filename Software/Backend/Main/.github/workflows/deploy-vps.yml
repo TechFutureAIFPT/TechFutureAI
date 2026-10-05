@@ -1,0 +1,157 @@
+name: Deploy backend to K3s VPS
+
+on:
+  workflow_run:
+    workflows: ["Build and publish backend image"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      image_ref:
+        description: "Immutable GHCR image, for example ghcr.io/techfutureaifpt/supporthr-backend:sha-1edcd14372bd"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supporthr-production-k3s
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: >-
+      ${{ vars.ENABLE_K3S_DEPLOY == 'true' &&
+          (github.event_name == 'workflow_dispatch' ||
+           (github.event.workflow_run.conclusion == 'success' &&
+            github.event.workflow_run.head_branch == 'main')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+    env:
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_USER: ${{ secrets.VPS_USER }}
+      VPS_PORT: ${{ secrets.VPS_PORT }}
+      VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+      VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+      API_DOMAIN: ${{ vars.API_DOMAIN }}
+      ACME_EMAIL: ${{ vars.ACME_EMAIL }}
+
+    steps:
+      - name: Resolve immutable release
+        id: revision
+        shell: bash
+        env:
+          WORKFLOW_RUN_SHA: ${{ github.event.workflow_run.head_sha }}
+          MANUAL_IMAGE_REF: ${{ inputs.image_ref }}
+        run: |
+          set -Eeuo pipefail
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_run" ]]; then
+            source_sha="${WORKFLOW_RUN_SHA}"
+            image_ref="ghcr.io/techfutureaifpt/supporthr-backend:sha-${source_sha:0:12}"
+          else
+            source_sha="${GITHUB_SHA}"
+            image_ref="${MANUAL_IMAGE_REF}"
+          fi
+
+          if [[ ! "${source_sha}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Invalid source SHA." >&2
+            exit 1
+          fi
+          if [[ ! "${image_ref}" =~ ^ghcr\.io/techfutureaifpt/supporthr-backend:sha-[0-9a-f]{12}$ ]]; then
+            echo "Only immutable SupportHR sha-* images can be deployed." >&2
+            exit 1
+          fi
+
+          echo "source_sha=${source_sha}" >> "${GITHUB_OUTPUT}"
+          echo "image_ref=${image_ref}" >> "${GITHUB_OUTPUT}"
+
+      - name: Check out the published revision
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ steps.revision.outputs.source_sha }}
+
+      - name: Validate deployment inputs
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          : "${VPS_HOST:?Missing VPS_HOST production secret}"
+          : "${VPS_USER:?Missing VPS_USER production secret}"
+          : "${VPS_SSH_KEY:?Missing VPS_SSH_KEY production secret}"
+          : "${VPS_KNOWN_HOSTS:?Missing VPS_KNOWN_HOSTS production secret}"
+          : "${API_DOMAIN:?Missing API_DOMAIN production variable}"
+          : "${ACME_EMAIL:?Missing ACME_EMAIL production variable}"
+
+          if [[ ! "${VPS_USER}" =~ ^[a-z_][a-z0-9_-]*$ ]]; then
+            echo "VPS_USER has an invalid format." >&2
+            exit 1
+          fi
+          if [[ ! "${VPS_HOST}" =~ ^[A-Za-z0-9][A-Za-z0-9.-]*$ ]]; then
+            echo "VPS_HOST must be an IPv4 address or DNS hostname." >&2
+            exit 1
+          fi
+          if [[ ! "${API_DOMAIN}" =~ ^[a-z0-9][a-z0-9.-]*[a-z0-9]$ || ! "${API_DOMAIN}" =~ [a-z] ]]; then
+            echo "API_DOMAIN must be a lowercase DNS hostname." >&2
+            exit 1
+          fi
+          if [[ ! "${ACME_EMAIL}" =~ ^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]]; then
+            echo "ACME_EMAIL has an invalid format." >&2
+            exit 1
+          fi
+          if [[ -n "${VPS_PORT}" ]]; then
+            if [[ ! "${VPS_PORT}" =~ ^[0-9]{1,5}$ ]]; then
+              echo "VPS_PORT must be numeric." >&2
+              exit 1
+            fi
+            port_number=$((10#${VPS_PORT}))
+            if ((port_number < 1 || port_number > 65535)); then
+              echo "VPS_PORT must be between 1 and 65535." >&2
+              exit 1
+            fi
+          fi
+
+      - name: Configure verified SSH host key
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          install -m 700 -d "${HOME}/.ssh"
+          printf '%s\n' "${VPS_SSH_KEY}" > "${HOME}/.ssh/id_ed25519"
+          chmod 600 "${HOME}/.ssh/id_ed25519"
+          printf '%s\n' "${VPS_KNOWN_HOSTS}" > "${HOME}/.ssh/known_hosts"
+          chmod 600 "${HOME}/.ssh/known_hosts"
+
+      - name: Upload K3s deployment bundle
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          port="${VPS_PORT:-22}"
+          archive="/tmp/supporthr-k3s-${GITHUB_RUN_ID}.tar.gz"
+          tar -czf "${archive}" \
+            deploy/kubernetes \
+            deploy/vps/deploy-k3s.sh \
+            deploy/vps/rollback-k3s.sh
+          scp -P "${port}" -i "${HOME}/.ssh/id_ed25519" \
+            "${archive}" "${VPS_USER}@${VPS_HOST}:/tmp/$(basename "${archive}")"
+
+      - name: Deploy immutable image and verify HTTPS
+        shell: bash
+        env:
+          IMAGE_REF: ${{ steps.revision.outputs.image_ref }}
+        run: |
+          set -Eeuo pipefail
+          port="${VPS_PORT:-22}"
+          remote_archive="/tmp/supporthr-k3s-${GITHUB_RUN_ID}.tar.gz"
+          ssh -p "${port}" -i "${HOME}/.ssh/id_ed25519" "${VPS_USER}@${VPS_HOST}" \
+            "IMAGE_REF='${IMAGE_REF}' API_DOMAIN='${API_DOMAIN}' ACME_EMAIL='${ACME_EMAIL}' REMOTE_ARCHIVE='${remote_archive}' bash -s" <<'REMOTE'
+          set -Eeuo pipefail
+          install_root=/opt/supporthr/backend
+          mkdir -p "${install_root}/deploy/vps"
+          tar -xzf "${REMOTE_ARCHIVE}" -C "${install_root}"
+          rm -f "${REMOTE_ARCHIVE}"
+          chmod 750 "${install_root}/deploy/vps/deploy-k3s.sh" "${install_root}/deploy/vps/rollback-k3s.sh"
+          cd "${install_root}"
+          SUPPORTHR_IMAGE_REF="${IMAGE_REF}" \
+            API_DOMAIN="${API_DOMAIN}" \
+            ACME_EMAIL="${ACME_EMAIL}" \
+            bash deploy/vps/deploy-k3s.sh
+          REMOTE

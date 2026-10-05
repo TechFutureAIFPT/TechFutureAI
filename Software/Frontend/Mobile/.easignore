@@ -1,0 +1,42 @@
+# Dependencies and generated folders
+node_modules/
+.expo/
+dist/
+build/
+
+# Native project folders
+android/
+Android/
+ios/
+
+# Local build outputs
+*.apk
+*.aab
+*.ipa
+*.keystore
+*.jks
+
+# Sensitive credentials (only needed for eas submit, not eas build)
+config/google-play-service-account.json
+
+# Logs and temporary files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+Thumbs.db
+
+# Local EAS artifacts
+.eas-inspect-archive/
+eas-build-*.log
+
+# Workspace data that is not needed for mobile builds
+Data/
+docs/
+website/
+Document/
+Software/Web/
+*.zip
+*.rar
+*.7z

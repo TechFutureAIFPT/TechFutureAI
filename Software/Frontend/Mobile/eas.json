@@ -1,0 +1,40 @@
+{
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "preview": {
+      "android": {
+        "buildType": "apk"
+      },
+      "ios": {
+        "simulator": true
+      },
+      "distribution": "internal"
+    },
+    "production": {
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "ios": {
+        "resourceClass": "m-medium"
+      },
+      "autoIncrement": true
+    }
+  },
+  "submit": {
+    "internal": {
+      "android": {
+        "track": "internal",
+        "serviceAccountKeyPath": "./config/google-play-service-account.json"
+      }
+    },
+    "production": {
+      "android": {
+        "track": "production",
+        "serviceAccountKeyPath": "./config/google-play-service-account.json"
+      }
+    }
+  }
+}

@@ -1,0 +1,32 @@
+# Compatibility ignore file when EAS resolves the outer Git root.
+# The active mobile project also maintains Software/Android/.easignore.
+
+# Workspace areas not required for the Android bundle
+Document/
+Software/Web/
+Software/Project-Rules/
+Software/Resources/
+
+# Dependencies and generated folders inside the active mobile app
+Software/Android/node_modules/
+Software/Android/.expo/
+Software/Android/.eas-inspect-archive/
+Software/Android/dist/
+Software/Android/build/
+Software/Android/android/
+Software/Android/Android/
+Software/Android/ios/
+
+# Local build outputs, logs, credentials, and temporary files
+Software/Android/*.apk
+Software/Android/*.aab
+Software/Android/*.ipa
+Software/Android/*.keystore
+Software/Android/*.jks
+Software/Android/*.log
+Software/Android/google-play-service-account.json
+Software/Android/npm-debug.log*
+Software/Android/yarn-debug.log*
+Software/Android/yarn-error.log*
+Software/Android/.DS_Store
+Software/Android/Thumbs.db

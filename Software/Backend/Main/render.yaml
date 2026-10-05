@@ -1,0 +1,85 @@
+services:
+  - type: web
+    name: backendsupporthr
+    runtime: python
+    plan: free
+    region: singapore
+    rootDir: Software/Backend/Main/api_server
+    buildCommand: python -m pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers
+    healthCheckPath: /health/live
+    autoDeployTrigger: commit
+    numInstances: 1
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.11
+      - key: APP_NAME
+        value: SupportHR Backend
+      - key: MAINTENANCE_MODE
+        value: "false"
+      - key: FRONTEND_ORIGIN
+        sync: false
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: FIREBASE_SERVICE_ACCOUNT_JSON
+        sync: false
+      - key: FIREBASE_WEB_API_KEY
+        sync: false
+      - key: FIREBASE_AUTH_DOMAIN
+        sync: false
+      - key: FIREBASE_DATABASE_URL
+        sync: false
+      - key: FIREBASE_STORAGE_BUCKET
+        sync: false
+      - key: FIREBASE_MESSAGING_SENDER_ID
+        sync: false
+      - key: FIREBASE_APP_ID
+        sync: false
+      - key: FIREBASE_MEASUREMENT_ID
+        sync: false
+      - key: FIREBASE_APPCHECK_SITE_KEY
+        sync: false
+      - key: FIREBASE_APPCHECK_ENFORCE
+        value: "false"
+      - key: DATA_ENCRYPTION_KEY
+        sync: false
+      - key: GEMINI_API_KEY_1
+        sync: false
+      - key: GEMINI_API_KEY_2
+        sync: false
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: GOOGLE_CLOUD_VISION_API_KEY
+        sync: false
+      - key: GOOGLE_PICKER_API_KEY
+        sync: false
+      - key: RAPIDAPI_KEY
+        sync: false
+      - key: GOOGLE_OAUTH_CLIENT_ID
+        sync: false
+      - key: GOOGLE_OAUTH_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_OAUTH_REDIRECT_URI
+        sync: false
+      - key: GOOGLE_DRIVE_ALLOWED_ORIGINS
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-3.6-flash
+      - key: GEMINI_CV_ANALYSIS_MODEL
+        value: gemini-3.6-flash
+      - key: GEMINI_EMBEDDING_MODEL
+        value: gemini-embedding-2
+      - key: GEMINI_EMBEDDING_DIMENSION
+        value: "768"
+      - key: VECTOR_INDEX_VERSION
+        value: gemini-embedding-2-768-v1
+      - key: ANALYSIS_JOB_MODE
+        value: in_process
+      - key: LOCAL_CLASSIFIER_MODE
+        value: local
+      - key: REQUIRE_CLASSIFIER_READY
+        value: "true"
+      - key: AI_PREPROCESS_CONCURRENCY
+        value: "1"
+      - key: RAG_CANDIDATE_LIMIT
+        value: "50"

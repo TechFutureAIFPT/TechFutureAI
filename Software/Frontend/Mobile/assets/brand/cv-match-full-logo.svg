@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 70" width="260" height="70">
+  <g transform="translate(5, 2) scale(0.65)">
+    <!-- 3D Isometric CV Logo Mark -->
+    <polygon points="35,12 72,32 52,44 18,24" fill="#0066FF" />
+    <polygon points="18,24 52,44 35,88 5,52" fill="#2563EB" />
+    <polygon points="5,52 35,88 18,88 5,60" fill="#1E3A8A" />
+    <polygon points="28,88 48,48 92,18 68,18" fill="#1C194D" />
+    <polygon points="92,18 68,18 64,12 88,12" fill="#311B92" />
+  </g>
+  <!-- Text 'Match' in sleek dark typography -->
+  <text x="75" y="48" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="42" font-weight="800" fill="currentColor" letter-spacing="-0.5">Match</text>
+</svg>

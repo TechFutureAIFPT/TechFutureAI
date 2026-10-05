@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: supporthr-classifier-service
+    runtime: python
+    plan: free
+    region: singapore
+    rootDir: Software/Backend/Extensions/classifier-service
+    buildCommand: python -m pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.11
+      - key: MODEL_SOURCE
+        value: local

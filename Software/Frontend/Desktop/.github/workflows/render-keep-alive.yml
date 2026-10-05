@@ -1,0 +1,19 @@
+﻿name: Render Backend 24/7 Keep-Alive
+
+on:
+  schedule:
+    # Ping every 10 minutes to ensure Render backend never sleeps
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  keep-alive:
+    name: Keep Render Backend Active
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Ping Backend Health Endpoint
+        run: |
+          echo "Pinging Render backend..."
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 https://backendsupporthr.onrender.com/health/live)
+          echo "Status code: $STATUS"

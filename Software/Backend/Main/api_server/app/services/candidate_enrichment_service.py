@@ -1,0 +1,1327 @@
+from __future__ import annotations
+
+import re
+import unicodedata
+from typing import Any, Dict, List, Optional, Tuple
+
+from app.core.ai_contract import rank_from_score
+from app.core.config import get_settings
+from app.services.candidate_screening_service import build_candidate_profile, build_screening_summary
+from app.services.gemini_service import embed_text
+from app.services.hr_summary_service import build_hr_summary
+from app.services.role_profile_service import get_role_requirements, is_generic_role, resolve_role_profile
+from app.services.vector_store_service import search_similar_records
+
+
+IT_KEYWORDS = ["it", "software", "developer", "engineer", "backend", "frontend", "fullstack", "full-stack", "devops", "data engineer", "data scientist", "ky su", "lap trinh", "qa", "tester", "product manager"]
+SALES_KEYWORDS = ["sales", "kinh doanh", "ban hang", "thi truong", "business development", "account manager", "tu van", "sale"]
+MARKETING_KEYWORDS = ["marketing", "truyen thong", "content", "seo", "social media", "brand", "quang cao", "pr", "digital"]
+DESIGN_KEYWORDS = ["design", "thiet ke", "do hoa", "ui/ux", "art", "creative", "sang tao", "artist", "designer"]
+SKILL_KEYWORDS = [
+    "react", "vue", "angular", "node", "python", "java", "javascript", "typescript", "sql", "docker",
+    "kubernetes", "aws", "gcp", "azure", "git", "ci/cd", "machine learning", "html", "css", "sass", "redux",
+    "graphql", "mongodb", "postgresql", "mysql", "redis", "nextjs", "nuxt", "django", "flask", "spring",
+    "springboot", "golang", "rust", "c++", "flutter", "react native", "swift", "kotlin", "figma", "photoshop",
+    "tableau", "power bi", "scrum", "agile", "kanban", "jira", "leadership", "project management",
+    "communication", "teamwork", "problem solving", "critical thinking", "nlp", "computer vision", "deep learning",
+    "tensorflow", "pytorch", "data analysis", "data science", "statistics", "excel", "r programming",
+]
+COMPANY_NAME_WORDS = [
+    "fpt", "viettel", "vnpt", "vingroup", "vinfast", "vietinbank", "vietcombank", "bidv", "shopee", "lazada",
+    "tiki", "grab", "vng", "garena", "sea group", "vccorp", "misa", "haravan", "bkav", "mobifone", "cmc",
+    "vietnampost", "google", "meta", "facebook", "apple", "amazon", "microsoft", "netflix", "nvidia", "tesla",
+    "uber", "airbnb", "stripe", "salesforce", "adobe", "oracle", "ibm", "intel", "cisco", "sap", "siemens",
+    "bosch", "philips", "jpmorgan", "goldman sachs", "morgan stanley", "bloomberg", "blackrock", "mckinsey",
+    "bain", "bcg", "pwc", "deloitte", "kpmg", "ey",
+]
+BIAS_PATTERNS = [
+    (re.compile(r"\b(nam|nu|nam gioi|nu gioi|gioi tinh|gender)\b", re.IGNORECASE), "gioi tinh"),
+    (re.compile(r"\b(\d{2})\s*(tuoi|years?\s*old)\b", re.IGNORECASE), "tuoi"),
+    (re.compile(r"\b(ton giao|religion|faith)\b", re.IGNORECASE), "ton giao"),
+    (re.compile(r"\b(dan toc|ethnicity|ethnic)\b", re.IGNORECASE), "dan toc"),
+    (re.compile(r"\b(hon nhan|married|marital)\b", re.IGNORECASE), "hon nhan"),
+    (re.compile(r"\b(que|quen|hometown|birthplace)\b", re.IGNORECASE), "que quan"),
+    (re.compile(r"\b(hinh anh|photo|avatar|image)\b", re.IGNORECASE), "hinh anh"),
+]
+LEADER_VERBS = ["dan dat", "lanh dao", "sang lap", "found", "established", "built", "created", "founded", "pioneered", "spearheaded", "orchestrated", "championed", "mentored", "coached", "transformed", "dieu phoi", "phoi hop", "mentor", "huan luyen"]
+ACTIVE_VERBS = ["phat trien", "develop", "implemented", "improved", "increased", "reduced", "optimized", "streamlined", "designed", "built", "delivered", "achieved", "launched", "managed", "coordinated", "conducted", "analyzed", "created", "giai quyet", "dat duoc", "hoan thanh", "trien khai", "thiet ke", "xay dung", "quan ly", "thuc hien", "toi uu", "tang truong"]
+PASSIVE_VERBS = ["duoc giao", "duoc phan cong", "assigned", "participated", "was responsible", "tham gia", "joined", "worked with", "assisted", "helped", "cung voi", "support", "supporting", "aided", "collaborated"]
+METRIC_PATTERNS = [re.compile(p, re.IGNORECASE) for p in [r"\d+[%]", r"\$\d+", r"\d+[\.,]\d+[\.,]\d+", r"x\d+", r"\d+[trKMB](?:/|\s)", r"tang\s+\d+", r"giam\s+\d+", r"dat\s+\d+", r"\d+\s*lan"]]
+OUTSTANDING_ACHIEVEMENT_KEYWORDS = ["tang truong", "doanh thu", "loi nhuan", "thanh cong", "hoan thanh", "dan dat", "thiet ke", "xay dung", "trien khai", "giai quyet", "dat giai", "top", "best", "winner", "achievement", "exceeded", "performance", "impact", "revenue", "growth", "delivered"]
+BREAKTHROUGH_KEYWORDS = ["dot pha", "breakthrough", "record", "ky luc", "revenue boost", "10x", "10 lan", "100%", "thanh lap", "sang lap", "found", "startup", "khoi nghiep", "patent", "bang sang che", "innovation award", "most valuable", "best performer", "champion", "vo dich"]
+SKILL_CLUSTERS: Dict[str, List[str]] = {
+    "frontend-react": ["react", "reactjs", "nextjs", "next.js", "react native", "redux", "react query", "tanstack query"],
+    "frontend-vue": ["vue", "vuejs", "nuxt", "nuxtjs", "vuex", "pinia"],
+    "frontend-general": ["html", "css", "sass", "scss", "tailwind", "bootstrap", "tailwindcss", "javascript", "typescript", "jquery"],
+    "backend-node": ["node", "nodejs", "express", "expressjs", "nestjs", "nest.js", "koa", "fastify"],
+    "backend-python": ["python", "django", "flask", "fastapi", "pyramid"],
+    "backend-java": ["java", "spring", "springboot", "spring boot", "spring cloud"],
+    "backend-go": ["golang", "go", "go-lang"],
+    "backend-dotnet": ["c#", "csharp", ".net", "dotnet", "asp.net", "aspnetcore"],
+    "database": ["sql", "postgresql", "mysql", "mongodb", "redis", "elasticsearch", "mariadb", "oracle db", "mssql", "dynamodb", "cassandra", "sqlite", "graphql"],
+    "devops": ["docker", "kubernetes", "k8s", "aws", "gcp", "azure", "ci/cd", "jenkins", "gitlab ci", "github actions", "terraform", "ansible", "prometheus", "grafana"],
+    "mobile": ["flutter", "react native", "swift", "kotlin", "android", "ios", "xamarin", "ionic"],
+    "ai-ml": ["machine learning", "tensorflow", "pytorch", "scikit-learn", "nlp", "computer vision", "deep learning", "data science", "statistics", "r programming", "keras", "pandas", "numpy"],
+    "data": ["data analysis", "tableau", "power bi", "excel", "powerbi", "looker", "qlik"],
+    "pm": ["scrum", "agile", "kanban", "jira", "project management", "confluence", "asana"],
+    "design": ["figma", "sketch", "adobe xd", "photoshop", "illustrator", "ui/ux", "ui design", "ux design", "user research"],
+    "security": ["cybersecurity", "penetration testing", "owasp", "iso 27001", "ssl", "oauth", "jwt"],
+}
+TIER1_GLOBAL = ["google", "meta", "facebook", "apple", "amazon", "microsoft", "netflix", "nvidia", "tesla", "uber", "airbnb", "stripe", "salesforce", "adobe", "oracle", "ibm", "intel", "cisco", "sap", "siemens", "bosch", "philips", "jpmorgan", "goldman sachs", "morgan stanley", "bloomberg", "blackrock", "mckinsey", "bain", "bcg", "pwc", "deloitte", "kpmg", "ey", "accenture", "nike", "cocacola"]
+TIER2_GLOBAL = ["shopee", "lazada", "grab", "vng", "garena", "sea group", "vccorp", "misa", "haravan", "bkav", "mobifone", "cmc", "tencent", "alibaba", "bytedance", "ant group", "mastercard", "visa", "paypal", "atlassian", "slack", "zoom", "dropbox", "twilio"]
+TIER1_VN = ["fpt", "viettel", "vnpt", "vingroup", "vinfast", "vietinbank", "vietcombank", "bidv", "agribank", "mb bank", "tp bank", "acb", "sacombank", "petrovietnam", "evn", "vnre", "sao do", "mobifone", "vietnammobile"]
+TIER2_VN = ["vietnampost", "cuc buu chinh", "cmc", "bkav", "viettel solutions", "vnpt technology", "fpt software", "fpt telecom", "vng", "vccorp", "sendo", "tiki", "haravan", "base", "1975", "gtv", "viec lam 24h", "jobstreet", "mywork", "workbvietnam"]
+JD_FIT_CRITERION_LABEL = "Phù hợp JD (Job Fit)"
+JD_FIT_CRITERION_ALIASES = [JD_FIT_CRITERION_LABEL, "Phù hợp JD", "Job Fit", "Phu hop JD"]
+JD_FIT_MAX_SCORE = 20.0
+INDUSTRY_FIT_CRITERION_LABEL = "Phù hợp ngành/nghề"
+INDUSTRY_FIT_CRITERION_ALIASES = [
+    INDUSTRY_FIT_CRITERION_LABEL,
+    "Industry Fit",
+    "Phu hop nganh nghe",
+    "Phu hop nganh/nghe",
+    "Chuẩn mẫu IT",
+    "Chuẩn mẫu SALES",
+    "Chuẩn mẫu MARKETING",
+    "Chuẩn mẫu DESIGN",
+]
+INDUSTRY_CLASSIFIER_MAX_SCORE = 3.0
+INDUSTRY_VECTOR_MAX_SCORE = 2.0
+INDUSTRY_FIT_MAX_SCORE = 5.0
+JD_CV_SIMILARITY_FLOOR = 0.45
+JD_CV_SIMILARITY_CEILING = 0.90
+MAX_EMBEDDING_TEXT_LENGTH = 6000
+DETAIL_LIST_ALIASES = [
+    "Chi tiet",
+    "Chi tiết",
+]
+
+
+def _normalize_lookup_key(value: str) -> str:
+    normalized = unicodedata.normalize("NFD", value or "")
+    normalized = "".join(char for char in normalized if unicodedata.category(char) != "Mn")
+    normalized = normalized.replace("đ", "d").replace("Đ", "d")
+    return re.sub(r"[^a-z0-9]+", " ", normalized.lower()).strip()
+
+
+_MOJIBAKE_DETECTOR = re.compile(
+    r"(?:\u00c3|\u00c4|\u00c6|\u00d0|\u00f0|\u00c2|\u00e2\u20ac|\u00e1\u00ba|\u00e1\u00bb|\ufffd)"
+)
+_VIETNAMESE_MARK_DETECTOR = re.compile(r"[\u00c0-\u1ef9\u0110\u0111]")
+
+
+def _display_text_score(value: str) -> int:
+    return (
+        len(_MOJIBAKE_DETECTOR.findall(value)) * -8
+        + len(_VIETNAMESE_MARK_DETECTOR.findall(value)) * 2
+        - (20 if "\ufffd" in value else 0)
+    )
+
+
+def _decode_mojibake_once(value: str) -> str | None:
+    for encoding in ("latin-1", "cp1252"):
+        try:
+            return value.encode(encoding).decode("utf-8")
+        except (UnicodeEncodeError, UnicodeDecodeError):
+            continue
+    return None
+
+
+def _normalize_display_text(value: str) -> str:
+    current = value
+    for _ in range(3):
+        if not _MOJIBAKE_DETECTOR.search(current):
+            break
+        decoded = _decode_mojibake_once(current)
+        if not decoded or decoded == current:
+            break
+        if _display_text_score(decoded) <= _display_text_score(current):
+            break
+        current = decoded
+    return current
+
+
+def _normalize_output_payload(value: Any) -> Any:
+    if isinstance(value, str):
+        return _normalize_display_text(value)
+    if isinstance(value, list):
+        return [_normalize_output_payload(item) for item in value]
+    if isinstance(value, dict):
+        normalized: Dict[str, Any] = {}
+        for key, item in value.items():
+            normalized_key = _normalize_display_text(str(key))
+            normalized[normalized_key] = _normalize_output_payload(item)
+        return normalized
+    return value
+
+
+def _get_record_value(record: Dict[str, Any], aliases: List[str]) -> str:
+    alias_set = {_normalize_lookup_key(alias) for alias in aliases}
+    for key, value in record.items():
+        if value is None or str(value).strip() == "":
+            continue
+        if _normalize_lookup_key(str(key)) in alias_set:
+            return str(value).strip()
+    return ""
+
+
+def _get_analysis_value(record: Dict[str, Any], aliases: List[str], default: Any = None) -> Any:
+    alias_set = {_normalize_lookup_key(alias) for alias in aliases}
+    for key, value in record.items():
+        if value is None or value == "":
+            continue
+        if _normalize_lookup_key(str(key)) in alias_set:
+            return value
+    return default
+
+
+def _get_analysis_details(analysis: Dict[str, Any]) -> List[Dict[str, Any]]:
+    alias_set = {_normalize_lookup_key(alias) for alias in DETAIL_LIST_ALIASES}
+    for key, value in analysis.items():
+        if _normalize_lookup_key(str(key)) in alias_set:
+            if isinstance(value, list):
+                return value
+            return []
+    return []
+
+
+def _sync_analysis_detail_aliases(analysis: Dict[str, Any], details: List[Dict[str, Any]]) -> None:
+    for alias in DETAIL_LIST_ALIASES:
+        analysis[alias] = details
+
+
+def _parse_numeric_value(value: Any) -> float | None:
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str):
+        match = re.search(r"[+-]?\d+(?:\.\d+)?", value)
+        if match:
+            try:
+                return float(match.group(0))
+            except ValueError:
+                return None
+    return None
+
+
+def _format_score_value(value: float) -> str:
+    if abs(value - round(value)) < 1e-9:
+        return str(int(round(value)))
+    return f"{value:.1f}".rstrip("0").rstrip(".")
+
+
+def _parse_detail_score(value: str) -> tuple[float | None, float | None]:
+    ratio_match = re.search(r"([+-]?\d+(?:\.\d+)?)\s*/\s*([+-]?\d+(?:\.\d+)?)", value or "")
+    if ratio_match:
+        try:
+            return float(ratio_match.group(1)), float(ratio_match.group(2))
+        except ValueError:
+            return None, None
+    numeric = _parse_numeric_value(value)
+    return numeric, None
+
+
+def _get_analysis_total_score(analysis: Dict[str, Any]) -> float:
+    for key, value in analysis.items():
+        if _normalize_lookup_key(str(key)) in {"tong diem", "total score", "score"}:
+            parsed = _parse_numeric_value(value)
+            if parsed is not None:
+                return max(0.0, min(100.0, parsed))
+
+    for key in ("Tổng điểm", "Tong diem"):
+        parsed = _parse_numeric_value(analysis.get(key))
+        if parsed is not None:
+            return max(0.0, min(100.0, parsed))
+
+    return 0.0
+
+
+def _build_stage_decision(candidate: Dict[str, Any], hard_filters: Dict[str, Any]) -> Dict[str, Any]:
+    analysis = candidate.get("analysis") if isinstance(candidate.get("analysis"), dict) else {}
+    score = _get_analysis_total_score(analysis or {})
+    hard_failure = str(candidate.get("hardFilterFailureReason") or "").strip()
+    location_match = candidate.get("locationMatch")
+    threshold = float(hard_filters.get("autoAdvanceThreshold") or hard_filters.get("minPassScore") or 75)
+    screening_summary = candidate.get("screeningSummary") if isinstance(candidate.get("screeningSummary"), dict) else {}
+
+    blocking_reasons: List[str] = []
+    if hard_failure:
+        blocking_reasons.append(hard_failure)
+    if location_match is False:
+        blocking_reasons.append("Không đạt yêu cầu địa điểm bắt buộc.")
+    for item in screening_summary.values():
+        if not isinstance(item, dict):
+            continue
+        if item.get("mandatory") and str(item.get("status") or "").lower() == "fail":
+            reason = str(item.get("reason") or "").strip()
+            if reason:
+                blocking_reasons.append(reason)
+    blocking_reasons = list(dict.fromkeys(blocking_reasons))
+
+    if blocking_reasons:
+        return {
+            "status": "hold",
+            "label": "Giữ lại vòng ứng tuyển",
+            "autoAdvance": False,
+            "currentStage": "Ứng tuyển",
+            "recommendedStage": "Ứng tuyển",
+            "scoreThreshold": threshold,
+            "reason": "Ứng viên có điểm đánh giá nhưng chưa đạt tiêu chí bắt buộc.",
+            "blockingReasons": blocking_reasons,
+        }
+
+    mandatory_reviews: List[str] = []
+    for item in screening_summary.values():
+        if not isinstance(item, dict):
+            continue
+        if item.get("mandatory") and str(item.get("status") or "").lower() == "review":
+            reason = str(item.get("reason") or "").strip()
+            if reason:
+                mandatory_reviews.append(reason)
+    mandatory_reviews = list(dict.fromkeys(mandatory_reviews))
+
+    if mandatory_reviews:
+        return {
+            "status": "review",
+            "label": "Cần HR rà soát",
+            "autoAdvance": False,
+            "currentStage": "Ứng tuyển",
+            "recommendedStage": "Rà soát thủ công",
+            "scoreThreshold": threshold,
+            "reason": "Thiếu hoặc chưa đủ dữ liệu ở tiêu chí bắt buộc, cần HR kiểm tra thủ công.",
+            "blockingReasons": mandatory_reviews,
+        }
+
+    if score >= threshold:
+        return {
+            "status": "ready_to_advance",
+            "label": "Sẵn sàng chuyển vòng",
+            "autoAdvance": True,
+            "currentStage": "Ứng tuyển",
+            "recommendedStage": "Vòng tiếp theo",
+            "scoreThreshold": threshold,
+            "reason": "Đạt ngưỡng điểm và không vi phạm tiêu chí bắt buộc.",
+            "blockingReasons": [],
+        }
+
+    if score >= 50:
+        return {
+            "status": "review",
+            "label": "Cần HR rà soát",
+            "autoAdvance": False,
+            "currentStage": "Ứng tuyển",
+            "recommendedStage": "Rà soát thủ công",
+            "scoreThreshold": threshold,
+            "reason": "Điểm phù hợp ở mức trung bình, nên kiểm tra thêm bằng chứng trước khi chuyển vòng.",
+            "blockingReasons": [],
+        }
+
+    return {
+        "status": "not_ready",
+        "label": "Chưa nên chuyển vòng",
+        "autoAdvance": False,
+        "currentStage": "Ứng tuyển",
+        "recommendedStage": "Không đề xuất",
+        "scoreThreshold": threshold,
+        "reason": "Điểm phù hợp còn thấp so với ngưỡng chuyển vòng.",
+        "blockingReasons": [],
+    }
+
+
+def _find_detail_index(details: List[Dict[str, Any]], aliases: List[str]) -> int | None:
+    alias_set = {_normalize_lookup_key(alias) for alias in aliases}
+    for index, item in enumerate(details):
+        if not isinstance(item, dict):
+            continue
+        criterion = _get_record_value(item, ["Tiêu chí", "Tieu chi", "Criterion"])
+        if _normalize_lookup_key(criterion) in alias_set:
+            return index
+    return None
+
+
+def _detail_item(title: str, score: str, formula: str, evidence: str, explanation: str) -> Dict[str, str]:
+    return {
+        "Tieu chi": title,
+        "Tiêu chí": title,
+        "Diem": score,
+        "Điểm": score,
+        "Cong thuc": formula,
+        "Công thức": formula,
+        "Dan chung": evidence,
+        "Dẫn chứng": evidence,
+        "Giai thich": explanation,
+        "Giải thích": explanation,
+    }
+
+
+def _extract_companies_from_candidate(candidate: Dict[str, Any]) -> List[str]:
+    analysis = candidate.get("analysis") or {}
+    details = _get_analysis_details(analysis)
+    strengths = _get_analysis_value(analysis, ["Điểm mạnh CV", "Diem manh CV"], [])
+    evidence = " ".join([
+        str(candidate.get("jobTitle", "")),
+        str(candidate.get("industry", "")),
+        str(candidate.get("department", "")),
+        *[_get_record_value(item, ["Dẫn chứng", "Dan chung"]) for item in details if isinstance(item, dict)],
+        *[str(item) for item in strengths],
+    ]).lower()
+    return [name for name in COMPANY_NAME_WORDS if name in evidence]
+
+
+def _contains_lookup_term(text: str, term: str) -> bool:
+    normalized_text = f" {_normalize_lookup_key(text)} "
+    normalized_term = _normalize_lookup_key(term)
+    return bool(normalized_term and f" {normalized_term} " in normalized_text)
+
+
+def _split_evidence_sentences(text: str) -> List[str]:
+    return [
+        sentence.strip()[:280]
+        for sentence in re.split(r"(?<=[.!?])\s+|\n+|[;•]", text or "")
+        if len(sentence.strip()) >= 8
+    ][:80]
+
+
+def _find_best_evidence_sentence(text: str, terms: List[str]) -> str:
+    sentences = _split_evidence_sentences(text)
+    if not sentences:
+        return ""
+
+    normalized_terms = [_normalize_lookup_key(term) for term in terms if _normalize_lookup_key(term)]
+    if not normalized_terms:
+        return sentences[0]
+
+    ranked: List[Tuple[float, str]] = []
+    for sentence in sentences:
+        normalized_sentence = f" {_normalize_lookup_key(sentence)} "
+        score = 0.0
+        for normalized_term in normalized_terms:
+            if f" {normalized_term} " in normalized_sentence or normalized_term in normalized_sentence:
+                score += max(1.0, len(normalized_term) / 10)
+        if score > 0:
+            ranked.append((score, sentence))
+
+    if not ranked:
+        return ""
+    ranked.sort(key=lambda item: item[0], reverse=True)
+    return ranked[0][1]
+
+
+def _build_candidate_evidence_corpus(candidate: Dict[str, Any], cv_text: str = "") -> str:
+    analysis = candidate.get("analysis") or {}
+    details = _get_analysis_details(analysis)
+    strengths = _get_analysis_value(analysis, ["Điểm mạnh CV", "Diem manh CV"], [])
+    texts = [
+        cv_text,
+        candidate.get("jobTitle", ""),
+        candidate.get("industry", ""),
+        candidate.get("department", ""),
+        *[_get_record_value(item, ["Dẫn chứng", "Dan chung"]) for item in details if isinstance(item, dict)],
+        *[str(item) for item in strengths],
+    ]
+    return " ".join(str(text or "") for text in texts if str(text or "").strip())
+
+
+def _extract_skills_from_jd(jd_text: str, role_profile: Dict[str, Any] | None = None) -> List[str]:
+    if role_profile and not is_generic_role(role_profile):
+        extracted: List[str] = []
+        for requirement in get_role_requirements(role_profile):
+            requirement_terms = [
+                *list(requirement.get("terms") or []),
+                *list(requirement.get("equivalentTerms") or []),
+                *list(requirement.get("evidenceTerms") or []),
+            ]
+            if any(_contains_lookup_term(jd_text, term) for term in requirement_terms):
+                extracted.append(str(requirement.get("label") or ""))
+        core_requirements = [str(item.get("label") or "") for item in role_profile.get("coreRequirements") or []]
+        if extracted:
+            return list(dict.fromkeys([item for item in extracted if item]))
+        return list(dict.fromkeys([item for item in core_requirements if item]))
+
+    lower = jd_text.lower()
+    return [skill for skill in SKILL_KEYWORDS if skill.lower() in lower]
+
+
+def _extract_skills_from_candidate(
+    candidate: Dict[str, Any],
+    cv_text: str = "",
+    role_profile: Dict[str, Any] | None = None,
+) -> List[str]:
+    combined = _build_candidate_evidence_corpus(candidate, cv_text).lower()
+    if role_profile and not is_generic_role(role_profile):
+        extracted: List[str] = []
+        for requirement in get_role_requirements(role_profile):
+            requirement_terms = [
+                *list(requirement.get("terms") or []),
+                *list(requirement.get("equivalentTerms") or []),
+                *list(requirement.get("evidenceTerms") or []),
+            ]
+            if any(_contains_lookup_term(combined, term) for term in requirement_terms):
+                extracted.append(str(requirement.get("label") or ""))
+        return list(dict.fromkeys([item for item in extracted if item]))
+
+    return [skill for skill in SKILL_KEYWORDS if skill.lower() in combined]
+
+
+def _check_bias_risk(filters: Dict[str, Any]) -> List[str]:
+    warnings: List[str] = []
+    age = filters.get("age") or {}
+    if isinstance(age, dict) and (age.get("min") is not None or age.get("max") is not None):
+        warnings.append(f"Cảnh báo: Bộ lọc tuổi ({age.get('min', '?')}-{age.get('max', '?')}) có thể vi phạm Điều 8 BLLĐ 2019.")
+    if filters.get("gender"):
+        warnings.append("Cảnh báo: Bộ lọc giới tính có thể vi phạm luật Bình đẳng lao động Việt Nam.")
+    if filters.get("ethnicity"):
+        warnings.append("Cảnh báo: Bộ lọc dân tộc có thể vi phạm Điều 8 BLLĐ 2019.")
+    if filters.get("religion"):
+        warnings.append("Cảnh báo: Bộ lọc tôn giáo có thể vi phạm quyền tự do tín ngưỡng.")
+    if filters.get("maritalStatus"):
+        warnings.append("Cảnh báo: Bộ lọc tình trạng hôn nhân có thể vi phạm Điều 36 BLLĐ 2019.")
+    if warnings:
+        warnings.extend([
+            "Điều 8 BLLĐ 2019 - Nghiêm cấm phân biệt đối xử trên cơ sở giới tính, tuổi tác, tôn giáo, dân tộc.",
+            "Điều 36 BLLĐ 2019 - Không được yêu cầu xác nhận tình trạng hôn nhân khi tuyển dụng.",
+        ])
+    return warnings
+
+
+def _run_debiasing(cv_text: str, filters: Dict[str, Any]) -> Dict[str, Any]:
+    warnings = _check_bias_risk(filters)
+    blinded_fields: List[str] = []
+    removed: List[str] = []
+    for pattern, label in BIAS_PATTERNS:
+        matches = pattern.findall(cv_text)
+        if matches:
+            blinded_fields.append(label)
+            if isinstance(matches[0], tuple):
+                removed.extend([match[0] for match in matches])
+            else:
+                removed.extend(matches)
+    return {
+        "overall_safe": len(warnings) == 0,
+        "warnings": warnings,
+        "blinded_fields": list(dict.fromkeys(blinded_fields)),
+        "removed_patterns": removed,
+    }
+
+
+def _score_generic_skill_match(jd_skills: List[str], candidate_skills: List[str]) -> Dict[str, Any]:
+    cand_set = {skill.lower() for skill in candidate_skills}
+    matched: List[str] = []
+    unmatched: List[str] = []
+    transfer_matches: List[str] = []
+    clusters: List[str] = []
+    for jd_skill in jd_skills:
+        jd_lower = jd_skill.lower()
+        if jd_lower in cand_set:
+            matched.append(jd_skill)
+            continue
+        cluster_entry = next(((cluster_key, members) for cluster_key, members in SKILL_CLUSTERS.items() if any(member in jd_lower or jd_lower in member for member in members)), None)
+        if cluster_entry:
+            cluster_key, members = cluster_entry
+            member_set = {member.lower() for member in members}
+            found = next((skill for skill in candidate_skills if skill.lower() in member_set), None)
+            if found:
+                transfer_matches.append(f"{jd_skill} -> {found} ({cluster_key})")
+                matched.append(jd_skill)
+                clusters.append(cluster_key)
+            else:
+                unmatched.append(jd_skill)
+        else:
+            unmatched.append(jd_skill)
+    total = len(jd_skills) or 1
+    match_rate = round(((len(matched) + len(transfer_matches)) / total) * 100)
+    return {
+        "matchedSkills": matched,
+        "unmatchedSkills": unmatched,
+        "transferMatches": transfer_matches,
+        "familyClusters": list(dict.fromkeys(clusters)),
+        "matchRate": match_rate,
+        "matchedRequirements": list(matched),
+        "missingRequirements": list(unmatched),
+        "evidenceMatches": [],
+        "roleWeightedScore": 0.0,
+        "uiSections": ["General fit"],
+    }
+
+
+def _score_skill_match(
+    jd_skills: List[str],
+    candidate_skills: List[str],
+    *,
+    role_profile: Dict[str, Any] | None = None,
+    jd_text: str = "",
+    cv_text: str = "",
+    candidate: Dict[str, Any] | None = None,
+) -> Dict[str, Any]:
+    if not role_profile or is_generic_role(role_profile):
+        return _score_generic_skill_match(jd_skills, candidate_skills)
+
+    candidate_payload = candidate or {}
+    evidence_corpus = _build_candidate_evidence_corpus(candidate_payload, cv_text)
+    requirements = get_role_requirements(role_profile)
+    matched: List[str] = []
+    unmatched: List[str] = []
+    transfer_matches: List[str] = []
+    family_clusters: List[str] = []
+    evidence_matches: List[Dict[str, Any]] = []
+    total_weight = 0.0
+    earned_weight = 0.0
+
+    for requirement in requirements:
+        requirement_label = str(requirement.get("label") or "").strip()
+        if not requirement_label:
+            continue
+
+        if jd_skills and requirement_label not in jd_skills:
+            continue
+
+        weight = float(requirement.get("weight") or 1.0)
+        total_weight += weight
+        section = str(requirement.get("section") or "General fit")
+        family_clusters.append(section)
+        terms = [*list(requirement.get("terms") or []), *list(requirement.get("evidenceTerms") or [])]
+        equivalent_terms = list(requirement.get("equivalentTerms") or [])
+        jd_terms = [requirement_label, *terms, *equivalent_terms]
+        jd_evidence = _find_best_evidence_sentence(jd_text, jd_terms) or f"JD có yêu cầu liên quan đến {requirement_label}."
+
+        exact_term = next((term for term in terms if _contains_lookup_term(evidence_corpus, term)), "")
+        transfer_term = next((term for term in equivalent_terms if _contains_lookup_term(evidence_corpus, term)), "")
+        cv_terms = [value for value in [exact_term, transfer_term, requirement_label, *terms, *equivalent_terms] if value]
+        cv_evidence = _find_best_evidence_sentence(evidence_corpus, cv_terms)
+
+        if exact_term and cv_evidence:
+            matched.append(requirement_label)
+            earned_weight += weight
+            evidence_matches.append(
+                {
+                    "section": section,
+                    "requirement": requirement_label,
+                    "jdEvidence": jd_evidence,
+                    "cvEvidence": cv_evidence,
+                    "matchType": "exact",
+                    "score": 0.94,
+                    "reason": f"CV có bằng chứng trực tiếp cho nhóm năng lực {requirement_label}.",
+                }
+            )
+        elif transfer_term and cv_evidence:
+            matched.append(requirement_label)
+            transfer_matches.append(f"{requirement_label} -> {transfer_term}")
+            earned_weight += weight * 0.75
+            evidence_matches.append(
+                {
+                    "section": section,
+                    "requirement": requirement_label,
+                    "jdEvidence": jd_evidence,
+                    "cvEvidence": cv_evidence,
+                    "matchType": "transfer",
+                    "score": 0.78,
+                    "reason": f"CV có năng lực tương đương cho nhóm {requirement_label}, nhưng cách diễn đạt không trùng hoàn toàn với JD.",
+                }
+            )
+        else:
+            unmatched.append(requirement_label)
+            evidence_matches.append(
+                {
+                    "section": section,
+                    "requirement": requirement_label,
+                    "jdEvidence": jd_evidence,
+                    "cvEvidence": f"Không tìm thấy bằng chứng rõ ràng cho {requirement_label} trong CV đã trích xuất.",
+                    "matchType": "incorrect",
+                    "score": 0.0,
+                    "reason": f"Nhóm năng lực {requirement_label} chưa có bằng chứng đủ rõ trong CV.",
+                }
+            )
+
+    if total_weight <= 0:
+        return _score_generic_skill_match(jd_skills, candidate_skills)
+
+    role_weighted_score = round((earned_weight / total_weight) * JD_FIT_MAX_SCORE, 1)
+    match_rate = round((earned_weight / total_weight) * 100)
+    return {
+        "matchedSkills": list(dict.fromkeys(matched)),
+        "unmatchedSkills": list(dict.fromkeys(unmatched)),
+        "transferMatches": list(dict.fromkeys(transfer_matches)),
+        "familyClusters": list(dict.fromkeys(family_clusters)),
+        "matchRate": match_rate,
+        "matchedRequirements": list(dict.fromkeys(matched)),
+        "missingRequirements": list(dict.fromkeys(unmatched)),
+        "evidenceMatches": evidence_matches,
+        "roleWeightedScore": role_weighted_score,
+        "uiSections": list(role_profile.get("uiSections") or ["General fit"]),
+    }
+
+
+def _apply_company_tier_multiplier(base_score: float, companies: List[str]) -> Dict[str, Any]:
+    if not companies:
+        return {"adjustedScore": base_score, "multipliers": {}, "reasoning": "Không nhận diện được công ty nào trong CV.", "recognizedCompanies": []}
+    multipliers: Dict[str, float] = {}
+    recognized: List[str] = []
+    avg_multiplier = 1.0
+    for company in companies:
+        lower = company.lower()
+        multiplier = 1.0
+        if any(name in lower for name in TIER1_GLOBAL + TIER1_VN):
+            multiplier = 1.15
+            recognized.append(company)
+        elif any(name in lower for name in TIER2_GLOBAL + TIER2_VN):
+            multiplier = 1.10
+            recognized.append(company)
+        multipliers[company] = multiplier
+        avg_multiplier += multiplier - 1
+    avg_multiplier = avg_multiplier / len(companies) + 1
+    adjusted = min(100, round(base_score * avg_multiplier, 1))
+    return {"adjustedScore": adjusted, "multipliers": multipliers, "reasoning": f"Nhận diện {len(recognized)} công ty uy tín. Hệ số x{avg_multiplier:.2f} -> +{adjusted - base_score:.1f} điểm.", "recognizedCompanies": recognized}
+
+
+def _detect_boost_level(score: float, evidence: str) -> Optional[str]:
+    lower = evidence.lower()
+    if score >= 85 or any(keyword in lower for keyword in BREAKTHROUGH_KEYWORDS):
+        return "breakthrough"
+    if score >= 75 or any(keyword in lower for keyword in OUTSTANDING_ACHIEVEMENT_KEYWORDS):
+        return "outstanding"
+    return None
+
+
+def _apply_dynamic_boost(criteria_scores: Dict[str, float], criteria_evidence: Dict[str, str]) -> List[Dict[str, Any]]:
+    boost_signals: List[Dict[str, Any]] = []
+    for criterion, score in criteria_scores.items():
+        boost_type = _detect_boost_level(score, criteria_evidence.get(criterion, ""))
+        if not boost_type:
+            continue
+        deficits = sorted([(key, value) for key, value in criteria_scores.items() if key != criterion and value < 90], key=lambda item: item[1])[:3]
+        multiplier = {"outstanding": 1.5, "exceptional": 2.0, "breakthrough": 2.5}[boost_type]
+        for target, target_score in deficits:
+            deficit = 90 - target_score
+            if deficit <= 0 or score < 75:
+                continue
+            boost = max(0, min(min(score - 75, deficit) * (multiplier - 1) * 0.1, 90 - score))
+            if boost > 0:
+                boost_signals.append({
+                    "type": boost_type,
+                    "sourceCriterion": criterion,
+                    "boostedCriteria": [target],
+                    "boostAmount": boost,
+                    "reason": f"Thanh tich noi bat tai '{criterion}' bu dap thieu sot tai '{target}'",
+                })
+    return boost_signals
+
+
+def _contains_keyword(value: str, keywords: List[str]) -> bool:
+    lower = value.lower()
+    return any(keyword in lower for keyword in keywords)
+
+
+def _prepare_embedding_text(value: str) -> str:
+    return re.sub(r"\s+", " ", (value or "").strip())[:MAX_EMBEDDING_TEXT_LENGTH]
+
+
+def _cosine_similarity(a: List[float], b: List[float]) -> float | None:
+    if not a or not b or len(a) != len(b):
+        return None
+    dot = sum(x * y for x, y in zip(a, b))
+    norm_a = sum(x * x for x in a) ** 0.5
+    norm_b = sum(y * y for y in b) ** 0.5
+    if norm_a == 0 or norm_b == 0:
+        return None
+    return dot / (norm_a * norm_b)
+
+
+def _semantic_similarity_to_job_fit_score(similarity: float) -> float:
+    if similarity <= JD_CV_SIMILARITY_FLOOR:
+        return 0.0
+    span = JD_CV_SIMILARITY_CEILING - JD_CV_SIMILARITY_FLOOR
+    scaled = (similarity - JD_CV_SIMILARITY_FLOOR) / span if span > 0 else similarity
+    return round(max(0.0, min(JD_FIT_MAX_SCORE, scaled * JD_FIT_MAX_SCORE)), 1)
+
+
+def _detect_industry(candidate: Dict[str, Any], hard_filters: Dict[str, Any]) -> Optional[str]:
+    values = [
+        str(candidate.get("industry", "")),
+        str(candidate.get("department", "")),
+        str(candidate.get("jobTitle", "")),
+        str(hard_filters.get("industry", "")),
+    ]
+    joined = " ".join(values).lower()
+    if _contains_keyword(joined, IT_KEYWORDS):
+        return "it"
+    if _contains_keyword(joined, SALES_KEYWORDS):
+        return "sales"
+    if _contains_keyword(joined, MARKETING_KEYWORDS):
+        return "marketing"
+    if _contains_keyword(joined, DESIGN_KEYWORDS):
+        return "design"
+    return None
+
+
+def _compute_industry_similarity(
+    industry: str,
+    cv_text: str,
+    owner_uid: str | None = None,
+    file_name: str | None = None,
+    query_vector: List[float] | None = None,
+) -> Optional[Dict[str, Any]]:
+    result = search_similar_records(
+        industry,
+        cv_text,
+        top_k=3,
+        min_similarity=0.0,
+        owner_uid=owner_uid,
+        exclude_file_names=[file_name] if file_name else None,
+        query_vector=query_vector,
+    )
+    if not result:
+        return None
+    return {
+        "industry": industry,
+        "provider": result.get("provider"),
+        "collectionKey": result.get("collectionKey"),
+        "queryModel": result.get("queryModel"),
+        "recordCount": result.get("recordCount"),
+        "averageSimilarity": result.get("averageSimilarity"),
+        "topMatches": result.get("topMatches"),
+        "bonusPoints": result.get("bonusPoints"),
+    }
+
+
+def _pipeline_metadata(candidate: Dict[str, Any]) -> Dict[str, Any]:
+    metadata = candidate.get("pipelineMetadata")
+    return metadata if isinstance(metadata, dict) else {}
+
+
+def _normalized_collection_keys(values: Any) -> List[str]:
+    if not isinstance(values, list):
+        return []
+    keys: List[str] = []
+    for value in values:
+        normalized = _normalize_lookup_key(str(value))
+        if normalized and normalized not in keys:
+            keys.append(normalized)
+    return keys
+
+
+def _resolve_target_industry(candidate: Dict[str, Any], hard_filters: Dict[str, Any]) -> Tuple[str | None, str]:
+    detected = _detect_industry(candidate, hard_filters)
+    if detected:
+        return detected, "candidate_or_filter"
+
+    collection_keys = _normalized_collection_keys(_pipeline_metadata(candidate).get("collectionKeys"))
+    if collection_keys:
+        return collection_keys[0], "classifier_inferred"
+
+    return None, "unknown"
+
+
+def _classifier_signal_for_industry(
+    candidate: Dict[str, Any],
+    target_industry: str,
+    target_source: str,
+) -> Dict[str, Any]:
+    metadata = _pipeline_metadata(candidate)
+    classifier = metadata.get("classifier") if isinstance(metadata.get("classifier"), dict) else {}
+    collection_keys = _normalized_collection_keys(metadata.get("collectionKeys"))
+    confidence = float(_parse_numeric_value(classifier.get("confidence")) or 0.0)
+    top_predictions = classifier.get("top_predictions") if isinstance(classifier.get("top_predictions"), list) else []
+    prediction_summary = [
+        f"{str(item.get('label') or '').strip()}:{float(item.get('score') or 0.0):.2f}"
+        for item in top_predictions[:3]
+        if isinstance(item, dict) and str(item.get("label") or "").strip()
+    ]
+    matched = bool(target_industry and target_industry in collection_keys)
+
+    if target_source == "classifier_inferred":
+        score = round(min(1.5, 0.5 + confidence), 1) if collection_keys else 0.0
+    elif matched:
+        if confidence >= 0.85:
+            score = 3.0
+        elif confidence >= 0.75:
+            score = 2.5
+        elif confidence >= 0.60:
+            score = 2.0
+        else:
+            score = 1.0
+    elif collection_keys:
+        score = 0.5 if confidence < 0.60 else 0.0
+    else:
+        score = 0.0
+
+    return {
+        "score": round(min(INDUSTRY_CLASSIFIER_MAX_SCORE, max(0.0, score)), 1),
+        "matched": matched,
+        "confidence": confidence,
+        "collectionKeys": collection_keys,
+        "predictionSummary": prediction_summary,
+        "modelSource": str(classifier.get("model_source") or metadata.get("classifierSource") or "").strip(),
+    }
+
+
+def _compute_industry_fit(
+    candidate: Dict[str, Any],
+    hard_filters: Dict[str, Any],
+    cv_text: str,
+    *,
+    owner_uid: str | None,
+    query_vector: List[float] | None,
+) -> Optional[Dict[str, Any]]:
+    target_industry, target_source = _resolve_target_industry(candidate, hard_filters)
+    if not target_industry:
+        return None
+
+    classifier_signal = _classifier_signal_for_industry(candidate, target_industry, target_source)
+    vector_insight = _compute_industry_similarity(
+        target_industry,
+        cv_text,
+        owner_uid=owner_uid,
+        file_name=str(candidate.get("fileName") or ""),
+        query_vector=query_vector,
+    )
+    vector_bonus = float(vector_insight.get("bonusPoints") or 0.0) if vector_insight else 0.0
+    vector_score = round(min(INDUSTRY_VECTOR_MAX_SCORE, (vector_bonus / 5.0) * INDUSTRY_VECTOR_MAX_SCORE), 1)
+    final_score = round(min(INDUSTRY_FIT_MAX_SCORE, classifier_signal["score"] + vector_score), 1)
+
+    evidence_parts: List[str] = [f"Nganh muc tieu: {target_industry.upper()}"]
+    if classifier_signal["predictionSummary"]:
+        evidence_parts.append(f"Classifier: {', '.join(classifier_signal['predictionSummary'])}")
+    if vector_insight and vector_insight.get("topMatches"):
+        evidence_parts.append(
+            "Vector matches: "
+            + "; ".join(
+                f"{item.get('name') or item.get('role') or item.get('id')} {float(item.get('similarity') or 0.0) * 100:.1f}%"
+                for item in list(vector_insight.get("topMatches") or [])[:3]
+                if isinstance(item, dict)
+            )
+        )
+    evidence = " | ".join(part for part in evidence_parts if part)
+
+    if target_source == "classifier_inferred":
+        explanation = (
+            "Không thấy đủ mạnh dấu hiệu ngành ở phần cấu hình vào, nên hệ thống tạm suy ra "
+            "ngành mục tiêu từ classifier rồi đối chiếu thêm với vector similarity."
+        )
+    elif classifier_signal["matched"]:
+        explanation = (
+            f"Classifier và vector similarity đều nghiêng về nhóm {target_industry.upper()}, "
+            "vì vậy CV được cộng điểm phù hợp ngành/nghề."
+        )
+    else:
+        explanation = (
+            f"Classifier chưa xác nhận rõ nhóm {target_industry.upper()} nên điểm phù hợp ngành/nghề bị giới hạn."
+        )
+
+    return {
+        "targetIndustry": target_industry,
+        "targetSource": target_source,
+        "classifierScore": classifier_signal["score"],
+        "classifierMatched": classifier_signal["matched"],
+        "classifierConfidence": classifier_signal["confidence"],
+        "classifierCollectionKeys": classifier_signal["collectionKeys"],
+        "classifierPredictionSummary": classifier_signal["predictionSummary"],
+        "classifierModelSource": classifier_signal["modelSource"],
+        "vectorScore": vector_score,
+        "vectorInsight": vector_insight,
+        "finalScore": final_score,
+        "maxScore": INDUSTRY_FIT_MAX_SCORE,
+        "formula": (
+            f"Classifier {_format_score_value(classifier_signal['score'])}/{_format_score_value(INDUSTRY_CLASSIFIER_MAX_SCORE)} + "
+            f"Vector {_format_score_value(vector_score)}/{_format_score_value(INDUSTRY_VECTOR_MAX_SCORE)} = "
+            f"{_format_score_value(final_score)}/{_format_score_value(INDUSTRY_FIT_MAX_SCORE)}"
+        ),
+        "evidence": evidence,
+        "explanation": explanation,
+    }
+
+
+def _upsert_industry_fit_detail(
+    details: List[Dict[str, Any]],
+    *,
+    analysis: Dict[str, Any],
+    candidate: Dict[str, Any],
+    hard_filters: Dict[str, Any],
+    cv_text: str,
+    owner_uid: str | None,
+    query_vector: List[float] | None,
+) -> None:
+    detail_index = _find_detail_index(details, INDUSTRY_FIT_CRITERION_ALIASES)
+    previous_score = 0.0
+    if detail_index is not None:
+        score_text = _get_record_value(details[detail_index], ["Điểm", "Diem", "Score"])
+        previous_score = _parse_detail_score(score_text)[0] or 0.0
+
+    fit_payload = _compute_industry_fit(
+        candidate,
+        hard_filters,
+        cv_text,
+        owner_uid=owner_uid,
+        query_vector=query_vector,
+    )
+    if not fit_payload:
+        return
+
+    candidate["industryFitInsights"] = fit_payload
+    vector_insight = fit_payload.get("vectorInsight") if isinstance(fit_payload.get("vectorInsight"), dict) else None
+    if vector_insight:
+        candidate["embeddingInsights"] = vector_insight
+
+    detail_payload = _detail_item(
+        INDUSTRY_FIT_CRITERION_LABEL,
+        f"{_format_score_value(float(fit_payload['finalScore']))}/{_format_score_value(INDUSTRY_FIT_MAX_SCORE)}",
+        str(fit_payload["formula"]),
+        str(fit_payload["evidence"]),
+        str(fit_payload["explanation"]),
+    )
+    if detail_index is None:
+        details.insert(1 if details else 0, detail_payload)
+    else:
+        details[detail_index] = detail_payload
+
+    current_total = (
+        _parse_numeric_value(_get_analysis_value(analysis, ["Tổng điểm", "Tong diem"]))
+    )
+    if current_total is not None:
+        updated_total = max(0.0, min(100.0, current_total + (float(fit_payload["finalScore"]) - previous_score)))
+        analysis["Tổng điểm"] = round(updated_total, 1)
+        analysis["Tong diem"] = round(updated_total, 1)
+
+
+def _compute_jd_cv_embedding_match(
+    jd_text: str,
+    cv_text: str,
+    *,
+    jd_vector: List[float] | None = None,
+    cv_vector: List[float] | None = None,
+) -> Dict[str, Any] | None:
+    cleaned_jd = _prepare_embedding_text(jd_text)
+    cleaned_cv = _prepare_embedding_text(cv_text)
+    if not cleaned_jd or not cleaned_cv:
+        return None
+
+    settings = get_settings()
+    try:
+        resolved_jd_vector = jd_vector or embed_text(cleaned_jd, settings.gemini_embedding_model)
+        resolved_cv_vector = cv_vector or embed_text(cleaned_cv, settings.gemini_embedding_model)
+    except Exception:
+        return None
+
+    similarity = _cosine_similarity(resolved_jd_vector, resolved_cv_vector)
+    if similarity is None:
+        return None
+
+    return {
+        "similarity": similarity,
+        "weightedScore": _semantic_similarity_to_job_fit_score(similarity),
+        "maxScore": JD_FIT_MAX_SCORE,
+        "queryModel": settings.gemini_embedding_model,
+    }
+
+
+def _upsert_jd_fit_detail(
+    details: List[Dict[str, Any]],
+    *,
+    analysis: Dict[str, Any],
+    candidate: Dict[str, Any],
+    jd_text: str,
+    cv_text: str,
+    hard_filters: Dict[str, Any],
+    semantic_match: Dict[str, Any] | None,
+) -> None:
+    detail_index = _find_detail_index(details, JD_FIT_CRITERION_ALIASES)
+    previous_score = 0.0
+    if detail_index is not None:
+        score_text = _get_record_value(details[detail_index], ["Điểm", "Diem", "Score"])
+        previous_score = _parse_detail_score(score_text)[0] or 0.0
+
+    role_profile = resolve_role_profile(
+        jd_text=jd_text,
+        job_position=str(hard_filters.get("jobTitle") or hard_filters.get("position") or ""),
+        hard_filters=hard_filters,
+        industry_hint=str(candidate.get("industry") or hard_filters.get("industry") or ""),
+        candidate_job_title=str(candidate.get("jobTitle") or ""),
+    )
+    jd_skills = _extract_skills_from_jd(jd_text, role_profile)
+    candidate_skills = _extract_skills_from_candidate(candidate, cv_text, role_profile)
+    skill_match = _score_skill_match(
+        jd_skills,
+        candidate_skills,
+        role_profile=role_profile,
+        jd_text=jd_text,
+        cv_text=cv_text,
+        candidate=candidate,
+    ) if jd_skills else {
+        "matchedSkills": [],
+        "unmatchedSkills": [],
+        "transferMatches": [],
+        "familyClusters": [],
+        "matchRate": 0,
+        "matchedRequirements": [],
+        "missingRequirements": [],
+        "evidenceMatches": [],
+        "roleWeightedScore": 0.0,
+        "uiSections": list(role_profile.get("uiSections") or ["General fit"]),
+    }
+
+    vector_score = float(semantic_match.get("weightedScore") or 0.0) if semantic_match else 0.0
+    role_score = float(skill_match.get("roleWeightedScore") or 0.0)
+    if role_profile and not is_generic_role(role_profile):
+        blended_score = role_score if not semantic_match else round((role_score * 0.65) + (vector_score * 0.35), 1)
+        final_score = min(JD_FIT_MAX_SCORE, max(previous_score, blended_score))
+    else:
+        final_score = min(JD_FIT_MAX_SCORE, max(previous_score, vector_score))
+
+    evidence_parts: List[str] = []
+    if role_profile and not is_generic_role(role_profile):
+        evidence_parts.append(f"Vị trí mục tiêu: {role_profile['label']}")
+    if skill_match["matchedSkills"]:
+        evidence_parts.append(f"Kỹ năng khớp: {', '.join(skill_match['matchedSkills'][:6])}")
+    if skill_match["transferMatches"]:
+        evidence_parts.append(f"Khớp chuyển đổi: {'; '.join(skill_match['transferMatches'][:3])}")
+    if skill_match["unmatchedSkills"]:
+        evidence_parts.append(f"Còn thiếu: {', '.join(skill_match['unmatchedSkills'][:4])}")
+    if semantic_match:
+        evidence_parts.append(
+            f"Embedding JD/CV {semantic_match['similarity'] * 100:.1f}% ({semantic_match['queryModel']})"
+        )
+    evidence = " | ".join(evidence_parts) or "Chưa có đủ dữ liệu để suy ra phần so khớp JD/CV."
+
+    if semantic_match and role_profile and not is_generic_role(role_profile):
+        explanation = (
+            f"So khớp Job Fit ưu tiên năng lực chuyên môn của {role_profile['label']}, "
+            f"sau đó đối chiếu với độ tương đồng embedding JD/CV."
+        )
+        formula = (
+            f"max(AI Job Fit {_format_score_value(previous_score)}/{_format_score_value(JD_FIT_MAX_SCORE)}, "
+            f"Role fit {_format_score_value(role_score)}/{_format_score_value(JD_FIT_MAX_SCORE)} * 65% + "
+            f"Vector semantic {_format_score_value(vector_score)}/{_format_score_value(JD_FIT_MAX_SCORE)} * 35%)"
+        )
+    elif semantic_match:
+        explanation = (
+            f"So khớp JD/CV lấy mức cao hơn giữa điểm AI gốc "
+            f"{_format_score_value(previous_score)}/{_format_score_value(JD_FIT_MAX_SCORE)} và "
+            f"điểm semantic embedding {_format_score_value(vector_score)}/{_format_score_value(JD_FIT_MAX_SCORE)}."
+        )
+        formula = (
+            f"max(AI Job Fit {_format_score_value(previous_score)}/{_format_score_value(JD_FIT_MAX_SCORE)}, "
+            f"Vector semantic {_format_score_value(vector_score)}/{_format_score_value(JD_FIT_MAX_SCORE)})"
+        )
+    elif role_profile and not is_generic_role(role_profile):
+        explanation = f"Không tạo được semantic embedding ổn định, nên Job Fit được suy ra từ bằng chứng chuyên môn của {role_profile['label']}."
+        formula = f"max(AI Job Fit {_format_score_value(previous_score)}/{_format_score_value(JD_FIT_MAX_SCORE)}, Role fit {_format_score_value(role_score)}/{_format_score_value(JD_FIT_MAX_SCORE)})"
+    else:
+        explanation = "Giữ lại điểm Job Fit hiện có vì chưa tạo được semantic embedding ổn định cho JD/CV."
+        formula = f"AI Job Fit {_format_score_value(previous_score)}/{_format_score_value(JD_FIT_MAX_SCORE)}"
+
+    candidate["jdCvMatchInsights"] = {
+        "similarity": float(semantic_match.get("similarity") or 0.0) if semantic_match else 0.0,
+        "weightedScore": final_score,
+        "semanticWeightedScore": vector_score,
+        "maxScore": JD_FIT_MAX_SCORE,
+        "queryModel": semantic_match.get("queryModel") if semantic_match else None,
+        "roleKey": role_profile.get("roleKey") or "generic",
+        "roleLabel": role_profile.get("label") or "General Specialist",
+        "matchedSkills": skill_match["matchedSkills"],
+        "missingSkills": skill_match["unmatchedSkills"],
+        "transferMatches": skill_match["transferMatches"],
+        "matchedRequirements": skill_match.get("matchedRequirements") or skill_match["matchedSkills"],
+        "missingRequirements": skill_match.get("missingRequirements") or skill_match["unmatchedSkills"],
+        "evidenceMatches": skill_match.get("evidenceMatches") or [],
+        "uiSections": skill_match.get("uiSections") or list(role_profile.get("uiSections") or ["General fit"]),
+    }
+
+    detail_payload = _detail_item(
+        JD_FIT_CRITERION_LABEL,
+        f"{_format_score_value(final_score)}/{_format_score_value(JD_FIT_MAX_SCORE)}",
+        formula,
+        evidence,
+        explanation,
+    )
+    if detail_index is None:
+        details.insert(0, detail_payload)
+    else:
+        details[detail_index] = detail_payload
+
+    current_total = (
+        _parse_numeric_value(_get_analysis_value(analysis, ["Tổng điểm", "Tong diem"]))
+    )
+    if current_total is not None:
+        updated_total = max(0.0, min(100.0, current_total + (final_score - previous_score)))
+        analysis["Tổng điểm"] = round(updated_total, 1)
+        analysis["Tong diem"] = analysis["Tổng điểm"]
+
+
+def enrich_candidates(
+    candidates: List[Dict[str, Any]],
+    cv_text_map: Dict[str, str],
+    jd_text: str,
+    hard_filters: Dict[str, Any],
+    owner_uid: str | None = None,
+    *,
+    precomputed_jd_vector: List[float] | None = None,
+    precomputed_cv_vectors: Dict[str, List[float]] | None = None,
+) -> List[Dict[str, Any]]:
+    enriched: List[Dict[str, Any]] = []
+    settings = get_settings()
+    jd_vector: List[float] | None = precomputed_jd_vector
+    cleaned_jd_for_embedding = _prepare_embedding_text(jd_text)
+    if jd_vector is None and cleaned_jd_for_embedding:
+        try:
+            jd_vector = embed_text(cleaned_jd_for_embedding, settings.gemini_embedding_model)
+        except Exception:
+            jd_vector = None
+    for candidate in candidates:
+        cv_text = cv_text_map.get(str(candidate.get("fileName", "")), "")
+        analysis = candidate.get("analysis") or {}
+        details = _get_analysis_details(analysis)
+        _sync_analysis_detail_aliases(analysis, details)
+        if cv_text:
+            candidate_profile = build_candidate_profile(candidate, cv_text, jd_text, hard_filters)
+            screening_summary, auto_reject_reasons = build_screening_summary(candidate_profile, jd_text, hard_filters)
+            candidate["candidateProfile"] = candidate_profile
+            candidate["screeningSummary"] = screening_summary
+            if auto_reject_reasons:
+                candidate["autoRejectReasons"] = auto_reject_reasons
+                candidate["hardFilterFailureReason"] = auto_reject_reasons[0]
+            location_factor = screening_summary.get("location") if isinstance(screening_summary.get("location"), dict) else {}
+            if location_factor:
+                observed_location = str(location_factor.get("observed") or "").strip()
+                if observed_location:
+                    candidate["detectedLocation"] = observed_location
+                    candidate["detectedLocationSource"] = "screening_profile"
+                if location_factor.get("status") == "pass":
+                    candidate["locationMatch"] = True
+                elif location_factor.get("status") == "fail":
+                    candidate["locationMatch"] = False
+            candidate["hrSummary"] = build_hr_summary(
+                candidate,
+                cv_text,
+                jd_text,
+                hard_filters,
+                profile=candidate_profile,
+                screening_summary=screening_summary,
+            )
+
+        cv_vector: List[float] | None = (precomputed_cv_vectors or {}).get(str(candidate.get("fileName", "")))
+        if cv_text:
+            cleaned_cv_for_embedding = _prepare_embedding_text(cv_text)
+            if cv_vector is None and cleaned_cv_for_embedding:
+                try:
+                    cv_vector = embed_text(cleaned_cv_for_embedding, settings.gemini_embedding_model)
+                except Exception:
+                    cv_vector = None
+        semantic_match = _compute_jd_cv_embedding_match(
+            jd_text,
+            cv_text,
+            jd_vector=jd_vector,
+            cv_vector=cv_vector,
+        ) if cv_text else None
+        _upsert_jd_fit_detail(
+            details,
+            analysis=analysis,
+            candidate=candidate,
+            jd_text=jd_text,
+            cv_text=cv_text,
+            hard_filters=hard_filters,
+            semantic_match=semantic_match,
+        )
+
+        if cv_text:
+            debias_result = _run_debiasing(cv_text, hard_filters)
+            if debias_result["warnings"]:
+                candidate["debiasingWarnings"] = debias_result["warnings"]
+
+        companies = _extract_companies_from_candidate(candidate)
+        if companies:
+            base_score = (
+                _get_analysis_value(analysis, ["Tổng điểm", "Tong diem"], 50)
+            )
+            tiered = _apply_company_tier_multiplier(float(base_score), companies)
+            if tiered["adjustedScore"] != base_score:
+                analysis["Tổng điểm"] = min(100, tiered["adjustedScore"])
+                analysis["Tong diem"] = analysis["Tổng điểm"]
+                details.append(_detail_item(
+                    "Hệ số uy tín công ty",
+                    f"{'+' if tiered['adjustedScore'] - base_score > 0 else ''}{tiered['adjustedScore'] - base_score:.1f}",
+                    tiered["reasoning"],
+                    ", ".join([f"{name} (x{multiplier})" for name, multiplier in tiered["multipliers"].items() if multiplier > 1]),
+                    tiered["reasoning"],
+                ))
+
+        if details:
+            criteria_scores: Dict[str, float] = {}
+            criteria_evidence: Dict[str, str] = {}
+            for item in details:
+                score_text = _get_record_value(item, ["Điểm", "Diem"]) or "0"
+                criteria = _get_record_value(item, ["Tiêu chí", "Tieu chi"])
+                evidence = _get_record_value(item, ["Dẫn chứng", "Dan chung"])
+                try:
+                    criteria_scores[criteria] = float(score_text.split("/")[0].replace("+", ""))
+                except Exception:
+                    criteria_scores[criteria] = 0.0
+                criteria_evidence[criteria] = evidence
+            boost_signals = _apply_dynamic_boost(criteria_scores, criteria_evidence)
+            if boost_signals:
+                total_boost = 0.0
+                for signal in boost_signals:
+                    total_boost += signal["boostAmount"]
+                    details.append(_detail_item(
+                        f"Dynamic Boost: {signal['sourceCriterion']}",
+                        f"+{signal['boostAmount']:.1f}",
+                        signal["reason"],
+                        signal["reason"],
+                        signal["reason"],
+                    ))
+                current_score = _get_analysis_value(analysis, ["Tổng điểm", "Tong diem"])
+                if isinstance(current_score, (int, float)):
+                    analysis["Tổng điểm"] = min(100, current_score + total_boost)
+                    analysis["Tong diem"] = analysis["Tổng điểm"]
+
+        if cv_text:
+            _upsert_industry_fit_detail(
+                details,
+                analysis=analysis,
+                candidate=candidate,
+                hard_filters=hard_filters,
+                cv_text=cv_text,
+                owner_uid=owner_uid,
+                query_vector=cv_vector,
+            )
+
+        if False and cv_text:
+            industry = _detect_industry(candidate, hard_filters)
+            if industry:
+                insight = _compute_industry_similarity(
+                    industry,
+                    cv_text,
+                    owner_uid=owner_uid,
+                    file_name=str(candidate.get("fileName") or ""),
+                    query_vector=cv_vector,
+                )
+                if insight:
+                    candidate["embeddingInsights"] = insight
+                    details.insert(0, _detail_item(
+                        f"Chuẩn mẫu {industry.upper()}",
+                        f"{insight['bonusPoints']:.1f}/5",
+                        f"Similarity {insight['averageSimilarity'] * 100:.1f}% => +{insight['bonusPoints']:.1f} điểm",
+                        "; ".join([f"{item.get('name') or item.get('role') or item.get('id')} {item['similarity'] * 100:.1f}%" for item in insight["topMatches"][:3]]),
+                        f"CV tương đồng thư viện CV {industry.upper()} chuẩn.",
+                    ))
+                    current_score = _get_analysis_value(analysis, ["Tổng điểm", "Tong diem"])
+                    if isinstance(current_score, (int, float)):
+                        analysis["Tổng điểm"] = min(100, current_score + insight["bonusPoints"])
+                        analysis["Tong diem"] = analysis["Tổng điểm"]
+
+        score = _get_analysis_value(analysis, ["Tổng điểm", "Tong diem"])
+        if isinstance(score, (int, float)):
+            analysis["Hạng"] = rank_from_score(score)
+            analysis["Hang"] = analysis["Hạng"]
+        candidate["analysis"] = analysis
+        candidate["stageDecision"] = _build_stage_decision(candidate, hard_filters)
+        enriched.append(_normalize_output_payload(candidate))
+
+    enriched.sort(
+        key=lambda candidate: (
+            -float(
+                (candidate.get("analysis") or {}).get("Tổng điểm")
+                or (candidate.get("analysis") or {}).get("Tong diem")
+                or -1
+            ),
+            str(candidate.get("fileName") or ""),
+        )
+    )
+    return enriched

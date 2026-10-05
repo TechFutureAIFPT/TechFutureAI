@@ -1,0 +1,163 @@
+/* ============================================================
+   CV Match — Design tokens
+   Ba màu nhận diện: #005AC6 (xanh), #2E318D (chàm), #201F5B (navy sâu).
+   Lấy trực tiếp từ bộ logo trong assets/images/brand.
+   Chỉ dùng biến CSS; không hard-code màu trong component.
+   ============================================================ */
+
+:root {
+  /* ---------- Brand core (khóa cứng, không đổi) ---------- */
+  --c-brand-blue: #005ac6;
+  --c-brand-indigo: #2e318d;
+  --c-brand-navy: #201f5b;
+
+  /* ---------- Brand ramp ---------- */
+  --c-navy-900: #201f5b;
+  --c-navy-800: #26276e;
+  --c-navy-700: #2e318d;
+  --c-navy-600: #343aa0;
+  --c-blue-600: #0b4fa8;
+  --c-blue-500: #005ac6;
+  --c-blue-400: #3b82dc;
+  --c-blue-200: #aecbef;
+  --c-blue-100: #dce8f9;
+  --c-blue-050: #eef3fc;
+
+  /* ---------- Surface: nền trắng lạnh ---------- */
+  --c-canvas: #f5f7fb;
+  --c-canvas-deep: #edf0f7;
+  --c-surface: #ffffff;
+  --c-surface-alt: #fafbfe;
+  --c-surface-sunken: #f1f4fa;
+
+  /* ---------- Đường viền nhẹ ---------- */
+  --c-border: #dce1ec;
+  --c-border-strong: #c3cbdb;
+  --c-border-subtle: #e9edf5;
+
+  /* ---------- Màu chữ đậm ---------- */
+  --c-text: #14163a;
+  --c-text-2: #4b5270;
+  --c-text-3: #6e7691;
+  --c-text-inverse: #ffffff;
+
+  /* ---------- Semantic ---------- */
+  --c-success-700: #10664a;
+  --c-success-600: #157d59;
+  --c-success-100: #d6efe4;
+  --c-success-050: #edf8f3;
+
+  --c-warn-700: #855000;
+  --c-warn-600: #a36100;
+  --c-warn-100: #fae6c6;
+  --c-warn-050: #fdf4e6;
+
+  --c-danger-700: #99202a;
+  --c-danger-600: #b92c36;
+  --c-danger-100: #f9d9dc;
+  --c-danger-050: #fdedef;
+
+  --c-info-700: #14458f;
+  --c-info-600: #1a57ae;
+  --c-info-100: #d7e5f8;
+  --c-info-050: #eef3fc;
+
+  --c-neutral-100: #e6eaf3;
+  --c-neutral-050: #f2f4fa;
+
+  /* Grade A / B / C — luôn kèm text, không dùng màu làm tín hiệu duy nhất */
+  --c-grade-a: #157d59;
+  --c-grade-a-bg: #e2f3eb;
+  --c-grade-b: #a36100;
+  --c-grade-b-bg: #faecd4;
+  --c-grade-c: #656d88;
+  --c-grade-c-bg: #ecf0f6;
+
+  /* ---------- Focus ---------- */
+  --c-focus: #005ac6;
+  --focus-ring: 0 0 0 2px var(--c-surface), 0 0 0 4px var(--c-focus);
+
+  /* ---------- Spacing (8px system) ---------- */
+  --s-0: 0;
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-7: 32px;
+  --s-8: 40px;
+  --s-9: 48px;
+  --s-10: 64px;
+  --s-11: 80px;
+
+  /* ---------- Radius ---------- */
+  --r-xs: 4px;
+  --r-sm: 6px;
+  --r-control: 10px;
+  --r-surface: 12px;
+  --r-lg: 16px;
+  --r-pill: 999px;
+
+  /* ---------- Typography ----------
+     Be Vietnam Pro cho nội dung tiếng Việt.
+     IBM Plex Mono chỉ dùng cho điểm số, trạng thái và dữ liệu dạng bảng. */
+  --font-sans: "Be Vietnam Pro", "Segoe UI", -apple-system, BlinkMacSystemFont,
+    "Roboto", "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --font-mono: "IBM Plex Mono", "SFMono-Regular", "Cascadia Mono", Consolas,
+    "Liberation Mono", monospace;
+
+  --t-display: 700 30px/1.2 var(--font-sans);
+  --t-h1: 700 24px/1.28 var(--font-sans);
+  --t-h2: 600 19px/1.35 var(--font-sans);
+  --t-h3: 600 16px/1.4 var(--font-sans);
+  --t-body: 400 14px/1.6 var(--font-sans);
+  --t-body-strong: 600 14px/1.6 var(--font-sans);
+  --t-sm: 400 13px/1.55 var(--font-sans);
+  --t-xs: 500 12px/1.45 var(--font-sans);
+  --t-micro: 600 11px/1.4 var(--font-sans);
+
+  --ls-caps: 0.08em;
+
+  /* ---------- Elevation ---------- */
+  --e-0: none;
+  --e-1: 0 1px 2px rgba(32, 31, 91, 0.05), 0 1px 1px rgba(32, 31, 91, 0.04);
+  --e-2: 0 2px 4px rgba(32, 31, 91, 0.06), 0 4px 12px rgba(32, 31, 91, 0.06);
+  --e-3: 0 8px 24px rgba(32, 31, 91, 0.1), 0 2px 6px rgba(32, 31, 91, 0.06);
+  --e-4: 0 20px 48px rgba(32, 31, 91, 0.18), 0 4px 12px rgba(32, 31, 91, 0.08);
+  --e-focus-glow: 0 0 0 4px rgba(0, 90, 198, 0.14);
+
+  /* ---------- Motion ---------- */
+  --d-instant: 90ms;
+  --d-fast: 150ms;
+  --d-base: 240ms;
+  --d-slow: 380ms;
+  --d-slower: 620ms;
+
+  --ease-standard: cubic-bezier(0.2, 0, 0.16, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.5, 0, 0.9, 0.2);
+  --ease-spring: cubic-bezier(0.34, 1.42, 0.5, 1);
+
+  /* ---------- Layout ---------- */
+  --rail-w: 248px;
+  --topbar-h: 60px;
+  --content-max: 1360px;
+  --z-rail: 40;
+  --z-topbar: 50;
+  --z-scrim: 60;
+  --z-drawer: 70;
+  --z-modal: 80;
+  --z-toast: 90;
+}
+
+/* Tôn trọng prefers-reduced-motion ở cấp token: mọi thứ dùng biến sẽ tự tắt. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --d-instant: 1ms;
+    --d-fast: 1ms;
+    --d-base: 1ms;
+    --d-slow: 1ms;
+    --d-slower: 1ms;
+  }
+}

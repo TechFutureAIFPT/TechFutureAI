@@ -1,0 +1,65 @@
+{
+  "expo": {
+    "name": "CVMatch",
+    "slug": "cv-match-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "icon": "./assets/brand/cv-match-icon.png",
+    "scheme": [
+      "supporthr",
+      "com.supporthr.companion"
+    ],
+    "ios": {
+      "bundleIdentifier": "com.supporthr.companion",
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "CV Match dùng micro để ghi feedback nhanh bằng giọng nói.",
+        "NSSpeechRecognitionUsageDescription": "CV Match dùng nhận dạng giọng nói để chuyển feedback phỏng vấn thành ghi chú."
+      }
+    },
+    "android": {
+      "package": "com.supporthr.companion",
+      "googleServicesFile": "./config/google-services.json",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/brand/cv-match-icon.png",
+        "backgroundColor": "#090D16"
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ],
+      "allowBackup": false,
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      [
+        "@react-native-voice/voice",
+        {
+          "microphonePermission": "CV Match dùng micro để ghi feedback nhanh bằng giọng nói.",
+          "speechRecognitionPermission": "CV Match dùng nhận dạng giọng nói để chuyển feedback phỏng vấn thành ghi chú."
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/brand/cv-match-splash.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#090D16"
+        }
+      ],
+      "expo-web-browser",
+      "expo-sharing"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "933209c7-c551-44da-8041-b09ab06d1ae2"
+      }
+    },
+    "owner": "techfutureais-organization"
+  }
+}

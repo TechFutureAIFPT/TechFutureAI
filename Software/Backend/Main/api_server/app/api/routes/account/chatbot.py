@@ -1,0 +1,96 @@
+from __future__ import annotations
+
+from fastapi import APIRouter, Depends, Query, Request
+
+from app.api.deps import get_current_user
+from app.api.response_utils import cached_json_response
+from app.schemas.account import (
+    AuthenticatedUser,
+    ChatbotMessagesRequest,
+    ChatbotReplyRequest,
+    ChatbotReplyResponse,
+    ChatbotSessionCreateRequest,
+)
+from app.services.account import chatbot_copilot_service, chatbot_service, response_cache_service
+
+
+router = APIRouter()
+
+
+@router.post("/chatbot/sessions")
+def create_chatbot_session(payload: ChatbotSessionCreateRequest, current_user: AuthenticatedUser = Depends(get_current_user)):
+    return {
+        "id": chatbot_service.create_chatbot_session(
+            current_user,
+            payload.jobPosition,
+            payload.totalCandidates,
+            analysis_context=payload.analysisContext.model_dump() if payload.analysisContext else None,
+            candidate_briefs=[item.model_dump() for item in payload.candidateBriefs],
+        )
+    }
+
+
+@router.post("/chatbot/sessions/{session_id}/messages")
+def add_chatbot_messages(
+    session_id: str,
+    payload: ChatbotMessagesRequest,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    return {"ok": chatbot_service.add_chatbot_messages(current_user, session_id, [item.model_dump() for item in payload.messages])}
+
+
+@router.post("/chatbot/sessions/{session_id}/reply", response_model=ChatbotReplyResponse)
+def reply_chatbot_session(
+    session_id: str,
+    payload: ChatbotReplyRequest,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    return chatbot_copilot_service.reply_to_chatbot_session(
+        current_user,
+        session_id,
+        payload.message,
+        selected_candidate_ids=payload.selectedCandidateIds,
+        focus_candidate_id=payload.focusCandidateId,
+        candidate_briefs=[item.model_dump() for item in payload.candidateBriefs],
+    )
+
+
+@router.get("/chatbot/sessions")
+def list_chatbot_sessions(
+    request: Request,
+    limit_count: int = Query(default=20, ge=1, le=200),
+    current_user: AuthenticatedUser = Depends(get_current_user),
+):
+    cache_key_name = response_cache_service.account_cache_key("chatbot_sessions", current_user.uid, "list", str(limit_count))
+    cached = response_cache_service.get_or_build_cached_payload(
+        cache_key_name,
+        "chatbot",
+        lambda: chatbot_service.get_user_chatbot_sessions(current_user, limit_count=limit_count),
+    )
+    return cached_json_response(request, cached)
+
+
+@router.get("/chatbot/sessions/{session_id}")
+def get_chatbot_session(session_id: str, current_user: AuthenticatedUser = Depends(get_current_user)):
+    return chatbot_service.get_chatbot_session(current_user, session_id)
+
+
+@router.get("/chatbot/recent")
+def find_recent_chatbot_session(job_position: str, current_user: AuthenticatedUser = Depends(get_current_user)):
+    return chatbot_service.find_recent_chatbot_session(current_user, job_position)
+
+
+@router.delete("/chatbot/sessions/{session_id}")
+def delete_chatbot_session(session_id: str, current_user: AuthenticatedUser = Depends(get_current_user)):
+    return {"ok": chatbot_service.delete_chatbot_session(current_user, session_id)}
+
+
+@router.get("/chatbot/stats")
+def get_chatbot_stats(request: Request, current_user: AuthenticatedUser = Depends(get_current_user)):
+    cache_key_name = response_cache_service.account_cache_key("chatbot_sessions", current_user.uid, "stats")
+    cached = response_cache_service.get_or_build_cached_payload(
+        cache_key_name,
+        "chatbot",
+        lambda: chatbot_service.get_chatbot_session_stats(current_user),
+    )
+    return cached_json_response(request, cached)
