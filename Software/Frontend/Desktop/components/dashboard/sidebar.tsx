@@ -22,6 +22,8 @@ import {
   X,
   Layers,
   CalendarDays,
+  Compass,
+  Bot,
 } from "lucide-react";
 
 interface NavGroup {
@@ -54,7 +56,8 @@ const navGroups: NavGroup[] = [
   {
     label: "CÔNG CỤ & TIỆN ÍCH AI",
     items: [
-      { id: "chatbot", label: "Trợ Lý AI", icon: MessageSquare, badge: "Chat", href: "/chatbot" },
+      { id: "ai-assistant", label: "Trợ Lý AI Tuyển Dụng", icon: Bot, badge: "Port 8080", href: "/ai-assistant" },
+      { id: "career-compass", label: "Định Hướng Nghề Nghiệp", icon: Compass, badge: "Port 8001", href: "/career-compass" },
       { id: "interview-gen", label: "Bộ Câu Hỏi Phỏng Vấn", icon: HelpCircle, href: "/interview-questions" },
       { id: "interview-hub", label: "Lịch PV & Hộp Thư Email", icon: CalendarDays, badge: "Mới" },
       { id: "salary-benchmark", label: "Tra Cứu Thị Trường Lương", icon: DollarSign, href: "/salary-benchmark" },

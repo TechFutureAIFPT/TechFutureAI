@@ -43,6 +43,8 @@ export type Section =
   | "candidates"
   | "jobs"
   | "chatbot"
+  | "ai-assistant"
+  | "career-compass"
   | "quick-score"
   | "interview-hub"
   | "interview-gen"

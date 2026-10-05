@@ -65,31 +65,36 @@ const MENUS: Menu[] = [
     foot: [["Tổng quan tuyển dụng", "/dashboard?section=overview"], ["So sánh cách làm", "/#so-sanh"]],
   },
   {
-    id: "cong-cu-ai",
-    label: "Công cụ AI & Tiện ích",
+    id: "chuc-nang",
+    label: "Chức năng",
     columns: [
       {
-        caption: "Trợ lý & phỏng vấn",
+        caption: "Trợ lý & Cố vấn thông minh",
         items: [
-          ["Trợ lý AI", "Hỏi đáp tự do, lưu lại lịch sử hội thoại", "/chatbot"],
+          ["Trợ lý AI Tuyển dụng", "Đàm thoại phân tích JD, lọc CV & Deep Research (Port 8080)", "/ai-assistant"],
+          ["Chatbot Định hướng Nghề nghiệp", "Cố vấn DeepSeek Reasoner & Khảo sát Holland RIASEC (Port 8001)", "/career-compass"],
           ["Bộ câu hỏi phỏng vấn", "Sinh câu hỏi chung, chuyên sâu hoặc so sánh", "/interview-questions"],
-          ["Lịch PV & hộp thư email", "Quản lý lịch phỏng vấn và email trao đổi", "/dashboard?section=interview-hub"],
         ],
       },
       {
-        caption: "Lương & liên hệ",
+        caption: "Công cụ & Tiện ích",
         items: [
           ["Tra cứu thị trường lương", "Đối chiếu mức lương đề xuất với thị trường", "/salary-benchmark"],
+          ["Lịch PV & hộp thư email", "Quản lý lịch phỏng vấn và email trao đổi", "/dashboard?section=interview-hub"],
           ["Liên hệ ứng viên", "Cá nhân hóa mẫu thư, gửi hàng loạt", "/dashboard?section=contact-candidates"],
         ],
       },
     ],
     feature: {
-      caption: "Không cần rời trang",
-      title: "Hỏi thẳng Trợ lý AI",
-      text: "Hỏi về tuyển dụng, nghề nghiệp, CV hay JD — trợ lý trả lời và lưu lại lịch sử hội thoại.",
-      cta: ["Hỏi Trợ lý AI", "/chatbot"],
+      caption: "Hệ thống AI chuyên biệt",
+      title: "Trợ Lý AI & Cố Vấn Nghề Nghiệp",
+      text: "Hai phân hệ AI độc lập: Hỗ trợ Recruiter tối ưu hóa tuyển dụng và Cố vấn ứng viên chọn đúng ngành nghề theo chuẩn RIASEC.",
+      cta: ["Khám phá Cố vấn Nghề nghiệp", "/career-compass"],
     },
+    foot: [
+      ["Trợ lý AI Tuyển dụng (Port 8080)", "/ai-assistant"],
+      ["Chatbot Định hướng Nghề nghiệp (Port 8001)", "/career-compass"],
+    ],
   },
   {
     id: "quan-tri",
@@ -119,7 +124,7 @@ const MENUS: Menu[] = [
 ];
 
 const DIRECT_LINKS: [string, string][] = [
-  ["Chức năng", "/#nang-luc"],
+  ["Năng lực cốt lõi", "/#nang-luc"],
   ["Quy trình", "/#lo-trinh"],
   ["Tính hiệu quả", "/#tinh-hieu-qua"],
   ["So sánh", "/#so-sanh"],

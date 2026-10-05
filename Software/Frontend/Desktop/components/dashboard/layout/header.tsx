@@ -97,6 +97,14 @@ const sectionTitles: Record<Section, { title: string; subtitle: string }> = {
     title: "Tiêu Chí Chấm Điểm & Bộ Lọc JD (Rubric Engine)",
     subtitle: "Cấu hình 6 trọng số Rubric AI và bộ lọc điều kiện cứng tự động áp dụng cho các đợt lọc CV",
   },
+  "ai-assistant": {
+    title: "Trợ Lý AI Tuyển Dụng & Deep Research",
+    subtitle: "Đàm thoại hỗ trợ Recruiter, phân tích JD/CV và nghiên cứu thị trường đa nguồn (Port 8080)",
+  },
+  "career-compass": {
+    title: "Chatbot Định Hướng Nghề Nghiệp & Cố Vấn Tuyển Sinh",
+    subtitle: "Cố vấn DeepSeek Reasoner, trắc nghiệm tâm lý Holland RIASEC và lộ trình tuyển sinh 2026 (Port 8001)",
+  },
 };
 
 export function Header() {

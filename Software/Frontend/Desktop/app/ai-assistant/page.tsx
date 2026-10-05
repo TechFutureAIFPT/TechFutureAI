@@ -5,7 +5,7 @@ import { AIAssistantSection } from "@/components/dashboard/features/ai-tools";
 import { ArrowLeft, Sparkles } from "lucide-react";
 import Link from "next/link";
 
-export default function ChatbotPage() {
+export default function AIAssistantPage() {
   return (
     <SalesOpsProvider>
       <div className="min-h-screen bg-slate-50 flex flex-col">

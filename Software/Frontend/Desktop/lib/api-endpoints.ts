@@ -339,3 +339,8 @@ export const aiApi = ai;
 export const filesApi = files;
 export const salaryApi = salary;
 export const accountApi = account;
+
+// Re-export extension service APIs (Ports 8080, 8001, 5000)
+export { assistant, type AssistantSessionSummary, type AssistantMessageRecord, type DeepResearchResponse } from "./assistant-endpoints";
+export { careerCompassApi, type CareerAdvisorData, type SurveyQuestionItem, type CareerProfileResult } from "./career-compass-endpoints";
+export { classifierApi, type ClassifyCvResponse, type ClassifierStatusResponse } from "./classifier-endpoints";

@@ -31,6 +31,20 @@ export interface AssistantReplyResponse {
   responseText: string;
 }
 
+export interface DeepResearchSource {
+  title: string;
+  url: string;
+  content: string;
+  score?: number;
+}
+
+export interface DeepResearchResponse {
+  question: string;
+  report: string;
+  sources: DeepResearchSource[];
+  queries: string[];
+}
+
 const baseUrl = APP_CONFIG.assistantApiBaseUrl;
 
 export const assistant = {
@@ -78,6 +92,17 @@ export const assistant = {
       method: "DELETE",
       auth: true,
       baseUrl,
+      signal,
+    }),
+
+  /** POST /api/assistant/deep-research { question } */
+  deepResearch: (question: string, signal?: AbortSignal) =>
+    apiFetch<DeepResearchResponse>("/api/assistant/deep-research", {
+      method: "POST",
+      body: { question },
+      auth: true,
+      baseUrl,
+      timeoutMs: 120000,
       signal,
     }),
 };

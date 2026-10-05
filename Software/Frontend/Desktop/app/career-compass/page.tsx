@@ -1,11 +1,11 @@
 "use client";
 
 import { SalesOpsProvider } from "@/lib/sales-ops-context";
-import { AIAssistantSection } from "@/components/dashboard/features/ai-tools";
-import { ArrowLeft, Sparkles } from "lucide-react";
+import { CareerCompassSection } from "@/components/dashboard/features/ai-tools";
+import { ArrowLeft, Compass } from "lucide-react";
 import Link from "next/link";
 
-export default function ChatbotPage() {
+export default function CareerCompassPage() {
   return (
     <SalesOpsProvider>
       <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -21,24 +21,24 @@ export default function ChatbotPage() {
               <ArrowLeft className="w-4 h-4" />
             </Link>
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-md bg-indigo-600 text-white flex items-center justify-center">
-                <Sparkles className="w-3.5 h-3.5" />
+              <div className="w-6 h-6 rounded-md bg-teal-600 text-white flex items-center justify-center">
+                <Compass className="w-3.5 h-3.5" />
               </div>
               <span className="text-sm font-bold text-slate-900">
-                SupportHR AI Assistant
+                Career Compass • Cố Vấn Định Hướng Nghề Nghiệp
               </span>
             </div>
-            <span className="hidden md:inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
-              Tuyển Dụng & Deep Research (Port 8080)
+            <span className="hidden md:inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-teal-50 text-teal-700 border border-teal-200">
+              DeepSeek Reasoner & Holland RIASEC (Port 8001)
             </span>
           </div>
 
           <div className="flex items-center gap-3">
             <Link
-              href="/career-compass"
-              className="text-xs text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 px-3 py-1.5 rounded-lg font-medium transition-colors hidden sm:inline-flex items-center gap-1.5"
+              href="/ai-assistant"
+              className="text-xs text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-3 py-1.5 rounded-lg font-medium transition-colors hidden sm:inline-flex items-center gap-1.5"
             >
-              <span>🧭 Chuyển sang Cố vấn Hướng nghiệp</span>
+              <span>✨ Chuyển sang Trợ lý Tuyển dụng AI</span>
             </Link>
             <Link
               href="/dashboard"
@@ -49,9 +49,9 @@ export default function ChatbotPage() {
           </div>
         </header>
 
-        {/* Khung chức năng AI Assistant */}
+        {/* Khung chức năng Career Compass */}
         <div className="flex-1 overflow-hidden">
-          <AIAssistantSection />
+          <CareerCompassSection />
         </div>
       </div>
     </SalesOpsProvider>

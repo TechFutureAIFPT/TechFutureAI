@@ -7,7 +7,7 @@ import { OverviewSection } from "@/components/dashboard/features/overview";
 import { WorkspaceSection, HistorySection } from "@/components/dashboard/features/matching";
 import { CandidatesSection, PipelineSection, ContactCandidatesSection } from "@/components/dashboard/features/candidates";
 import { JobsSection } from "@/components/dashboard/features/jobs";
-import { InterviewHubSection } from "@/components/dashboard/features/ai-tools";
+import { InterviewHubSection, AIAssistantSection, CareerCompassSection } from "@/components/dashboard/features/ai-tools";
 import { ReportsSection } from "@/components/dashboard/features/reports";
 import { SettingsSection, CriteriaSettingsSection } from "@/components/dashboard/features/settings";
 
@@ -42,6 +42,11 @@ function DashboardContent() {
         return <JobsSection />;
       case "contact-candidates":
         return <ContactCandidatesSection />;
+      case "ai-assistant":
+      case "chatbot":
+        return <AIAssistantSection />;
+      case "career-compass":
+        return <CareerCompassSection />;
       case "interview-hub":
         return <InterviewHubSection />;
       case "history":
