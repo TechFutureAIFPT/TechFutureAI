@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="vi">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Đăng nhập quản trị · AI Match</title><link rel="icon" href="/admin/brand.svg" type="image/svg+xml"><link rel="stylesheet" href="/admin/assets/admin.css"></head>
+<body class="login-page">
+  <main class="login-layout">
+    <section class="login-story">
+      <a class="brand brand-light" href="/admin/login"><img src="/admin/brand.svg" alt="" width="42" height="42"><span>AI Match<small>Administration</small></span></a>
+      <div class="login-message"><span class="eyebrow">Không gian quản trị</span><h1>Một góc nhìn rõ ràng.<br>Mọi dữ liệu trong tầm kiểm soát.</h1><p>Theo dõi cơ sở dữ liệu, kiểm tra kết nối và vận hành hệ sinh thái AI Match từ một không gian làm việc.</p>
+        <div class="login-diagram" aria-label="Đăng nhập quản trị với Google và lưu phiên trên SQLite"><div><span class="diagram-node">G</span><strong>Google OAuth</strong><small>Xác minh quản trị viên</small></div><span class="diagram-line">→</span><div><span class="diagram-node">▤</span><strong>SQLite local</strong><small>Lưu dữ liệu và phiên</small></div></div>
+      </div><p class="login-footnote">AI Match · Tuyển dụng có cơ sở. Phát triển có định hướng.</p>
+    </section>
+    <section class="login-form-panel"><div class="login-form-wrap"><span class="login-shield" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m12 3 8 3v6c0 5-8 9-8 9S4 17 4 12V6Z"/><path d="m8 12 3 3 5-6"/></svg></span><h2>Đăng nhập quản trị</h2><p class="muted">Đăng nhập bằng tài khoản Google đã được cấp quyền để truy cập Database Studio local.</p>
+      <button id="google-login" class="button google-button" type="button"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M21.6 12.2c0-.7-.1-1.4-.2-2.1H12v4h5.4a4.6 4.6 0 0 1-2 3v2.6h3.2c1.9-1.8 3-4.3 3-7.5Z"/><path fill="#34A853" d="M12 22c2.7 0 5-.9 6.6-2.3l-3.2-2.6c-.9.6-2 1-3.4 1-2.6 0-4.8-1.7-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22Z"/><path fill="#FBBC05" d="M6.4 14a6 6 0 0 1 0-4V7.4H3.1a10 10 0 0 0 0 9.2Z"/><path fill="#EA4335" d="M12 5.9c1.5 0 2.8.5 3.9 1.5l2.9-2.8A9.5 9.5 0 0 0 12 2a10 10 0 0 0-8.9 5.4L6.4 10A5.9 5.9 0 0 1 12 5.9Z"/></svg>Tiếp tục với Google</button>
+      <p id="login-error" class="inline-error" role="alert" hidden></p><p id="login-status" class="muted" role="status" aria-live="polite"></p>
+      <div class="access-note"><strong>Quyền truy cập được kiểm soát</strong><p>Chỉ tài khoản quản trị có email đã xác minh được phép truy cập. Mọi yêu cầu dữ liệu đều được máy chủ kiểm tra quyền.</p></div>
+    </div></section>
+  </main><script type="application/json" id="admin-config">__ADMIN_CONFIG__</script><script type="module" src="/admin/assets/login.js"></script>
+</body></html>
