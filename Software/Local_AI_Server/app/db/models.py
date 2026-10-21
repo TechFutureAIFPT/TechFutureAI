@@ -86,6 +86,37 @@ CREATE TABLE IF NOT EXISTS system_settings (
 """
 
 LOCAL_AUTH_DDL = """
+CREATE TABLE IF NOT EXISTS local_auth_credentials (
+    email TEXT PRIMARY KEY,
+    uid TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    display_name TEXT NOT NULL DEFAULT '',
+    created_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS local_google_identities (
+    subject TEXT PRIMARY KEY,
+    uid TEXT NOT NULL UNIQUE,
+    email TEXT NOT NULL,
+    created_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS local_auth_sessions (
+    token_hash TEXT PRIMARY KEY,
+    uid TEXT NOT NULL,
+    claims_json TEXT NOT NULL,
+    expires_at INTEGER NOT NULL,
+    created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_local_auth_sessions_expiry ON local_auth_sessions(expires_at);
+CREATE TABLE IF NOT EXISTS local_auth_oauth_states (
+    state_hash TEXT PRIMARY KEY,
+    origin TEXT NOT NULL,
+    redirect_uri TEXT NOT NULL,
+    code_verifier TEXT NOT NULL,
+    nonce TEXT NOT NULL,
+    expires_at INTEGER NOT NULL,
+    created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_local_auth_states_expiry ON local_auth_oauth_states(expires_at);
 CREATE TABLE IF NOT EXISTS local_admin_sessions (
     token_hash TEXT PRIMARY KEY,
     claims_json TEXT NOT NULL,

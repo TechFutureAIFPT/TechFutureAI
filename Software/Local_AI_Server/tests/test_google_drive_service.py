@@ -23,10 +23,10 @@ def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> TestClient:
 
 def test_drive_oauth_state_is_pkce_bound_and_one_time(client, monkeypatch):
     settings = get_settings()
-    settings.google_oauth_client_id = "client-id"
-    settings.google_oauth_client_secret = "client-secret"
-    settings.google_drive_token_encryption_key = Fernet.generate_key().decode()
-    settings.google_drive_allowed_origins = ["http://localhost:3000"]
+    monkeypatch.setattr(settings, "google_oauth_client_id", "client-id")
+    monkeypatch.setattr(settings, "google_oauth_client_secret", "client-secret")
+    monkeypatch.setattr(settings, "google_drive_token_encryption_key", Fernet.generate_key().decode())
+    monkeypatch.setattr(settings, "google_drive_allowed_origins", ["http://localhost:3000"])
     user = {"uid": "local-recruiter-001", "email": "recruiter@local.supporthr.vn"}
     oauth = drive.create_oauth_url(user, "http://localhost:3000/google-drive/callback")
     query = parse_qs(urlparse(oauth["authUrl"]).query)

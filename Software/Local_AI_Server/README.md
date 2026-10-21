@@ -1,6 +1,6 @@
 # AI Match Local Server
 
-Local AI Match is the on-device API and Database Studio for AI Match. It runs FastAPI on port `8088`, uses Ollama for inference, and stores application data and administrator sessions in SQLite. The cloud backend in `Software/Backend/Main` remains a separate Gemini/Firebase deployment.
+Local AI Match is the on-device API and Database Studio for AI Match. It runs FastAPI on port `8088`, uses Ollama for inference, and stores application data, users, login sessions, Drive tokens, and administrator sessions in SQLite. The cloud backend in `Software/Backend/Main` remains a separate Gemini/Firebase deployment.
 
 ## Runtime layout
 
@@ -33,7 +33,7 @@ Existing SQLite business table and column names are retained to preserve compati
 
    Generate a Fernet key with `.venv\Scripts\python.exe -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"` and paste it into `GOOGLE_DRIVE_TOKEN_ENCRYPTION_KEY` in `.env`. Add each frontend origin to `GOOGLE_DRIVE_ALLOWED_ORIGINS` and to the Google OAuth client's authorized JavaScript origins. The Drive flow requests read-only access, stores OAuth states and encrypted access/refresh tokens in SQLite, and can list or import supported files. Scanned documents requiring OCR are rejected until an OCR engine is configured.
 
-3. Create a Google OAuth web client. Add `http://localhost:8088/api/admin/google/callback` and `http://localhost:3000/google-drive/callback` as authorized redirect URIs, and add `http://localhost:3000` as an authorized JavaScript origin. Set the client ID and secret in `.env`. The admin server grants access only to the verified email in `ADMIN_EMAIL`.
+3. Create a Google OAuth web client. Add `http://localhost:8088/api/admin/google/callback`, `http://localhost:8088/api/auth/google/callback`, and `http://localhost:3000/google-drive/callback` as authorized redirect URIs, and add `http://localhost:3000` as an authorized JavaScript origin. Set the client ID and secret in `.env`. Admin access is limited to the verified email in `ADMIN_EMAIL`; recruiter accounts and their revocable sessions are stored in SQLite.
 
 4. Start Ollama, then run `start_server.bat` or:
 
@@ -42,6 +42,8 @@ Existing SQLite business table and column names are retained to preserve compati
    ```
 
 Open `http://localhost:8088/admin/login`. The signed-in administrator can open the Database Studio at `/dashboard`. API documentation is at `/docs`; `/health/live` checks process liveness and `/health/ready` checks SQLite and all configured Ollama models.
+
+The Desktop frontend can use local authentication when `NEXT_PUBLIC_RUNTIME_MODE=local`; its API base defaults to `http://localhost:8088`. Local registration and email sign-in use SQLite credentials and revocable bearer sessions. Google sign-in uses the configured OIDC client and stores its identity mapping and session locally.
 
 ## Verification
 

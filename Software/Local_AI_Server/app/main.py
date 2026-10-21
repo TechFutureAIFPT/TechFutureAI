@@ -19,6 +19,7 @@ from app.api.routes import (
     job_routes,
     admin_routes,
     drive_routes,
+    local_auth_routes,
 )
 from app.config import get_settings
 from app.db.database import init_database
@@ -87,6 +88,7 @@ app.include_router(file_routes.router)
 app.include_router(db_routes.router)
 app.include_router(admin_routes.router)
 app.include_router(drive_routes.router)
+app.include_router(local_auth_routes.router)
 app.mount("/admin/assets", StaticFiles(directory=TEMPLATE_DIR.parent / "static"), name="admin-assets")
 
 

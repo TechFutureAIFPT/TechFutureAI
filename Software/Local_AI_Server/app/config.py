@@ -65,6 +65,10 @@ class Settings:
             "GOOGLE_OAUTH_REDIRECT_URI",
             f"http://localhost:{self.port}/api/admin/google/callback",
         ).strip()
+        self.local_auth_redirect_uri = os.getenv(
+            "LOCAL_AUTH_REDIRECT_URI",
+            f"http://localhost:{self.port}/api/auth/google/callback",
+        ).strip()
         self.google_drive_token_encryption_key = os.getenv("GOOGLE_DRIVE_TOKEN_ENCRYPTION_KEY", "").strip()
         raw_drive_origins = os.getenv(
             "GOOGLE_DRIVE_ALLOWED_ORIGINS",
