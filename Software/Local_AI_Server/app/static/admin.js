@@ -9,6 +9,7 @@ const viewNames = {
   data: ["Trình duyệt dữ liệu", "Trình duyệt dữ liệu", "Khám phá bản ghi, tìm kiếm và đối chiếu cấu trúc từng bảng."],
   checks: ["Kiểm tra hệ thống", "Kiểm tra hệ thống", "Xác nhận tình trạng Ollama và tính toàn vẹn của SQLite local."],
   ai: ["Kiểm thử AI", "Kiểm thử AI local", "Đánh giá phản hồi của model trong không gian quản trị."],
+  "ai-routing": ["Model & API", "Điều phối model & API", "Chọn provider cho AI và theo dõi trạng thái các dịch vụ trên máy này."],
 };
 let tables = [];
 let stats = null;
@@ -23,6 +24,7 @@ let dataController = null;
 let searchTimer;
 let toastTimer;
 let refreshing = false;
+let aiRuntime = null;
 
 $("admin-email").textContent = config.profile?.email || "Quản trị viên";
 
@@ -67,8 +69,89 @@ function showView(name, updateHash = true) {
   $("menu-toggle").setAttribute("aria-expanded", "false");
   if (updateHash && location.hash !== `#${name}`) history.pushState(null, "", `#${name}`);
   if (name === "data" && !selected && tables.length) selectTable(tables.some((item) => item.name === "users") ? "users" : tables[0].name);
+  if (name === "ai-routing") loadAiRuntime();
 }
 document.querySelectorAll("[data-view], [data-open]").forEach((button) => button.addEventListener("click", () => showView(button.dataset.view || button.dataset.open)));
+
+function renderAiRuntime(runtime) {
+  aiRuntime = runtime;
+  const local = runtime.provider === "ollama";
+  const badge = $("runtime-provider-badge");
+  badge.className = `badge ${local ? "success" : "neutral"}`;
+  badge.textContent = local ? "Ollama local đang chạy" : "Gemini API đang chạy";
+  $("runtime-summary").textContent = local
+    ? `Backend dùng CV Match ${runtime.ollama.cvModel} để chấm CV; ${runtime.ollama.generalModel} xử lý tác vụ AI chung.`
+    : `Backend dùng ${runtime.gemini.model} cho phân tích CV và ${runtime.gemini.generalModel} cho tác vụ AI chung.`;
+  $("activate-local").disabled = local || !runtime.ollama.cvModelAvailable;
+  $("activate-local").textContent = local ? "Model local đang hoạt động" : (runtime.ollama.cvModelAvailable ? "Bật model local" : "Thiếu model CV local");
+  $("activate-gemini").disabled = !runtime.gemini.configured || !local;
+  $("gemini-key-status").className = `badge ${runtime.gemini.configured ? "success" : "warning"}`;
+  $("gemini-key-status").textContent = runtime.gemini.configured ? "Đã có API key" : "Chưa có API key";
+  if (!$("gemini-model").value) $("gemini-model").value = runtime.gemini.model || "";
+  const rows = [
+    ["CV Match local", runtime.ollama.cvModel, runtime.ollama.cvModelAvailable, runtime.ollama.cvModelLoaded ? "Đang nạp" : "Đã cài"],
+    ["Qwen tác vụ chung", runtime.ollama.generalModel, runtime.ollama.generalModelAvailable, "Ollama"],
+    ["Nomic embedding", runtime.ollama.embeddingModel, runtime.ollama.embeddingModelAvailable, "Vector local"],
+    ["Gemini", runtime.gemini.model, runtime.gemini.configured, runtime.gemini.active ? "Đang hoạt động" : "Sẵn sàng"],
+    ["Classifier CV", runtime.classifier.version, runtime.classifier.ready, `${runtime.classifier.labels} nhãn`],
+    ["Cơ sở dữ liệu", runtime.data.provider, runtime.data.provider === "sqlite", "Local SQLite"],
+  ];
+  $("runtime-cards").innerHTML = rows.map(([label, detail, ready, state]) => `<article class="panel runtime-card"><div><span class="runtime-dot ${ready ? "ready" : "offline"}"></span><strong>${escape(label)}</strong></div><p>${escape(detail || "Chưa cấu hình")}</p><small>${escape(state)}</small></article>`).join("");
+}
+
+async function loadAiRuntime() {
+  const message = $("runtime-message");
+  try {
+    const runtime = await api("/api/admin/ai-runtime", { timeout: 10000 });
+    renderAiRuntime(runtime);
+    message.textContent = "";
+  } catch (error) {
+    message.textContent = error.message || "Không đọc được trạng thái backend local.";
+  }
+}
+
+async function changeAiProvider(provider) {
+  const buttons = [$("activate-local"), $("activate-gemini"), $("runtime-refresh")];
+  buttons.forEach((button) => { button.disabled = true; });
+  $("runtime-message").textContent = provider === "ollama" ? "Đang khởi động Ollama và nạp model CV Match…" : "Đang kiểm tra Gemini API…";
+  try {
+    const runtime = await api("/api/admin/ai-runtime/provider", { method: "PUT", body: { provider }, timeout: 300000 });
+    renderAiRuntime(runtime);
+    $("runtime-message").textContent = provider === "ollama" ? "Model local đã sẵn sàng và đang xử lý yêu cầu mới." : "Gemini đã được kiểm tra và đang xử lý yêu cầu mới.";
+    notify($("runtime-message").textContent);
+  } catch (error) {
+    const failure = error.message || "Không đổi được provider.";
+    await loadAiRuntime();
+    $("runtime-message").textContent = failure;
+  } finally {
+    buttons.forEach((button) => { button.disabled = false; });
+    if (aiRuntime) renderAiRuntime(aiRuntime);
+  }
+}
+
+$("activate-local").addEventListener("click", () => changeAiProvider("ollama"));
+$("activate-gemini").addEventListener("click", () => changeAiProvider("gemini"));
+$("runtime-refresh").addEventListener("click", loadAiRuntime);
+$("gemini-config-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const button = $("gemini-save");
+  button.disabled = true;
+  const body = {};
+  if ($("gemini-api-key").value.trim()) body.api_key = $("gemini-api-key").value.trim();
+  if ($("gemini-model").value.trim()) body.model = $("gemini-model").value.trim();
+  try {
+    const runtime = await api("/api/admin/ai-runtime/gemini", { method: "PUT", body });
+    $("gemini-api-key").value = "";
+    renderAiRuntime(runtime);
+    $("runtime-message").textContent = "Cấu hình Gemini đã lưu trên máy này. Hãy chọn Chuyển sang Gemini để kiểm tra kết nối và kích hoạt.";
+    notify("Đã lưu cấu hình Gemini local.");
+  } catch (error) {
+    $("runtime-message").textContent = error.message || "Không lưu được cấu hình Gemini.";
+  } finally {
+    button.disabled = false;
+  }
+});
+
 $("view-switcher").addEventListener("change", (event) => showView(event.target.value));
 window.addEventListener("hashchange", () => showView(location.hash.slice(1), false));
 $("menu-toggle").addEventListener("click", () => {
