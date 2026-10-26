@@ -1,5 +1,5 @@
 /* ============================================================
-   CV Match — Landing công khai, route `/`
+   AI Match — Landing công khai, route `/`
    Điểm nhấn duy nhất là hiệu ứng đối chiếu CV–JD (.lp-stage).
    Trạng thái mặc định của mọi phần tử động chính là khung hình cuối,
    nên khi tắt animation (prefers-reduced-motion) trang vẫn đọc đủ nội dung.
@@ -1463,6 +1463,12 @@ html.has-landing {
   letter-spacing: var(--ls-caps);
   color: var(--c-text-3);
   transition: color 160ms var(--ease-standard);
+}
+.lp-cap__num .product-mark {
+  display: block;
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
 }
 .lp-cap:hover .lp-cap__num {
   color: var(--c-brand-blue);

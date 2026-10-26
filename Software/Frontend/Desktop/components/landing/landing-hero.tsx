@@ -4,8 +4,8 @@ import React from "react";
 import { ChevronDown } from "lucide-react";
 
 const HERO_TITLE: { text: string; accent?: boolean }[] = [
-  { text: "Một nền tảng. Hai lối đi." },
-  { text: "Cùng một điểm chạm.", accent: true },
+  { text: "Tuyển dụng rõ căn cứ." },
+  { text: "Phát triển đúng hướng.", accent: true },
 ];
 
 function HeroTitle() {
@@ -50,16 +50,16 @@ export function LandingHero() {
       <div className="lp-container lp-hero__center">
         <span className="lp-hero__eyebrow">
           <i aria-hidden="true" />
-          <span>Tuyển dụng</span>
-          <strong className="lp-hero__rotword">nhanh hơn</strong>
+          <span>AI Match kết nối</span>
+          <strong className="lp-hero__rotword">nhiều công cụ</strong>
         </span>
 
         <HeroTitle />
 
         <p className="lp-hero__lead">
-          CV Match giúp <strong>người tìm việc hiểu hồ sơ của mình</strong> và giúp doanh nghiệp{" "}
-          <strong>tìm đúng người cho đúng vai trò</strong>. Trọng số do recruiter kiểm soát, mỗi điểm
-          số đều kèm dẫn chứng.
+          AI Match kết nối <strong>các công cụ tuyển dụng chuyên biệt</strong> với{" "}
+          <strong>hành trình khám phá nghề nghiệp</strong>. Mỗi công cụ có không gian riêng để bạn
+          bắt đầu đúng việc mình cần.
         </p>
 
         <a href="#gioi-thieu" className="lp-hero__cue" aria-label="Xuống phần giới thiệu">

@@ -3,12 +3,12 @@
 import React from "react";
 
 const COMPARISON: [string, string, string][] = [
-  ["Tiêu chí đánh giá", "Mỗi người một cách hiểu", "Một bộ trọng số áp dụng cho mọi hồ sơ"],
-  ["Bằng chứng", "Ghi chú rời rạc", "Dẫn chứng trích thẳng từ CV, gắn với từng tiêu chí"],
-  ["So sánh ứng viên", "Mở lần lượt từng tệp", "Bảng xếp hạng kèm điểm và phân hạng A/B/C"],
-  ["Điều kiện bắt buộc", "Dễ bỏ sót khi đọc nhanh", "Lọc trước khi chấm và nêu rõ lý do loại"],
-  ["Chuẩn bị phỏng vấn", "Tự soạn câu hỏi cho từng hồ sơ", "Sinh câu hỏi chung, chuyên sâu hoặc so sánh từ kết quả"],
-  ["Lưu vết", "Email, Excel, ổ đĩa rời", "Lịch sử tập trung, tra lại được mọi lúc"],
+  ["Tuyển dụng", "Hồ sơ, vị trí và kết quả nằm ở nhiều nơi", "CV Match và Talent Match hỗ trợ các bước trong workspace"],
+  ["Đánh giá CV", "Khó thống nhất tiêu chí giữa người đánh giá", "Tùy chỉnh rubric và xem dẫn chứng theo hồ sơ"],
+  ["Phỏng vấn", "Tự chuẩn bị câu hỏi và tiêu chí từ đầu", "Interview Match hỗ trợ chuẩn bị cho từng vị trí"],
+  ["Thông tin lương", "Tìm kiếm và tổng hợp thủ công", "Salary Match tra cứu qua API và nêu nguồn dữ liệu"],
+  ["Định hướng nghề nghiệp", "Khó bắt đầu từ sở thích và năng lực cá nhân", "Career Match yêu cầu hoàn thành khảo sát RIASEC trước tư vấn"],
+  ["Quyền quyết định", "Khó truy lại căn cứ của kết quả", "AI hỗ trợ phân tích; con người kiểm tra và quyết định"],
 ];
 
 export function LandingComparison() {
@@ -16,8 +16,8 @@ export function LandingComparison() {
     <section id="so-sanh" className="lp-section lp-section--soft">
       <div className="lp-container">
         <div className="lp-sechead lp-reveal">
-          <h2>Sàng lọc thủ công và CV Match khác nhau ở đâu</h2>
-          <p>Khác biệt nằm ở chỗ kết luận có kèm căn cứ hay không, chứ không phải ở tốc độ.</p>
+          <h2>Nhiều công cụ. Một hệ sinh thái AI Match.</h2>
+          <p>Tuyển dụng và phát triển nghề nghiệp có không gian riêng, cùng một lối vào rõ ràng.</p>
         </div>
 
         <div className="lp-tablewrap lp-reveal">
@@ -27,7 +27,7 @@ export function LandingComparison() {
                 <th scope="col">Khía cạnh</th>
                 <th scope="col">Sàng lọc thủ công</th>
                 <th scope="col" className="lp-table__product-head">
-                  Với CV Match
+                  Với AI Match
                 </th>
               </tr>
             </thead>

@@ -3,24 +3,24 @@ import { ChevronDown } from "lucide-react";
 
 const QUESTIONS = [
   {
-    question: "CV Match đánh giá hồ sơ dựa trên những gì?",
+    question: "AI Match có những công cụ nào?",
     answer:
-      "Hệ thống đối chiếu nội dung CV với mô tả công việc và bộ tiêu chí recruiter đã thiết lập. Mỗi điểm số đi kèm phần giải thích hoặc dẫn chứng để bạn tự kiểm tra.",
+      "AI Match gồm CV Match, Career Match, Insight Match, Interview Match, Salary Match và Talent Match. Mỗi công cụ phục vụ một nhu cầu riêng và có trang truy cập riêng.",
   },
   {
-    question: "AI có tự quyết định loại ứng viên không?",
+    question: "Điểm đánh giá CV được sử dụng như thế nào?",
     answer:
-      "Không. Kết quả là thông tin tham khảo để hỗ trợ sàng lọc. Recruiter xem hồ sơ, điều chỉnh tiêu chí và quyết định bước tiếp theo.",
+      "CV Match đối chiếu hồ sơ với mô tả công việc và tiêu chí đã thiết lập. Điểm số cùng dẫn chứng là thông tin tham khảo; nhà tuyển dụng kiểm tra và quyết định bước tiếp theo.",
   },
   {
-    question: "Tôi có thể quản lý ứng viên và vị trí tuyển dụng ở đâu?",
+    question: "Tôi cần làm khảo sát trước khi dùng cố vấn nghề nghiệp không?",
     answer:
-      "Sau khi vào workspace, bạn có thể quản lý hồ sơ, vị trí tuyển dụng, tiến trình, lịch phỏng vấn và báo cáo trong thanh điều hướng.",
+      "Có. Career Match yêu cầu hoàn thành khảo sát Holland RIASEC trước khi đưa ra tư vấn định hướng.",
   },
   {
-    question: "Làm sao để bắt đầu?",
+    question: "Làm sao để bắt đầu với AI Match?",
     answer:
-      "Chọn “Vào workspace”, đăng nhập, rồi mở quy trình CV Match để chọn hoặc tạo mô tả công việc và tải hồ sơ cần đối chiếu.",
+      "Chọn công cụ phù hợp trong thanh điều hướng hoặc danh sách trên landing page. Với các tính năng workspace, đăng nhập rồi tiếp tục theo hướng dẫn của từng trang.",
   },
 ];
 
@@ -30,8 +30,8 @@ export function LandingFaq() {
       <div className="lp-container lp-faq">
         <div className="lp-sechead lp-faq__intro">
           <span className="lp-faq__eyebrow">Câu hỏi thường gặp</span>
-          <h2>Rõ cách dùng.<br />Chủ động quyết định.</h2>
-          <p>Thông tin nhanh để bạn bắt đầu với CV Match.</p>
+          <h2>Chọn đúng công cụ.<br />Bắt đầu đúng hành trình.</h2>
+          <p>Thông tin nhanh để bạn bắt đầu với AI Match.</p>
         </div>
         <div className="lp-faq__list">
           {QUESTIONS.map(({ question, answer }) => (

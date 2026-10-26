@@ -15,6 +15,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ArrowRight, Menu, X } from "lucide-react";
+import { ProductMark } from "@/components/product-logo";
 
 interface MenuColumn {
   caption: string;
@@ -66,7 +67,7 @@ const MENUS: Menu[] = [
   },
   {
     id: "chuc-nang",
-    label: "Chức năng",
+    label: "Công cụ AI & Tiện ích",
     columns: [
       {
         caption: "Trợ lý & Cố vấn thông minh",
@@ -120,8 +121,8 @@ const MENUS: Menu[] = [
 ];
 
 const DIRECT_LINKS: [string, string][] = [
-  ["Chức năng", "/#nang-luc"],
-  ["Quy trình", "/#lo-trinh"],
+  ["Công cụ", "/#nang-luc"],
+  ["Quy trình CV", "/#lo-trinh"],
   ["So sánh", "/#so-sanh"],
   ["FAQ", "/#faq"],
 ];
@@ -202,9 +203,9 @@ export function LandingNav() {
   return (
     <header className={`lp-header${isOverHero ? " is-over-hero" : ""}`}>
       <div className="lp-container lp-header__inner">
-        <a href="/" className="lp-brand" aria-label="CV Match — Trang chủ">
-          <img src="/brand/cvmatch-icon.png" alt="" />
-          <span className="lp-brand__name">CV MATCH</span>
+        <a href="/" className="lp-brand" aria-label="AI Match — Trang chủ">
+          <ProductMark product="platform" decorative />
+          <span className="lp-brand__name">AI MATCH</span>
         </a>
 
         <nav

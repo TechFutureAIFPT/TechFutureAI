@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-const ROTATING_WORDS = ["nhanh hơn", "chuẩn xác hơn", "tiết kiệm hơn"];
+const ROTATING_WORDS = ["nhiều công cụ", "rõ căn cứ", "đúng hướng"];
 
 function prefersReducedMotion() {
   return (

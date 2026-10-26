@@ -4,24 +4,24 @@ import React from "react";
 import { ArrowRight } from "lucide-react";
 
 const INTRO_TEXT =
-  "CV Match đối chiếu JD với từng hồ sơ, chỉ rõ ứng viên khớp ở đâu, " +
-  "thiếu ở đâu, kèm bằng chứng.";
+  "AI Match gom các công cụ tuyển dụng và định hướng nghề nghiệp vào một hệ sinh thái, " +
+  "để bạn chọn đúng công cụ cho từng hành trình.";
 
 const INTRO_HIGHLIGHTS = [
   {
-    num: "01",
-    title: "Cấu hình trọng số",
-    text: "Recruiter tùy chỉnh tiêu chí và xác nhận điều kiện loại trước khi chấm.",
+    num: "Cho nhà tuyển dụng",
+    title: "Công cụ riêng cho từng nhu cầu",
+    text: "Sàng lọc CV, chuẩn bị phỏng vấn, tra cứu lương và khám phá nghề nghiệp có trang riêng.",
   },
   {
-    num: "02",
-    title: "Dẫn chứng minh bạch",
-    text: "Trích xuất bằng chứng trực tiếp từ CV cho từng điểm số phù hợp.",
+    num: "Cho người học và người đi làm",
+    title: "Tuyển dụng có căn cứ",
+    text: "Nhà tuyển dụng kiểm soát tiêu chí, xem phân tích hồ sơ và tự quyết định.",
   },
   {
-    num: "03",
-    title: "Quyết định có căn cứ",
-    text: "Sinh bộ câu hỏi phỏng vấn và chủ động duyệt email trước khi gửi.",
+    num: "Cùng một hệ sinh thái",
+    title: "Định hướng có cơ sở",
+    text: "Người dùng bắt đầu từ khảo sát RIASEC rồi tham khảo hướng nghề phù hợp.",
   },
 ];
 
@@ -32,7 +32,7 @@ export function LandingIntro() {
     <section id="gioi-thieu" className="lp-intro">
       <div className="lp-container lp-intro__inner">
         <div className="lp-intro__main">
-          <p className="lp-intro__eyebrow">Đối chiếu JD · Chấm điểm CV · Bằng chứng</p>
+          <p className="lp-intro__eyebrow">Tuyển dụng · Phỏng vấn · Phát triển nghề nghiệp</p>
           <p className="lp-intro__text">
             {words.map((word, index) => (
               <span key={index}>
@@ -41,8 +41,8 @@ export function LandingIntro() {
               </span>
             ))}
           </p>
-          <a href="/cv-match" className="lp-btn lp-btn--primary lp-btn--lg">
-            <span>Thử một lượt đối chiếu</span>
+          <a href="#nang-luc" className="lp-btn lp-btn--primary lp-btn--lg">
+            <span>Khám phá các công cụ</span>
             <ArrowRight size={18} />
           </a>
         </div>

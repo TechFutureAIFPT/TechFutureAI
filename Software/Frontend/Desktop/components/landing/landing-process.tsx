@@ -29,8 +29,8 @@ export function LandingProcess() {
     <section id="lo-trinh" className="lp-section lp-section--process">
       <div className="lp-container">
         {sectionHead(
-          "Quy trình lọc CV",
-          "Sáu bước từ JD đến liên hệ ứng viên; recruiter xác nhận trước mọi hành động gửi đi."
+          "Quy trình CV Match",
+          "Trong AI Match, luồng tuyển dụng đi từ yêu cầu vị trí đến đánh giá hồ sơ và chuẩn bị phỏng vấn."
         )}
 
         <ol className="lp-road lp-road--timeline">

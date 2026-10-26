@@ -11,9 +11,9 @@ import { LandingProcess } from "@/components/landing/landing-process";
 import { LandingComparison } from "@/components/landing/landing-comparison";
 
 export const metadata: Metadata = {
-  title: { absolute: "CV Match | Sàng lọc tuyển dụng có căn cứ" },
+  title: { absolute: "AI Match | Tuyển dụng & phát triển nghề nghiệp" },
   description:
-    "Đối chiếu CV với mô tả công việc, xem dẫn chứng theo từng tiêu chí và quản lý quy trình tuyển dụng trong một workspace.",
+    "AI Match kết nối các công cụ tuyển dụng, sàng lọc CV và định hướng nghề nghiệp trong một hệ sinh thái với từng công cụ dành cho một nhu cầu riêng.",
 };
 
 export default function LandingPage() {
