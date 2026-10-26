@@ -49,6 +49,7 @@ export function JobModal({ open, onOpenChange, jobToEdit }: JobModalProps) {
   const [impactWeight, setImpactWeight] = useState("10");
   const [eduWeight, setEduWeight] = useState("5");
   const [softWeight, setSoftWeight] = useState("10");
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (jobToEdit) {
@@ -94,7 +95,7 @@ export function JobModal({ open, onOpenChange, jobToEdit }: JobModalProps) {
     }
   }, [jobToEdit, open, recruiters]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
 
@@ -124,13 +125,15 @@ export function JobModal({ open, onOpenChange, jobToEdit }: JobModalProps) {
       },
     };
 
-    if (jobToEdit) {
-      updateJob(jobToEdit.id, jobData);
-    } else {
-      addJob(jobData);
+    setIsSaving(true);
+    try {
+      const saved = jobToEdit
+        ? await updateJob(jobToEdit.id, jobData)
+        : await addJob(jobData);
+      if (saved) onOpenChange(false);
+    } finally {
+      setIsSaving(false);
     }
-
-    onOpenChange(false);
   };
 
   return (
@@ -358,9 +361,10 @@ export function JobModal({ open, onOpenChange, jobToEdit }: JobModalProps) {
             </Button>
             <Button
               type="submit"
+              disabled={isSaving}
               className="bg-sky-600 text-white hover:bg-sky-700 font-bold shadow-xs"
             >
-              {jobToEdit ? "Lưu Vị Trí JD" : "Tạo Chiến Dịch JD"}
+              {isSaving ? "Đang lưu…" : jobToEdit ? "Lưu Vị Trí JD" : "Tạo Chiến Dịch JD"}
             </Button>
           </DialogFooter>
         </form>

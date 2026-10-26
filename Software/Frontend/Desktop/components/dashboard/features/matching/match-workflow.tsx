@@ -82,7 +82,8 @@ export function MatchWorkflowSection() {
     resetWorkflow,
     jdTemplates,
     candidates,
-    setCandidates,
+    saveCandidates,
+    authUser,
     exportCandidatesCsv,
     backendStatus,
     userProfile,
@@ -439,6 +440,11 @@ export function MatchWorkflowSection() {
                 if (mapped.candidates && mapped.candidates.length > 0) {
                   const realCands: import("@/lib/mock-data").Candidate[] = mapped.candidates.map((c, idx) => ({
                     id: `cand-ai-${Date.now()}-${idx}`,
+                    sourceBatchId:
+                      mapped.savedHistoryId ??
+                      (typeof statusRes.result?.pipeline?.historyId === "string"
+                        ? statusRes.result.pipeline.historyId
+                        : jobAccepted.job_id),
                     name: c.candidateName || `Ứng viên #${idx + 1}`,
                     email: c.email || "",
                     phone: c.phone || "",
@@ -465,7 +471,10 @@ export function MatchWorkflowSection() {
                     weaknesses: c.analysis.weaknesses || [],
                     interviewQuestions: c.analysis.interview_questions || [],
                   }));
-                  setCandidates(realCands);
+                  const persisted = await saveCandidates(realCands);
+                  if (!persisted && authUser) {
+                    toast.warning("Phân tích đã xong nhưng chưa lưu được danh sách ứng viên. Hãy thử tải lại sau.");
+                  }
                 }
               }
 

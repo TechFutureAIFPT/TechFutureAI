@@ -52,6 +52,7 @@ export function CandidateModal({
   const [location, setLocation] = useState("TP. Hồ Chí Minh");
   const [recruiter, setRecruiter] = useState("");
   const [aiSummary, setAiSummary] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (candidateToEdit) {
@@ -87,7 +88,7 @@ export function CandidateModal({
     }
   }, [candidateToEdit, defaultStage, open, jobs, recruiters]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
 
@@ -118,13 +119,15 @@ export function CandidateModal({
       ],
     };
 
-    if (candidateToEdit) {
-      updateCandidate(candidateToEdit.id, candData);
-    } else {
-      addCandidate(candData);
+    setIsSaving(true);
+    try {
+      const saved = candidateToEdit
+        ? await updateCandidate(candidateToEdit.id, candData)
+        : await addCandidate(candData);
+      if (saved) onOpenChange(false);
+    } finally {
+      setIsSaving(false);
     }
-
-    onOpenChange(false);
   };
 
   return (
@@ -330,9 +333,10 @@ export function CandidateModal({
             </Button>
             <Button
               type="submit"
+              disabled={isSaving}
               className="bg-sky-600 text-white hover:bg-sky-700 font-bold shadow-xs"
             >
-              {candidateToEdit ? "Lưu Thay Đổi" : "Tiếp Nhận CV"}
+              {isSaving ? "Đang lưu…" : candidateToEdit ? "Lưu Thay Đổi" : "Tiếp Nhận CV"}
             </Button>
           </DialogFooter>
         </form>

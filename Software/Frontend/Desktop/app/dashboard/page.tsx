@@ -1,23 +1,36 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { useSalesOps, type Section } from "@/lib/sales-ops-context";
 import { canonicalSection, isSection, navigationItems } from "@/lib/navigation";
-import { OverviewSection } from "@/components/dashboard/features/overview";
-import { MatchWorkflowSection, WorkspaceSection, HistorySection } from "@/components/dashboard/features/matching";
-import { CandidatesSection, PipelineSection, ContactCandidatesSection } from "@/components/dashboard/features/candidates";
-import { JobsSection } from "@/components/dashboard/features/jobs";
-import { InterviewHubSection, InterviewQuestionsSection, SalaryBenchmarkSection, AIAssistantSection, CareerCompassSection } from "@/components/dashboard/features/ai-tools";
-import { ReportsSection } from "@/components/dashboard/features/reports";
-import { SettingsSection, CriteriaSettingsSection } from "@/components/dashboard/features/settings";
+
+function SectionLoading() {
+  return <div role="status" className="p-8 text-sm text-muted-foreground">Đang mở khu vực làm việc…</div>;
+}
+
+const OverviewSection = dynamic(() => import("@/components/dashboard/features/overview").then((module) => module.OverviewSection), { loading: SectionLoading });
+const MatchWorkflowSection = dynamic(() => import("@/components/dashboard/features/matching").then((module) => module.MatchWorkflowSection), { loading: SectionLoading });
+const WorkspaceSection = dynamic(() => import("@/components/dashboard/features/matching").then((module) => module.WorkspaceSection), { loading: SectionLoading });
+const HistorySection = dynamic(() => import("@/components/dashboard/features/matching").then((module) => module.HistorySection), { loading: SectionLoading });
+const CandidatesSection = dynamic(() => import("@/components/dashboard/features/candidates").then((module) => module.CandidatesSection), { loading: SectionLoading });
+const PipelineSection = dynamic(() => import("@/components/dashboard/features/candidates").then((module) => module.PipelineSection), { loading: SectionLoading });
+const ContactCandidatesSection = dynamic(() => import("@/components/dashboard/features/candidates").then((module) => module.ContactCandidatesSection), { loading: SectionLoading });
+const JobsSection = dynamic(() => import("@/components/dashboard/features/jobs").then((module) => module.JobsSection), { loading: SectionLoading });
+const InterviewHubSection = dynamic(() => import("@/components/dashboard/features/ai-tools").then((module) => module.InterviewHubSection), { loading: SectionLoading });
+const InterviewQuestionsSection = dynamic(() => import("@/components/dashboard/features/ai-tools").then((module) => module.InterviewQuestionsSection), { loading: SectionLoading });
+const SalaryBenchmarkSection = dynamic(() => import("@/components/dashboard/features/ai-tools").then((module) => module.SalaryBenchmarkSection), { loading: SectionLoading });
+const AIAssistantSection = dynamic(() => import("@/components/dashboard/features/ai-tools").then((module) => module.AIAssistantSection), { loading: SectionLoading });
+const CareerCompassSection = dynamic(() => import("@/components/dashboard/features/ai-tools").then((module) => module.CareerCompassSection), { loading: SectionLoading });
+const ReportsSection = dynamic(() => import("@/components/dashboard/features/reports").then((module) => module.ReportsSection), { loading: SectionLoading });
+const SettingsSection = dynamic(() => import("@/components/dashboard/features/settings").then((module) => module.SettingsSection), { loading: SectionLoading });
+const CriteriaSettingsSection = dynamic(() => import("@/components/dashboard/features/settings").then((module) => module.CriteriaSettingsSection), { loading: SectionLoading });
 
 function DashboardContent() {
-  const { activeSection, setActiveSection, authUser, authChecked, setIsAuthModalOpen } = useSalesOps();
+  const { activeSection, syncActiveSection, authUser, authChecked, setIsAuthModalOpen } = useSalesOps();
   const searchParams = useSearchParams();
   const currentSection = canonicalSection(activeSection);
-  const session = authUser?.uid || "preview";
-  const [visited, setVisited] = useState<{ session: string; sections: Section[] }>({ session, sections: [currentSection] });
 
   useEffect(() => {
     if (searchParams.get("auth") === "login" && authChecked && !authUser) setIsAuthModalOpen(true);
@@ -25,19 +38,14 @@ function DashboardContent() {
 
   useEffect(() => {
     const section = searchParams.get("section");
-    setActiveSection(section && isSection(section) ? canonicalSection(section) : "overview");
-  }, [searchParams, setActiveSection]);
+    syncActiveSection(section && isSection(section) ? canonicalSection(section) : "overview");
+  }, [searchParams, syncActiveSection]);
 
   useEffect(() => {
-    setVisited((previous) => {
-      if (previous.session !== session) return { session, sections: [currentSection] };
-      if (previous.sections.includes(currentSection)) return previous;
-      return { session, sections: [...previous.sections, currentSection] };
-    });
     const label = navigationItems.find((item) => item.id === currentSection)?.label || "Không gian làm việc";
     document.title = `${label} | AI Match`;
     window.scrollTo({ top: 0 });
-  }, [currentSection, session]);
+  }, [currentSection]);
 
   const renderSection = (section: Section) => {
     switch (section) {
@@ -79,18 +87,13 @@ function DashboardContent() {
     }
   };
 
-  const sections = visited.session === session ? Array.from(new Set([...visited.sections, currentSection])) : [currentSection];
   const immersive = currentSection === "ai-assistant" || currentSection === "career-compass";
 
   return (
-    <div key={session} className={`workspace-pages${immersive ? " workspace-pages-full" : ""}`}>
-      {sections.map((section) => {
-        const item = navigationItems.find((entry) => entry.id === section);
-        const fullHeight = section === "ai-assistant" || section === "career-compass";
-        return <section key={section} hidden={section !== currentSection} aria-label={item?.label || "Tổng quan"} data-workspace-section={section} className={fullHeight ? "workspace-page workspace-page-full" : "workspace-page"}>
-          {renderSection(section)}
-        </section>;
-      })}
+    <div className={`workspace-pages${immersive ? " workspace-pages-full" : ""}`}>
+      <section key={currentSection} aria-label={navigationItems.find((item) => item.id === currentSection)?.label || "Tổng quan"} data-workspace-section={currentSection} className={immersive ? "workspace-page workspace-page-full" : "workspace-page"}>
+        {renderSection(currentSection)}
+      </section>
     </div>
   );
 }

@@ -75,20 +75,9 @@ export function ReportsSection() {
   const filteredCandidates = useMemo(() => {
     let list = candidates;
 
-    // If a specific batch is chosen, filter by job target or batch name
+    // Candidate rows carry their originating batch id, so the selected report is exact.
     if (selectedBatch) {
-      const jobLower = selectedBatch.jobTitle.toLowerCase();
-      list = candidates.filter((c) => {
-        const cJob = c.jobTarget.toLowerCase();
-        return (
-          jobLower.includes(cJob) ||
-          cJob.includes(jobLower) ||
-          jobLower.split("&").some((part) => cJob.includes(part.trim())) ||
-          c.recruiter === selectedBatch.recruiter
-        );
-      });
-      // If list is empty (e.g. mock subset), fallback to all candidates to always show rich data
-      if (list.length === 0) list = candidates;
+      list = candidates.filter((candidate) => candidate.sourceBatchId === selectedBatch.id);
     }
 
     if (searchCand.trim()) {
@@ -181,7 +170,7 @@ export function ReportsSection() {
       ];
       candidates.forEach((c) => {
         csvRows.push(
-          `"${c.id}","${c.name}","${c.email}","${c.phone}","${c.jobTarget}",${c.matchScore}%,${c.experienceYears},${c.expectedSalary},"${c.status}","${c.stage}",${c.criteriaScores?.skills || 80},${c.criteriaScores?.experience || 75},${c.criteriaScores?.education || 80},${c.criteriaScores?.softSkills || 85},"${(c.aiSummary || "").replace(/"/g, '""')}"`
+          `"${c.id}","${c.name}","${c.email}","${c.phone}","${c.jobTarget}",${c.matchScore}%,${c.experienceYears},${c.expectedSalary},"${c.status}","${c.stage}",${c.criteriaScores?.skills ?? 0},${c.criteriaScores?.experience ?? 0},${c.criteriaScores?.education ?? 0},${c.criteriaScores?.softSkills ?? 0},"${(c.aiSummary || "").replace(/"/g, '""')}"`
         );
       });
 
@@ -566,13 +555,13 @@ export function ReportsSection() {
                         </td>
 
                         <td className="py-3 px-4 text-center font-semibold text-slate-700">
-                          {cand.criteriaScores?.skills || 85}/100
+                          {cand.criteriaScores?.skills ?? 0}/100
                         </td>
                         <td className="py-3 px-4 text-center font-semibold text-slate-700">
                           {cand.criteriaScores?.experience || 80}/100
                         </td>
                         <td className="py-3 px-4 text-center font-semibold text-slate-700">
-                          {cand.criteriaScores?.education || 85}/100
+                          {cand.criteriaScores?.education ?? 0}/100
                         </td>
                         <td className="py-3 px-4 text-center font-semibold text-slate-700">
                           {cand.criteriaScores?.softSkills || 90}/100

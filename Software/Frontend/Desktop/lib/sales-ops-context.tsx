@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useMemo, useEffect, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   type Candidate,
@@ -34,6 +35,7 @@ import {
 import { aiApi, filesApi, salaryApi, accountApi } from "./api-endpoints";
 import { probeBackend, getActiveBaseUrl } from "./api-client";
 import { APP_CONFIG } from "./config";
+import { canonicalSection, sectionHref } from "./navigation";
 
 export type Section =
   | "overview"
@@ -195,10 +197,13 @@ export interface BackendStatus {
   endpoint: string;
 }
 
+export type WorkspaceDataState = "preview" | "loading" | "ready" | "error";
+
 interface SalesOpsContextType {
   // Navigation
   activeSection: Section;
   setActiveSection: (section: Section) => void;
+  syncActiveSection: (section: Section) => void;
   sidebarCollapsed: boolean;
   setSidebarCollapsed: (collapsed: boolean) => void;
   mobileMenuOpen: boolean;
@@ -213,7 +218,8 @@ interface SalesOpsContextType {
   authChecked: boolean;
   isAuthModalOpen: boolean;
   setIsAuthModalOpen: (open: boolean) => void;
-  reloadRealUserData: () => Promise<void>;
+  reloadRealUserData: () => Promise<boolean>;
+  workspaceDataState: WorkspaceDataState;
   logoutUser: () => Promise<void>;
 
   // Global Search
@@ -222,7 +228,7 @@ interface SalesOpsContextType {
 
   // Core Data Collections
   candidates: Candidate[];
-  setCandidates: React.Dispatch<React.SetStateAction<Candidate[]>>;
+  saveCandidates: (candidates: Candidate[]) => Promise<boolean>;
   jobs: JobPosition[];
   jdTemplates: JDTemplate[];
   salaryBenchmarks: SalaryBenchmarkItem[];
@@ -253,15 +259,15 @@ interface SalesOpsContextType {
   clearChat: () => void;
 
   // Candidate CRUD
-  addCandidate: (candidate: Omit<Candidate, "id">) => void;
-  updateCandidate: (id: string, updates: Partial<Candidate>) => void;
-  deleteCandidate: (id: string) => void;
-  moveCandidateStage: (id: string, newStage: Candidate["stage"]) => void;
+  addCandidate: (candidate: Omit<Candidate, "id">) => Promise<boolean>;
+  updateCandidate: (id: string, updates: Partial<Candidate>) => Promise<boolean>;
+  deleteCandidate: (id: string) => Promise<boolean>;
+  moveCandidateStage: (id: string, newStage: Candidate["stage"]) => Promise<boolean>;
 
   // Job CRUD
-  addJob: (job: Omit<JobPosition, "id" | "hiredCount" | "totalApplicants">) => void;
-  updateJob: (id: string, updates: Partial<JobPosition>) => void;
-  deleteJob: (id: string) => void;
+  addJob: (job: Omit<JobPosition, "id" | "hiredCount" | "totalApplicants">) => Promise<boolean>;
+  updateJob: (id: string, updates: Partial<JobPosition>) => Promise<boolean>;
+  deleteJob: (id: string) => Promise<boolean>;
 
   // Recruiter CRUD
   addRecruiter: (recruiter: { name: string; role: string; email: string; phone: string; department: string; hiringTarget: number }) => void;
@@ -316,7 +322,16 @@ interface SalesOpsContextType {
 const SalesOpsContext = createContext<SalesOpsContextType | undefined>(undefined);
 
 export function SalesOpsProvider({ children }: { children: React.ReactNode }) {
-  const [activeSection, setActiveSection] = useState<Section>("overview");
+  const router = useRouter();
+  const [activeSection, setActiveSectionState] = useState<Section>("overview");
+  const setActiveSection = useCallback((section: Section) => {
+    const canonical = canonicalSection(section);
+    setActiveSectionState(canonical);
+    router.push(sectionHref(canonical), { scroll: false });
+  }, [router]);
+  const syncActiveSection = useCallback((section: Section) => {
+    setActiveSectionState(canonicalSection(section));
+  }, []);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -363,6 +378,7 @@ export function SalesOpsProvider({ children }: { children: React.ReactNode }) {
   // đăng nhập trong lúc onAuthStateChanged() chưa xác nhận xong phiên hiện tại.
   const [authChecked, setAuthChecked] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [workspaceDataState, setWorkspaceDataState] = useState<WorkspaceDataState>("preview");
 
   // Collections
   const [candidates, setCandidates] = useState<Candidate[]>(initialCandidates);
@@ -424,10 +440,13 @@ export function SalesOpsProvider({ children }: { children: React.ReactNode }) {
   // Reload real user profile & database data from Backend API
   const reloadRealUserData = useCallback(async () => {
     const loadId = ++dataLoadGeneration.current;
+    const isAuthenticatedLoad = Boolean(identityUid.current);
+    let workspaceLoadFailed = false;
+    if (isAuthenticatedLoad) setWorkspaceDataState("loading");
     try {
       // 1. Profile from Backend DB
       const prof = await accountApi.getProfile().catch(() => null);
-      if (loadId !== dataLoadGeneration.current) return;
+      if (loadId !== dataLoadGeneration.current) return false;
       if (prof && typeof prof === "object") {
         setUserProfile((prev) => ({
           ...prev,
@@ -440,7 +459,7 @@ export function SalesOpsProvider({ children }: { children: React.ReactNode }) {
 
       // 2. Settings from Backend DB
       const sett = await accountApi.getSettings().catch(() => null);
-      if (loadId !== dataLoadGeneration.current) return;
+      if (loadId !== dataLoadGeneration.current) return false;
       if (sett && typeof sett === "object") {
         setUserProfile((prev) => ({
           ...prev,
@@ -451,7 +470,7 @@ export function SalesOpsProvider({ children }: { children: React.ReactNode }) {
 
       // 3. Real JD Templates / Rubrics from Live Backend
       const rubricsRes = await aiApi.listRubrics().catch(() => null);
-      if (loadId !== dataLoadGeneration.current) return;
+      if (loadId !== dataLoadGeneration.current) return false;
       if (rubricsRes && Array.isArray(rubricsRes.items) && rubricsRes.items.length > 0) {
         const realTemplates: JDTemplate[] = rubricsRes.items.map((r: any, idx: number) => ({
           id: r.roleKey || `tmpl-${idx}`,
@@ -479,7 +498,7 @@ export function SalesOpsProvider({ children }: { children: React.ReactNode }) {
 
       // 4. Real User Notifications from Backend
       const notifRes = await accountApi.listNotifications().catch(() => null);
-      if (loadId !== dataLoadGeneration.current) return;
+      if (loadId !== dataLoadGeneration.current) return false;
       if (Array.isArray(notifRes)) {
         setNotifications(notifRes.map((n: any, idx: number) => ({
           id: n.id || `notif-${idx}`,
@@ -493,7 +512,9 @@ export function SalesOpsProvider({ children }: { children: React.ReactNode }) {
 
       // 5. Real History Batches & Candidate Records from Backend Database
       const hist = await accountApi.listHistory().catch(() => null);
-      if (loadId !== dataLoadGeneration.current) return;
+      if (loadId !== dataLoadGeneration.current) return false;
+      if (isAuthenticatedLoad && !Array.isArray(hist)) workspaceLoadFailed = true;
+      const extractedCandidates: Candidate[] = [];
       if (Array.isArray(hist)) {
         const realBatches: HistoryBatch[] = hist.map((h: any, idx: number) => ({
           id: h.id || `batch-${idx}`,
@@ -511,7 +532,6 @@ export function SalesOpsProvider({ children }: { children: React.ReactNode }) {
         setHistoryBatches(realBatches);
 
         // Extract real candidates from all history sessions with guaranteed unique IDs
-        const extractedCandidates: Candidate[] = [];
         const seenCandIds = new Set<string>();
 
         hist.forEach((h: any, batchIdx: number) => {
@@ -520,7 +540,7 @@ export function SalesOpsProvider({ children }: { children: React.ReactNode }) {
             candList.forEach((c: any, cIdx: number) => {
               const numericScore = Number(c.analysis?.["Tổng điểm"] ?? c.analysis?.total_score ?? c.analysis?.totalScore ?? c.totalScore ?? c.match_score ?? c.score ?? c.matchScore ?? 0);
               const score = Number.isFinite(numericScore) ? Math.max(0, Math.min(100, numericScore)) : 0;
-              const baseId = c.id || c.cv_id || (c.fileName ? `${c.fileName}-${c.name || cIdx}` : `cand-${cIdx}`);
+              const baseId = String(c.id || c.cv_id || (c.fileName ? `${c.fileName}-${c.name || cIdx}` : `cand-${cIdx}`)).slice(0, 120);
               let uniqueId = `cand-db-${batchIdx}-${cIdx}-${baseId}`;
               if (seenCandIds.has(uniqueId)) {
                 uniqueId = `${uniqueId}-${Math.random().toString(36).substring(2, 7)}`;
@@ -529,6 +549,7 @@ export function SalesOpsProvider({ children }: { children: React.ReactNode }) {
 
               extractedCandidates.push({
                 id: uniqueId,
+                sourceBatchId: h.id || `batch-${batchIdx}`,
                 name: c.candidateName || c.name || c.candidate_name || `Ứng viên ${cIdx + 1}`,
                 email: c.email || "",
                 phone: c.phone || "",
@@ -563,43 +584,49 @@ export function SalesOpsProvider({ children }: { children: React.ReactNode }) {
           }
         });
 
-        setCandidates(extractedCandidates);
       }
 
-      // 6. Real Job Campaigns from Backend Rubrics & Templates
-      if (!prof && rubricsRes && Array.isArray(rubricsRes.items) && rubricsRes.items.length > 0) {
-        const realJobs: JobPosition[] = rubricsRes.items.map((r: any, idx: number) => ({
-          id: r.roleKey || `job-${idx + 1}`,
-          title: r.roleLabel || r.roleKey,
-          department: r.roleKey.includes("marketing") || r.roleKey.includes("sales") ? "Kinh Doanh & Marketing" : "Khối Kỹ Thuật & Công Nghệ",
-          level: "Senior",
-          location: "TP. Hồ Chí Minh & Hà Nội",
-          openings: 2,
-          hiredCount: 0,
-          totalApplicants: 15 + idx * 3,
-          salaryRange: "28,000,000 - 65,000,000 ₫",
-          status: "active",
-          deadline: new Date(Date.now() + (30 + idx * 5) * 86400000).toISOString().split("T")[0],
-          recruiter: "Nguyễn Thị Mai",
-          requirements: [
-            `Yêu cầu kỹ năng chuyên môn: ${r.weights?.role_skills?.name || "Thành thạo công nghệ lõi"}`,
-            `Kinh nghiệm thực tế: ${r.weights?.experience?.name || "Kinh nghiệm làm việc tối thiểu 3 năm"}`,
-            `Dự án & bằng chứng định lượng: ${r.weights?.impact?.name || "Có kết quả dự án cụ thể"}`,
-            `Kỹ năng phối hợp & làm việc nhóm`,
-          ],
-          rubricWeights: {
-            job_fit: Number(r.weights?.job_fit?.weight) || 20,
-            role_skills: Number(r.weights?.role_skills?.weight) || 35,
-            experience: Number(r.weights?.experience?.weight) || 20,
-            impact: Number(r.weights?.impact?.weight) || 10,
-            education: Number(r.weights?.education?.weight) || 5,
-            soft_skills: Number(r.weights?.soft_skills?.weight) || 10,
-          },
-        }));
-        setJobs(realJobs);
+      if (isAuthenticatedLoad) {
+        const workspaceCandidates = await accountApi.listWorkspaceCandidates().catch(() => {
+          workspaceLoadFailed = true;
+          return null;
+        });
+        if (loadId !== dataLoadGeneration.current) return false;
+        const workspaceInitialized = await accountApi.getWorkspaceInitialization().catch(() => {
+          workspaceLoadFailed = true;
+          return null;
+        });
+        if (loadId !== dataLoadGeneration.current) return false;
+        if (Array.isArray(workspaceCandidates)) {
+          if (workspaceInitialized === false && workspaceCandidates.length === 0 && extractedCandidates.length > 0) {
+            try {
+              const migratedCandidates = await Promise.all(extractedCandidates.map((candidate) => accountApi.saveWorkspaceCandidate(candidate)));
+              setCandidates(migratedCandidates);
+            } catch {
+              workspaceLoadFailed = true;
+              setCandidates([]);
+            }
+          } else {
+            setCandidates(workspaceCandidates);
+          }
+          if (workspaceInitialized === false && !workspaceLoadFailed) {
+            await accountApi.initializeWorkspace().catch(() => { workspaceLoadFailed = true; });
+          }
+        }
+
+        const workspaceJobs = await accountApi.listWorkspaceJobs().catch(() => {
+          workspaceLoadFailed = true;
+          return null;
+        });
+        if (loadId !== dataLoadGeneration.current) return false;
+        if (Array.isArray(workspaceJobs)) setJobs(workspaceJobs);
+        setWorkspaceDataState(workspaceLoadFailed ? "error" : "ready");
+        return !workspaceLoadFailed;
       }
+      return true;
     } catch {
-      // Graceful fallback
+      if (isAuthenticatedLoad && loadId === dataLoadGeneration.current) setWorkspaceDataState("error");
+      return false;
     }
   }, []);
 
@@ -637,6 +664,8 @@ export function SalesOpsProvider({ children }: { children: React.ReactNode }) {
             avatar: (fbUser.displayName || fbUser.email || "HR").slice(0, 2).toUpperCase(),
           }));
           reloadRealUserData();
+        } else {
+          setWorkspaceDataState("preview");
         }
       });
     });
@@ -982,7 +1011,48 @@ export function SalesOpsProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Candidate CRUD
-  const addCandidate = (candData: Omit<Candidate, "id">) => {
+  const saveCandidates = async (candidateRecords: Candidate[]): Promise<boolean> => {
+    if (!authUser) {
+      setCandidates((previous) => {
+        const byId = new Map(previous.map((candidate) => [candidate.id, candidate]));
+        candidateRecords.forEach((candidate) => byId.set(candidate.id, candidate));
+        return Array.from(byId.values());
+      });
+      toast.info("Kết quả chỉ được giữ trong phiên xem trước. Đăng nhập để lưu lâu dài.");
+      return true;
+    }
+
+    try {
+      const savedRecords = await Promise.all(candidateRecords.map((candidate) => accountApi.saveWorkspaceCandidate(candidate)));
+      setCandidates((previous) => {
+        const byId = new Map(previous.map((candidate) => [candidate.id, candidate]));
+        savedRecords.forEach((candidate) => byId.set(candidate.id, candidate));
+        return Array.from(byId.values());
+      });
+      return true;
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Không lưu được danh sách ứng viên.");
+      return false;
+    }
+  };
+
+  const persistCandidate = async (candidate: Candidate): Promise<boolean> => {
+    if (!authUser) {
+      setCandidates((previous) => [candidate, ...previous.filter((item) => item.id !== candidate.id)]);
+      toast.info("Thay đổi chỉ có trong phiên xem trước. Đăng nhập để lưu lâu dài.");
+      return true;
+    }
+    try {
+      const saved = await accountApi.saveWorkspaceCandidate(candidate);
+      setCandidates((previous) => [saved, ...previous.filter((item) => item.id !== saved.id)]);
+      return true;
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Không lưu được hồ sơ ứng viên.");
+      return false;
+    }
+  };
+
+  const addCandidate = async (candData: Omit<Candidate, "id">): Promise<boolean> => {
     const newCand: Candidate = {
       ...candData,
       id: "cand-" + Date.now(),
@@ -993,8 +1063,9 @@ export function SalesOpsProvider({ children }: { children: React.ReactNode }) {
         softSkills: 88,
       },
     };
-    setCandidates((prev) => [newCand, ...prev]);
-    toast.success(`Đã thêm ứng viên "${newCand.name}" vào danh sách đối chiếu!`);
+    const saved = await persistCandidate(newCand);
+    if (!saved) return false;
+    if (authUser) toast.success(`Đã lưu ứng viên "${newCand.name}".`);
 
     const newNotif: NotificationItem = {
       id: "notif-" + Date.now(),
@@ -1006,55 +1077,86 @@ export function SalesOpsProvider({ children }: { children: React.ReactNode }) {
       sectionTarget: "candidates",
     };
     setNotifications((prev) => [newNotif, ...prev]);
+    return true;
   };
 
-  const updateCandidate = (id: string, updates: Partial<Candidate>) => {
-    setCandidates((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, ...updates } : c))
-    );
-    toast.success("Đã cập nhật thông tin ứng viên!");
+  const updateCandidate = async (id: string, updates: Partial<Candidate>): Promise<boolean> => {
+    const current = candidates.find((candidate) => candidate.id === id);
+    if (!current) return false;
+    const saved = await persistCandidate({ ...current, ...updates });
+    if (saved && authUser) toast.success("Đã lưu thay đổi ứng viên.");
+    return saved;
   };
 
-  const deleteCandidate = (id: string) => {
+  const deleteCandidate = async (id: string): Promise<boolean> => {
     const target = candidates.find((c) => c.id === id);
+    if (authUser) {
+      try {
+        await accountApi.deleteWorkspaceCandidate(id);
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Không xóa được hồ sơ ứng viên.");
+        return false;
+      }
+    }
     setCandidates((prev) => prev.filter((c) => c.id !== id));
-    toast.info(`Đã xoá ứng viên "${target?.name || id}"`);
+    toast.success(authUser ? `Đã xóa ứng viên "${target?.name || id}".` : "Đã xóa khỏi phiên xem trước.");
+    return true;
   };
 
-  const moveCandidateStage = (id: string, newStage: Candidate["stage"]) => {
-    setCandidates((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, stage: newStage } : c))
-    );
-    const stageNames: Record<Candidate["stage"], string> = {
-      screening: "Sơ loại CV",
-      qualified: "Đạt chuẩn (Match >= 75%)",
-      interview: "Vòng phỏng vấn",
-      offer: "Đề nghị tuyển dụng (Offer)",
-    };
-    toast.success(`Đã chuyển ứng viên sang giai đoạn "${stageNames[newStage]}"`);
+  const moveCandidateStage = async (id: string, newStage: Candidate["stage"]): Promise<boolean> => {
+    return updateCandidate(id, { stage: newStage });
   };
 
   // Job CRUD
-  const addJob = (jobData: Omit<JobPosition, "id" | "hiredCount" | "totalApplicants">) => {
+  const persistJob = async (job: JobPosition): Promise<boolean> => {
+    if (!authUser) {
+      setJobs((previous) => [job, ...previous.filter((item) => item.id !== job.id)]);
+      toast.info("Thay đổi chỉ có trong phiên xem trước. Đăng nhập để lưu lâu dài.");
+      return true;
+    }
+    try {
+      const saved = await accountApi.saveWorkspaceJob(job);
+      setJobs((previous) => [saved, ...previous.filter((item) => item.id !== saved.id)]);
+      return true;
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Không lưu được vị trí tuyển dụng.");
+      return false;
+    }
+  };
+
+  const addJob = async (jobData: Omit<JobPosition, "id" | "hiredCount" | "totalApplicants">): Promise<boolean> => {
     const newJob: JobPosition = {
       ...jobData,
       id: "job-" + Date.now(),
       hiredCount: 0,
       totalApplicants: 0,
     };
-    setJobs((prev) => [newJob, ...prev]);
-    toast.success(`Đã tạo vị trí tuyển dụng "${newJob.title}" thành công!`);
+    const saved = await persistJob(newJob);
+    if (saved && authUser) toast.success(`Đã lưu vị trí "${newJob.title}".`);
+    return saved;
   };
 
-  const updateJob = (id: string, updates: Partial<JobPosition>) => {
-    setJobs((prev) => prev.map((j) => (j.id === id ? { ...j, ...updates } : j)));
-    toast.success("Đã cập nhật vị trí tuyển dụng!");
+  const updateJob = async (id: string, updates: Partial<JobPosition>): Promise<boolean> => {
+    const current = jobs.find((job) => job.id === id);
+    if (!current) return false;
+    const saved = await persistJob({ ...current, ...updates });
+    if (saved && authUser) toast.success("Đã lưu thay đổi vị trí tuyển dụng.");
+    return saved;
   };
 
-  const deleteJob = (id: string) => {
+  const deleteJob = async (id: string): Promise<boolean> => {
     const target = jobs.find((j) => j.id === id);
+    if (authUser) {
+      try {
+        await accountApi.deleteWorkspaceJob(id);
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Không xóa được vị trí tuyển dụng.");
+        return false;
+      }
+    }
     setJobs((prev) => prev.filter((j) => j.id !== id));
-    toast.info(`Đã xóa vị trí "${target?.title || id}"`);
+    toast.success(authUser ? `Đã xóa vị trí "${target?.title || id}".` : "Đã xóa khỏi phiên xem trước.");
+    return true;
   };
 
   // Recruiter CRUD
@@ -1138,9 +1240,7 @@ export function SalesOpsProvider({ children }: { children: React.ReactNode }) {
 
     // Also update candidate stage if applicable
     if (interviewData.candidateId) {
-      setCandidates((prev) =>
-        prev.map((c) => (c.id === interviewData.candidateId ? { ...c, stage: "interview" } : c))
-      );
+      void moveCandidateStage(interviewData.candidateId, "interview");
     }
 
     toast.success(`Đã lên lịch phỏng vấn "${newInt.roundName}" cho ${newInt.candidateName}!`);
@@ -1283,15 +1383,15 @@ export function SalesOpsProvider({ children }: { children: React.ReactNode }) {
       `"Vị Trí Tuyển Dụng:","${batch?.jobTitle}"`,
       `"Thời Gian Lọc:","${batch?.createdAt}"`,
       `"Tổng Số CV Tiếp Nhận:","${batch?.totalCVs || candidates.length} CV"`,
-      `"Số Hồ Sơ Đạt Chuẩn (>= 75%):","${batch?.qualifiedCount || 18} hồ sơ"`,
-      `"Điểm Match Trung Bình:","${batch?.avgScore || 82}%"`,
+      `"Số Hồ Sơ Đạt Chuẩn (>= 75%):","${batch?.qualifiedCount ?? 0} hồ sơ"`,
+      `"Điểm Match Trung Bình:","${batch?.avgScore ?? 0}%"`,
       "",
       "ID,Họ Tên Ứng Viên,Email,Số Điện Thoại,Vị Trí Tuyển Dụng,Điểm Match AI,Kỹ Năng (30%),Kinh Nghiệm (25%),Học Vấn (5%),Kỹ Năng Mềm (10%),Kinh Nghiệm (Năm),Lương Mong Muốn,Trạng Thái,Tóm Tắt Đánh Giá AI",
     ];
 
     candidates.forEach((c) => {
       csvRows.push(
-        `"${c.id}","${c.name}","${c.email}","${c.phone}","${c.jobTarget}",${c.matchScore}%,${c.criteriaScores?.skills || 85}/100,${c.criteriaScores?.experience || 80}/100,${c.criteriaScores?.education || 85}/100,${c.criteriaScores?.softSkills || 90}/100,${c.experienceYears},${c.expectedSalary},"${c.status}","${(c.aiSummary || "").replace(/"/g, '""')}"`
+        `"${c.id}","${c.name}","${c.email}","${c.phone}","${c.jobTarget}",${c.matchScore}%,${c.criteriaScores?.skills ?? 0}/100,${c.criteriaScores?.experience ?? 0}/100,${c.criteriaScores?.education ?? 0}/100,${c.criteriaScores?.softSkills ?? 0}/100,${c.experienceYears},${c.expectedSalary},"${c.status}","${(c.aiSummary || "").replace(/"/g, '""')}"`
       );
     });
 
@@ -1312,6 +1412,7 @@ export function SalesOpsProvider({ children }: { children: React.ReactNode }) {
       value={{
         activeSection,
         setActiveSection,
+        syncActiveSection,
         sidebarCollapsed,
         setSidebarCollapsed,
         mobileMenuOpen,
@@ -1323,11 +1424,12 @@ export function SalesOpsProvider({ children }: { children: React.ReactNode }) {
         isAuthModalOpen,
         setIsAuthModalOpen,
         reloadRealUserData,
+        workspaceDataState,
         logoutUser,
         isSearchOpen,
         setIsSearchOpen,
         candidates,
-        setCandidates,
+        saveCandidates,
         jobs,
         jdTemplates,
         salaryBenchmarks,

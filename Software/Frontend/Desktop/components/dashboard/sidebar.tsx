@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { ArrowUpRight, X } from "lucide-react";
 import { Brand } from "@/components/brand";
 import { ProductMark } from "@/components/product-logo";
+import { getProductForSection } from "@/lib/brand";
 import { canonicalSection, navigationGroups } from "@/lib/navigation";
 import { useSalesOps } from "@/lib/sales-ops-context";
 import { cn } from "@/lib/utils";
@@ -13,6 +14,7 @@ import { cn } from "@/lib/utils";
 export function Sidebar() {
   const { activeSection, mobileMenuOpen, setMobileMenuOpen } = useSalesOps();
   const pathname = usePathname();
+  const currentProduct = getProductForSection(activeSection);
   const closeRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -44,7 +46,7 @@ export function Sidebar() {
     {mobileMenuOpen && <button className="app-backdrop" tabIndex={-1} aria-label="Đóng menu điều hướng" onClick={() => setMobileMenuOpen(false)} />}
     <aside ref={panelRef} id="application-navigation" role={mobileMenuOpen ? "dialog" : undefined} aria-modal={mobileMenuOpen ? true : undefined} aria-label="Điều hướng AI Match" className={cn("app-sidebar", mobileMenuOpen && "is-open")}>
       <div className="app-sidebar-brand"><Brand /><button ref={closeRef} className="icon-button mobile-only" aria-label="Đóng điều hướng" onClick={() => setMobileMenuOpen(false)}><X size={18} /></button></div>
-      <div className="workspace-label"><ProductMark product="talent" className="workspace-avatar" decorative /><div><strong>Không gian AI Match</strong><small>Talent Match</small></div></div>
+      <div className="workspace-label"><ProductMark product={currentProduct.id} className="workspace-avatar" decorative /><div><strong>Không gian AI Match</strong><small>{currentProduct.name}</small></div></div>
       <nav aria-label="Điều hướng chính" className="app-navigation">
         {navigationGroups.map((group) => <div key={group.label} className="app-nav-group"><p>{group.label}</p>
           {group.items.map((item) => {

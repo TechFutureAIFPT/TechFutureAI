@@ -1,5 +1,6 @@
 export interface Candidate {
   id: string;
+  sourceBatchId?: string;
   name: string;
   email: string;
   phone: string;

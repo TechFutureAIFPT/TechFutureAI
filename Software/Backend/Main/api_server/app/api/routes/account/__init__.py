@@ -12,6 +12,7 @@ from app.api.routes.account.settings import router as settings_router
 from app.api.routes.account.sync import router as sync_router
 from app.api.routes.account.templates import router as templates_router
 from app.api.routes.account.uploaded_files import router as uploaded_files_router
+from app.api.routes.account.workspace import router as workspace_router
 
 
 router = APIRouter(prefix="/api/account", tags=["account"])
@@ -22,6 +23,7 @@ router.include_router(history_router)
 router.include_router(notifications_router)
 router.include_router(uploaded_files_router)
 router.include_router(templates_router)
+router.include_router(workspace_router)
 router.include_router(chatbot_router)
 router.include_router(google_drive_router)
 router.include_router(email_router)

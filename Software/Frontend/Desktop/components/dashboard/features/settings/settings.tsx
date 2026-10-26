@@ -70,19 +70,6 @@ export function SettingsSection() {
     setIsSaving(true);
     const fullName = `${lastName} ${firstName}`.trim();
 
-    updateUserProfile({
-      name: fullName,
-      firstName,
-      lastName,
-      email,
-      role,
-      workLocation,
-      officeAddress,
-      timezone,
-      currency,
-      avatar: `${firstName[0] || "H"}${lastName[0] || "P"}`.toUpperCase(),
-    });
-
     try {
       if (authUser) {
         await accountApi.updateProfile({
@@ -92,12 +79,25 @@ export function SettingsSection() {
           timezone,
           currency,
         });
-        toast.success("Đã lưu hồ sơ và đồng bộ vào Cloud Database!");
       } else {
-        toast.success("Đã cập nhật thông tin người dùng thành công!");
+        toast.info("Đang dùng dữ liệu xem trước; hồ sơ chưa được lưu lên máy chủ.");
       }
+
+      updateUserProfile({
+        name: fullName,
+        firstName,
+        lastName,
+        email,
+        role,
+        workLocation,
+        officeAddress,
+        timezone,
+        currency,
+        avatar: `${firstName[0] || "H"}${lastName[0] || "P"}`.toUpperCase(),
+      });
+      if (authUser) toast.success("Đã lưu hồ sơ và đồng bộ vào Cloud Database!");
     } catch {
-      toast.success("Đã lưu thiết lập tài khoản thành công!");
+      toast.error("Không thể lưu hồ sơ. Vui lòng kiểm tra kết nối rồi thử lại.");
     } finally {
       setIsSaving(false);
     }
@@ -106,8 +106,9 @@ export function SettingsSection() {
   const handleSyncDatabase = async () => {
     setIsSyncing(true);
     try {
-      await reloadRealUserData();
-      toast.success("Đã đồng bộ dữ liệu thời gian thực từ Cloud Database!");
+      const synced = await reloadRealUserData();
+      if (!synced) throw new Error("Workspace synchronization failed.");
+      toast.success("Đã đồng bộ dữ liệu hồ sơ tuyển dụng từ Backend.");
     } catch {
       toast.error("Không thể kết nối máy chủ database");
     } finally {

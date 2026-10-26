@@ -60,7 +60,7 @@ export function ReportModal({ open, onOpenChange }: ReportModalProps) {
       candidates.forEach((c) => {
         let row = `"${c.id}","${c.name}","${c.email}","${c.phone}","${c.jobTarget}",${c.matchScore}%,${c.experienceYears},${c.expectedSalary},"${c.status}","${c.stage}"`;
         if (includeRubric) {
-          row += `,${c.criteriaScores?.skills || 80},${c.criteriaScores?.experience || 75},${c.criteriaScores?.education || 80},${c.criteriaScores?.softSkills || 85}`;
+          row += `,${c.criteriaScores?.skills ?? 0},${c.criteriaScores?.experience ?? 0},${c.criteriaScores?.education ?? 0},${c.criteriaScores?.softSkills ?? 0}`;
         }
         if (includeAiSummary) {
           row += `,"${(c.aiSummary || "").replace(/"/g, '""')}"`;

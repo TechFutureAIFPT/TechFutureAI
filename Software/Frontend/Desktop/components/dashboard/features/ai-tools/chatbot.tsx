@@ -9,6 +9,7 @@ import {
   type AssistantMessageRecord,
 } from "@/lib/assistant-endpoints";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AssistantMessageContent } from "./assistant-message-content";
 import {
   Send,
   Plus,
@@ -320,7 +321,7 @@ export function ChatbotSection() {
                   return (
                     <div key={msg.id} className="flex justify-end">
                       <div className="max-w-[80%] rounded-3xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap bg-slate-100 text-slate-900">
-                        {msg.content}
+                        <AssistantMessageContent content={msg.content} />
                       </div>
                     </div>
                   );
@@ -338,7 +339,7 @@ export function ChatbotSection() {
                       />
                     </div>
                     <div className="flex-1 min-w-0 text-sm leading-relaxed text-slate-800 whitespace-pre-wrap pt-0.5">
-                      {msg.content}
+                      <AssistantMessageContent content={msg.content} />
                     </div>
                   </div>
                 );

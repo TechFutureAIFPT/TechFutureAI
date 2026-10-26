@@ -30,6 +30,7 @@ import {
   Cpu,
 } from "lucide-react";
 import Link from "next/link";
+import { AssistantMessageContent } from "./assistant-message-content";
 
 const RECRUITER_SUGGESTIONS = [
   "Tôi nên chuẩn bị gì trước khi đăng một JD tuyển dụng kỹ sư phần mềm?",
@@ -354,7 +355,7 @@ export function AIAssistantSection() {
                           : "bg-slate-100 text-slate-800 rounded-tl-xs whitespace-pre-wrap"
                       }`}
                     >
-                      {m.content}
+                      <AssistantMessageContent content={m.content} />
                     </div>
                   </div>
                 ))

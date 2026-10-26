@@ -12,6 +12,65 @@ class AuthenticatedUser(BaseModel):
     photo_url: str | None = None
 
 
+class WorkspaceCandidateRecord(BaseModel):
+    id: str = Field(min_length=1, max_length=180)
+    sourceBatchId: str | None = Field(default=None, max_length=180)
+    name: str = Field(min_length=1, max_length=240)
+    email: str = Field(default="", max_length=320)
+    phone: str = Field(default="", max_length=80)
+    jobTarget: str = Field(default="", max_length=240)
+    matchScore: float = Field(default=0, ge=0, le=100)
+    stage: Literal["screening", "qualified", "interview", "offer"] = "screening"
+    status: Literal["active", "hired", "rejected"] = "active"
+    experienceYears: float = Field(default=0, ge=0, le=100)
+    expectedSalary: float = Field(default=0, ge=0)
+    skills: list[str] = Field(default_factory=list)
+    appliedDate: str = ""
+    recruiter: str = ""
+    education: str = ""
+    location: str = ""
+    aiSummary: str = ""
+    interviewQuestions: list[str] = Field(default_factory=list)
+    strengths: list[str] = Field(default_factory=list)
+    weaknesses: list[str] = Field(default_factory=list)
+    improvements: list[str] = Field(default_factory=list)
+    criteriaScores: dict[str, float] = Field(default_factory=dict)
+    resumeUrl: str = ""
+    createdAt: int | None = None
+    updatedAt: int | None = None
+
+
+class WorkspaceJobRecord(BaseModel):
+    id: str = Field(min_length=1, max_length=180)
+    title: str = Field(min_length=1, max_length=240)
+    department: str = ""
+    level: Literal["Junior", "Mid-Level", "Senior", "Lead", "Manager"] = "Mid-Level"
+    location: str = ""
+    openings: int = Field(default=1, ge=0, le=10000)
+    hiredCount: int = Field(default=0, ge=0, le=10000)
+    totalApplicants: int = Field(default=0, ge=0, le=10000000)
+    salaryRange: str = ""
+    status: Literal["active", "paused", "closed"] = "active"
+    deadline: str = ""
+    recruiter: str = ""
+    requirements: list[str] = Field(default_factory=list)
+    rubricWeights: dict[str, float] = Field(default_factory=dict)
+    createdAt: int | None = None
+    updatedAt: int | None = None
+
+
+class WorkspaceRecordsResponse(BaseModel):
+    success: bool = True
+    data: list[dict[str, Any]]
+    error: dict[str, str] | None = None
+
+
+class WorkspaceRecordResponse(BaseModel):
+    success: bool = True
+    data: dict[str, Any]
+    error: dict[str, str] | None = None
+
+
 class UserProfileUpsertRequest(BaseModel):
     email: str | None = None
     displayName: str | None = None

@@ -2,10 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Bell, CheckCheck, ChevronDown, LogOut, Search, Settings2, UserRound } from "lucide-react";
+import { Bell, CheckCheck, ChevronDown, LogOut, Menu, Search, Settings2, UserRound } from "lucide-react";
 import { useSalesOps } from "@/lib/sales-ops-context";
-import { canonicalSection, isSection, navigationGroups, navigationItems, sectionHref } from "@/lib/navigation";
+import { canonicalSection, navigationItems } from "@/lib/navigation";
 import { getProductForSection } from "@/lib/brand";
 import { ProductMark } from "@/components/product-logo";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -13,8 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { AuthModal } from "./modals/auth-modal";
 
 export function Header() {
-  const { activeSection, setIsSearchOpen, notifications, markNotificationAsRead, markAllNotificationsAsRead, authUser, isAuthModalOpen, setIsAuthModalOpen, logoutUser } = useSalesOps();
-  const router = useRouter();
+  const { activeSection, mobileMenuOpen, setMobileMenuOpen, setIsSearchOpen, notifications, markNotificationAsRead, markAllNotificationsAsRead, authUser, isAuthModalOpen, setIsAuthModalOpen, logoutUser } = useSalesOps();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   const user = mounted ? authUser : null;
@@ -24,11 +22,11 @@ export function Header() {
   const unread = visibleNotifications.filter((item) => !item.read).length;
   return <>
     <header className="app-header">
-      <div className="app-header-context"><ProductMark product={currentProduct.id} className="active-product-mark" decorative /><div><p>{currentProduct.id === "platform" ? "Không gian làm việc" : currentProduct.purpose}</p><h1 className="sr-only">{current?.label || "Tổng quan"}</h1><label className="sr-only" htmlFor="workspace-switcher">Chuyển chức năng AI Match</label><select id="workspace-switcher" className="workspace-switcher" value={current?.id || "overview"} aria-controls="workspace-content" onChange={(event) => {
-        if (!isSection(event.target.value)) return;
-        const section = canonicalSection(event.target.value);
-        router.push(sectionHref(section), { scroll: false });
-      }}>{navigationGroups.map((group) => <optgroup label={group.label} key={group.label}>{group.items.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</optgroup>)}</select></div></div>
+      <div className="app-header-context">
+        <button className="icon-button mobile-only" aria-label="Mở điều hướng" aria-controls="application-navigation" aria-expanded={mobileMenuOpen} onClick={() => setMobileMenuOpen(true)}><Menu size={19} /></button>
+        <ProductMark product={currentProduct.id} className="active-product-mark" decorative />
+        <div><p>{currentProduct.purpose}</p><h1>{current?.label || "Tổng quan"}</h1></div>
+      </div>
       <div className="app-header-actions">
         <button className="app-search" onClick={() => setIsSearchOpen(true)} aria-label="Tìm kiếm hồ sơ và vị trí tuyển dụng"><Search size={17} /><span>Tìm kiếm</span><kbd>Ctrl K</kbd></button>
         <Popover><PopoverTrigger asChild><button className="icon-button notification-button" aria-label={`Thông báo, ${unread} chưa đọc`}><Bell size={19} />{unread > 0 && <span>{unread}</span>}</button></PopoverTrigger>

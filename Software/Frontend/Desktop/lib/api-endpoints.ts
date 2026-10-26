@@ -8,6 +8,7 @@
 import { apiFetch } from "./api-client";
 import type { DriveStatus, DriveFile, DriveImport } from "./types/google-drive";
 import { normalizeScoringWeights } from "./mappers";
+import type { Candidate, JobPosition } from "./mock-data";
 import {
   type CoreCvAnalysisRequest,
   type AnalysisJobStatusResponse,
@@ -258,6 +259,52 @@ export const salary = {
 /* ============ Account & Settings (Yêu cầu Bearer Auth) ============ */
 
 export const account = {
+  /* --- Recruiter workspace records --- */
+  getWorkspaceInitialization: async (signal?: AbortSignal) => {
+    const response = await apiFetch<{ success: boolean; data: { initialized: boolean }; error: unknown }>("/api/account/workspace/initialized", { auth: true, signal });
+    if (!response.success || typeof response.data?.initialized !== "boolean") throw new Error("Không kiểm tra được trạng thái dữ liệu tuyển dụng.");
+    return response.data.initialized;
+  },
+
+  initializeWorkspace: async (signal?: AbortSignal) => {
+    const response = await apiFetch<{ success: boolean; data: { initialized: boolean }; error: unknown }>("/api/account/workspace/initialized", { method: "POST", auth: true, signal });
+    if (!response.success || response.data?.initialized !== true) throw new Error("Không hoàn tất khởi tạo dữ liệu tuyển dụng.");
+  },
+
+  listWorkspaceCandidates: async (signal?: AbortSignal) => {
+    const response = await apiFetch<{ success: boolean; data: Candidate[]; error: unknown }>("/api/account/workspace/candidates", { auth: true, signal });
+    if (!response.success || !Array.isArray(response.data)) throw new Error("Không tải được hồ sơ ứng viên.");
+    return response.data;
+  },
+
+  saveWorkspaceCandidate: async (candidate: Candidate, signal?: AbortSignal) => {
+    const response = await apiFetch<{ success: boolean; data: Candidate; error: unknown }>(`/api/account/workspace/candidates/${encodeURIComponent(candidate.id)}`, { method: "PUT", body: candidate, auth: true, signal });
+    if (!response.success || !response.data) throw new Error("Không lưu được hồ sơ ứng viên.");
+    return response.data;
+  },
+
+  deleteWorkspaceCandidate: async (id: string, signal?: AbortSignal) => {
+    const response = await apiFetch<{ success: boolean; data: { id: string; deleted: boolean }; error: unknown }>(`/api/account/workspace/candidates/${encodeURIComponent(id)}`, { method: "DELETE", auth: true, signal });
+    if (!response.success || !response.data?.deleted) throw new Error("Không xóa được hồ sơ ứng viên.");
+  },
+
+  listWorkspaceJobs: async (signal?: AbortSignal) => {
+    const response = await apiFetch<{ success: boolean; data: JobPosition[]; error: unknown }>("/api/account/workspace/jobs", { auth: true, signal });
+    if (!response.success || !Array.isArray(response.data)) throw new Error("Không tải được vị trí tuyển dụng.");
+    return response.data;
+  },
+
+  saveWorkspaceJob: async (job: JobPosition, signal?: AbortSignal) => {
+    const response = await apiFetch<{ success: boolean; data: JobPosition; error: unknown }>(`/api/account/workspace/jobs/${encodeURIComponent(job.id)}`, { method: "PUT", body: job, auth: true, signal });
+    if (!response.success || !response.data) throw new Error("Không lưu được vị trí tuyển dụng.");
+    return response.data;
+  },
+
+  deleteWorkspaceJob: async (id: string, signal?: AbortSignal) => {
+    const response = await apiFetch<{ success: boolean; data: { id: string; deleted: boolean }; error: unknown }>(`/api/account/workspace/jobs/${encodeURIComponent(id)}`, { method: "DELETE", auth: true, signal });
+    if (!response.success || !response.data?.deleted) throw new Error("Không xóa được vị trí tuyển dụng.");
+  },
+
   /* --- Profile --- */
   getProfile: (signal?: AbortSignal) =>
     apiFetch<Record<string, unknown>>("/api/account/profile", { auth: true, signal }),
