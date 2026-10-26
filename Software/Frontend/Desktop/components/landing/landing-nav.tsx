@@ -71,8 +71,8 @@ const MENUS: Menu[] = [
       {
         caption: "Trợ lý & Cố vấn thông minh",
         items: [
-          ["Trợ lý AI Tuyển dụng", "Trao đổi về JD, tiêu chí và quy trình tuyển dụng", "/ai-assistant"],
-          ["Cố vấn định hướng nghề nghiệp", "Khám phá sở thích Holland RIASEC và nhóm nghề phù hợp", "/career-compass"],
+          ["Trợ lý AI Tuyển dụng (Port 8080)", "Trao đổi về JD, tiêu chí và quy trình tuyển dụng", "/ai-assistant"],
+          ["Chatbot Định hướng Nghề nghiệp (Port 8001)", "Làm khảo sát Holland RIASEC trước khi nhận tư vấn nghề nghiệp", "/career-compass"],
           ["Bộ câu hỏi phỏng vấn", "Sinh câu hỏi chung, chuyên sâu hoặc so sánh", "/interview-questions"],
         ],
       },
@@ -91,10 +91,6 @@ const MENUS: Menu[] = [
       text: "Trợ lý tuyển dụng giúp làm rõ yêu cầu công việc; cố vấn nghề nghiệp giúp khám phá sở thích và hướng phát triển.",
       cta: ["Khám phá Cố vấn Nghề nghiệp", "/career-compass"],
     },
-    foot: [
-      ["Trợ lý AI Tuyển dụng (Port 8080)", "/ai-assistant"],
-      ["Chatbot Định hướng Nghề nghiệp (Port 8001)", "/career-compass"],
-    ],
   },
   {
     id: "quan-tri",
