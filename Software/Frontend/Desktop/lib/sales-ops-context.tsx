@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useMemo, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { toast } from "sonner";
 import {
   type Candidate,
@@ -209,7 +209,7 @@ interface SalesOpsContextType {
   checkBackendHealth: () => Promise<void>;
 
   // Firebase Real Auth & Database
-  authUser: import("firebase/auth").User | null;
+  authUser: import("./local-auth").AppAuthUser | null;
   authChecked: boolean;
   isAuthModalOpen: boolean;
   setIsAuthModalOpen: (open: boolean) => void;
@@ -355,13 +355,12 @@ export function SalesOpsProvider({ children }: { children: React.ReactNode }) {
   }, [checkBackendHealth]);
 
   // Firebase Real Auth State
-  const [authUser, setAuthUser] = useState<import("firebase/auth").User | null>(null);
-  // /chatbot, /salary-benchmark và /dashboard mỗi trang dựng riêng một
-  // SalesOpsProvider (route gốc riêng, không share React tree) nên phiên đăng
-  // nhập Firebase — vốn đã dùng chung trên trình duyệt — cần một nhịp bất đồng
-  // bộ để onAuthStateChanged() xác nhận lại mỗi lần tải trang mới. Không có cờ
-  // này, màn hình sẽ chớp "Cần đăng nhập" trước khi tự sửa lại, trông như tài
-  // khoản không đồng bộ giữa các trang dù thực chất vẫn cùng một phiên.
+  const [authUser, setAuthUser] = useState<import("./local-auth").AppAuthUser | null>(null);
+  const identityUid = useRef<string | null | undefined>(undefined);
+  const dataLoadGeneration = useRef(0);
+  // Firebase xác nhận phiên bất đồng bộ khi mở không gian làm việc lần đầu.
+  // Các công cụ dùng chung provider; giữ cờ này để tránh hiển thị yêu cầu
+  // đăng nhập trong lúc onAuthStateChanged() chưa xác nhận xong phiên hiện tại.
   const [authChecked, setAuthChecked] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
@@ -424,9 +423,11 @@ export function SalesOpsProvider({ children }: { children: React.ReactNode }) {
 
   // Reload real user profile & database data from Backend API
   const reloadRealUserData = useCallback(async () => {
+    const loadId = ++dataLoadGeneration.current;
     try {
       // 1. Profile from Backend DB
       const prof = await accountApi.getProfile().catch(() => null);
+      if (loadId !== dataLoadGeneration.current) return;
       if (prof && typeof prof === "object") {
         setUserProfile((prev) => ({
           ...prev,
@@ -439,6 +440,7 @@ export function SalesOpsProvider({ children }: { children: React.ReactNode }) {
 
       // 2. Settings from Backend DB
       const sett = await accountApi.getSettings().catch(() => null);
+      if (loadId !== dataLoadGeneration.current) return;
       if (sett && typeof sett === "object") {
         setUserProfile((prev) => ({
           ...prev,
@@ -449,6 +451,7 @@ export function SalesOpsProvider({ children }: { children: React.ReactNode }) {
 
       // 3. Real JD Templates / Rubrics from Live Backend
       const rubricsRes = await aiApi.listRubrics().catch(() => null);
+      if (loadId !== dataLoadGeneration.current) return;
       if (rubricsRes && Array.isArray(rubricsRes.items) && rubricsRes.items.length > 0) {
         const realTemplates: JDTemplate[] = rubricsRes.items.map((r: any, idx: number) => ({
           id: r.roleKey || `tmpl-${idx}`,
@@ -476,7 +479,8 @@ export function SalesOpsProvider({ children }: { children: React.ReactNode }) {
 
       // 4. Real User Notifications from Backend
       const notifRes = await accountApi.listNotifications().catch(() => null);
-      if (Array.isArray(notifRes) && notifRes.length > 0) {
+      if (loadId !== dataLoadGeneration.current) return;
+      if (Array.isArray(notifRes)) {
         setNotifications(notifRes.map((n: any, idx: number) => ({
           id: n.id || `notif-${idx}`,
           title: n.title || "Thông báo tuyển dụng",
@@ -489,18 +493,19 @@ export function SalesOpsProvider({ children }: { children: React.ReactNode }) {
 
       // 5. Real History Batches & Candidate Records from Backend Database
       const hist = await accountApi.listHistory().catch(() => null);
-      if (Array.isArray(hist) && hist.length > 0) {
+      if (loadId !== dataLoadGeneration.current) return;
+      if (Array.isArray(hist)) {
         const realBatches: HistoryBatch[] = hist.map((h: any, idx: number) => ({
           id: h.id || `batch-${idx}`,
           batchName: h.batch_name || h.name || h.jobPosition || `Đợt tuyển dụng #${idx + 1}`,
           jobTitle: h.job_title || h.jobTitle || h.jobPosition || "Kỹ Sư Phần Mềm",
           createdAt: h.timestamp || h.created_at || (h.createdAt ? new Date(h.createdAt).toLocaleDateString("vi-VN") : "Hôm nay"),
           recruiter: h.recruiter || h.userEmail || "Chuyên viên Tuyển dụng",
-          totalCVs: h.total_candidates || h.totalCandidates || h.candidatesCount || (h.analysisData?.candidates?.length) || 5,
-          qualifiedCount: h.passed_count || h.qualifiedCount || 3,
-          avgScore: h.avg_score || h.avgMatchScore || 85,
+          totalCVs: h.total_candidates ?? h.totalCandidates ?? h.candidatesCount ?? h.analysisData?.candidates?.length ?? 0,
+          qualifiedCount: h.passed_count ?? h.qualifiedCount ?? 0,
+          avgScore: h.avg_score ?? h.avgMatchScore ?? 0,
           topCandidateName: h.topCandidate || h.topCandidates?.[0]?.name || "Ứng viên nổi bật",
-          topScore: h.topScore || h.topCandidates?.[0]?.match_score || 92,
+          topScore: h.topScore ?? h.topCandidates?.[0]?.match_score ?? 0,
           status: "completed",
         }));
         setHistoryBatches(realBatches);
@@ -510,10 +515,11 @@ export function SalesOpsProvider({ children }: { children: React.ReactNode }) {
         const seenCandIds = new Set<string>();
 
         hist.forEach((h: any, batchIdx: number) => {
-          const candList = h.analysisData?.candidates || h.analysis_data?.candidates || h.candidates || h.topCandidates || [];
+          const candList = h.analysisData?.candidates || h.analysis_data?.candidates || h.fullPayload?.candidates || h.candidates || h.topCandidates || [];
           if (Array.isArray(candList)) {
             candList.forEach((c: any, cIdx: number) => {
-              const score = Number(c.match_score || c.score || c.matchScore) || 75;
+              const numericScore = Number(c.analysis?.["Tổng điểm"] ?? c.analysis?.total_score ?? c.analysis?.totalScore ?? c.totalScore ?? c.match_score ?? c.score ?? c.matchScore ?? 0);
+              const score = Number.isFinite(numericScore) ? Math.max(0, Math.min(100, numericScore)) : 0;
               const baseId = c.id || c.cv_id || (c.fileName ? `${c.fileName}-${c.name || cIdx}` : `cand-${cIdx}`);
               let uniqueId = `cand-db-${batchIdx}-${cIdx}-${baseId}`;
               if (seenCandIds.has(uniqueId)) {
@@ -523,50 +529,45 @@ export function SalesOpsProvider({ children }: { children: React.ReactNode }) {
 
               extractedCandidates.push({
                 id: uniqueId,
-                name: c.name || c.candidate_name || `Ứng viên ${cIdx + 1}`,
-                email: c.email || `${(c.name || "ungvien").toLowerCase().replace(/\s+/g, ".")}@gmail.com`,
-                phone: c.phone || "0908 xxx xxx",
+                name: c.candidateName || c.name || c.candidate_name || `Ứng viên ${cIdx + 1}`,
+                email: c.email || "",
+                phone: c.phone || "",
                 jobTarget: h.jobPosition || h.job_title || h.jobTitle || c.target_role || "Kỹ Sư Phần Mềm",
                 matchScore: score,
-                stage: score >= 85 ? "qualified" : score >= 75 ? "screening" : "interview",
+                stage: score >= 75 ? "qualified" : "screening",
                 status: "active",
-                experienceYears: Number(c.experience_years || c.years_of_experience) || 3,
-                expectedSalary: Number(c.expected_salary) || 32000000,
+                experienceYears: Number(c.experience_years ?? c.years_of_experience ?? 0),
+                expectedSalary: Number(c.expected_salary ?? 0),
                 skills: Array.isArray(c.matched_skills || c.skills || c.matched_keywords)
                   ? (c.matched_skills || c.skills || c.matched_keywords)
-                  : ["TypeScript", "React", "Next.js", "NodeJS"],
+                  : [],
                 appliedDate: h.timestamp || h.createdAt || "Gần đây",
                 recruiter: h.recruiter || h.userEmail || "Chuyên viên Tuyển dụng",
-                education: c.education || "Đại học / Kỹ sư (Bachelor)",
-                location: c.location || "TP. Hồ Chí Minh",
+                education: c.education || "Chưa cung cấp",
+                location: c.location || c.detectedLocation || "",
                 aiSummary: c.summary || c.ai_summary || "Hồ sơ đối chiếu trực tiếp từ Backend AI Engine.",
-                strengths: c.strengths || [],
-                weaknesses: c.weaknesses || [],
+                strengths: c.analysis?.["Điểm mạnh CV"] || c.strengths || [],
+                weaknesses: c.analysis?.["Điểm yếu CV"] || c.weaknesses || [],
                 improvements: c.improvements || [],
-                interviewQuestions: c.suggested_questions || [
-                  "Trình bày dự án kỹ thuật tiêu biểu bạn từng dẫn dắt?",
-                  "Cách bạn xử lý xung đột kỹ thuật trong nhóm phát triển?",
-                ],
+                interviewQuestions: c.analysis?.["Câu hỏi phỏng vấn"] || c.suggested_questions || [],
                 criteriaScores: {
-                  job_fit: c.criteria_scores?.job_fit || 85,
-                  role_skills: c.criteria_scores?.role_skills || score,
-                  experience: c.criteria_scores?.experience || 80,
-                  impact: c.criteria_scores?.impact || 78,
-                  education: c.criteria_scores?.education || 90,
-                  soft_skills: c.criteria_scores?.soft_skills || 82,
+                  job_fit: c.criteria_scores?.job_fit ?? 0,
+                  role_skills: c.criteria_scores?.role_skills ?? 0,
+                  experience: c.criteria_scores?.experience ?? 0,
+                  impact: c.criteria_scores?.impact ?? 0,
+                  education: c.criteria_scores?.education ?? 0,
+                  soft_skills: c.criteria_scores?.soft_skills ?? 0,
                 },
               });
             });
           }
         });
 
-        if (extractedCandidates.length > 0) {
-          setCandidates(extractedCandidates);
-        }
+        setCandidates(extractedCandidates);
       }
 
       // 6. Real Job Campaigns from Backend Rubrics & Templates
-      if (rubricsRes && Array.isArray(rubricsRes.items) && rubricsRes.items.length > 0) {
+      if (!prof && rubricsRes && Array.isArray(rubricsRes.items) && rubricsRes.items.length > 0) {
         const realJobs: JobPosition[] = rubricsRes.items.map((r: any, idx: number) => ({
           id: r.roleKey || `job-${idx + 1}`,
           title: r.roleLabel || r.roleKey,
@@ -613,6 +614,19 @@ export function SalesOpsProvider({ children }: { children: React.ReactNode }) {
     import("./firebase").then(({ observeAuth }) => {
       observeAuth((fbUser) => {
         if (!isMounted) return;
+        const nextUid = fbUser?.uid ?? null;
+        if (identityUid.current !== nextUid && (fbUser || identityUid.current)) {
+          dataLoadGeneration.current++;
+          setCandidates([]);
+          setHistoryBatches([]);
+          setNotifications([]);
+          setInterviews([]);
+          setEmailLogs([]);
+          setJobs([]);
+          setChatMessages([]);
+          setWorkflow((previous) => ({ ...previous, currentStep: 1, jdTitle: "", jdContent: "", jdRequirements: [], uploadedFiles: [], isAnalyzing: false, analysisProgress: 0, analysisLogs: [] }));
+        }
+        identityUid.current = nextUid;
         setAuthUser(fbUser);
         setAuthChecked(true);
         if (fbUser) {
@@ -711,7 +725,7 @@ export function SalesOpsProvider({ children }: { children: React.ReactNode }) {
     {
       id: "msg-1",
       sender: "ai",
-      text: "Xin chào! Tôi là Trợ Lý AI Tuyển Dụng Support HR. Tôi đã nắm toàn bộ dữ liệu hồ sơ ứng viên và tiêu chuẩn JD. Bạn cần tôi hỗ trợ phân tích so sánh ứng viên, gợi ý câu hỏi phỏng vấn hay khảo sát mức lương thị trường?",
+      text: "Xin chào! Tôi là trợ lý Insight Match. Tôi đã nắm toàn bộ dữ liệu hồ sơ ứng viên và tiêu chuẩn JD. Bạn cần tôi hỗ trợ phân tích so sánh ứng viên, gợi ý câu hỏi phỏng vấn hay khảo sát mức lương thị trường?",
       timestamp: "Vừa xong",
       suggestedActions: [
         "So sánh ứng viên Nguyễn Văn Hùng và Lê Quốc Bảo",

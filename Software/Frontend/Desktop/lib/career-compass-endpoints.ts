@@ -96,7 +96,7 @@ export const careerCompassApi = {
   sendMessage: (payload: CareerChatRequest, signal?: AbortSignal) =>
     apiFetch<{ success: boolean; data: CareerAdvisorData }>("/api/v1/chat/message", {
       method: "POST",
-      body: payload,
+      body: { ...payload, conversation_history: payload.conversation_history?.map((message) => ({ role: message.sender, content: message.content })) },
       baseUrl,
       timeoutMs: 60000,
       signal,

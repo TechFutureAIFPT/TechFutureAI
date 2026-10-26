@@ -13,11 +13,17 @@ import {
   onAuthStateChanged,
 } from "firebase/auth";
 import { APP_CONFIG } from "./config";
+import {
+  type AppAuthUser, getLocalToken, localGoogleSignIn, localRegister,
+  localSignIn, localSignOut, observeLocalAuth,
+} from "./local-auth";
+export type { AppAuthUser } from "./local-auth";
 
 let firebaseApp: FirebaseApp | null = null;
 let firebaseAuth: Auth | null = null;
 
 export function getFirebaseApp(): FirebaseApp | null {
+  if (APP_CONFIG.runtimeMode === "local") return null;
   if (typeof window === "undefined") return null;
   if (!firebaseApp) {
     const existing = getApps();
@@ -42,23 +48,28 @@ export function getFirebaseAuth(): Auth | null {
 }
 
 export async function getCurrentIdToken(forceRefresh = false): Promise<string | null> {
+  if (APP_CONFIG.runtimeMode === "local") return getLocalToken();
   try {
     const auth = getFirebaseAuth();
-    if (!auth || !auth.currentUser) return null;
+    if (!auth) return null;
+    await auth.authStateReady();
+    if (!auth.currentUser) return null;
     return await auth.currentUser.getIdToken(forceRefresh);
   } catch {
     return null;
   }
 }
 
-export async function signInWithEmail(email: string, pass: string): Promise<User> {
+export async function signInWithEmail(email: string, pass: string): Promise<AppAuthUser> {
+  if (APP_CONFIG.runtimeMode === "local") return localSignIn(email, pass);
   const auth = getFirebaseAuth();
   if (!auth) throw new Error("Firebase Auth chưa sẵn sàng");
   const cred = await signInWithEmailAndPassword(auth, email, pass);
   return cred.user;
 }
 
-export async function signInWithGoogle(): Promise<User> {
+export async function signInWithGoogle(): Promise<AppAuthUser> {
+  if (APP_CONFIG.runtimeMode === "local") return localGoogleSignIn();
   const auth = getFirebaseAuth();
   if (!auth) throw new Error("Firebase Auth chưa sẵn sàng");
   const provider = new GoogleAuthProvider();
@@ -67,7 +78,8 @@ export async function signInWithGoogle(): Promise<User> {
   return cred.user;
 }
 
-export async function registerWithEmail(email: string, pass: string, displayName?: string): Promise<User> {
+export async function registerWithEmail(email: string, pass: string, displayName?: string): Promise<AppAuthUser> {
+  if (APP_CONFIG.runtimeMode === "local") return localRegister(email, pass, displayName);
   const auth = getFirebaseAuth();
   if (!auth) throw new Error("Firebase Auth chưa sẵn sàng");
   const cred = await createUserWithEmailAndPassword(auth, email, pass);
@@ -78,18 +90,23 @@ export async function registerWithEmail(email: string, pass: string, displayName
 }
 
 export async function sendPasswordReset(email: string): Promise<void> {
+  if (APP_CONFIG.runtimeMode === "local") {
+    throw new Error("Khôi phục mật khẩu local cần cấu hình dịch vụ email của quản trị viên. Tài khoản Google có thể đăng nhập trực tiếp bằng Google.");
+  }
   const auth = getFirebaseAuth();
   if (!auth) throw new Error("Firebase Auth chưa sẵn sàng");
   await sendPasswordResetEmail(auth, email);
 }
 
 export async function signOutUser(): Promise<void> {
+  if (APP_CONFIG.runtimeMode === "local") return localSignOut();
   const auth = getFirebaseAuth();
   if (!auth) return;
   await signOut(auth);
 }
 
-export function observeAuth(callback: (user: User | null) => void): (() => void) | null {
+export function observeAuth(callback: (user: AppAuthUser | null) => void): (() => void) | null {
+  if (APP_CONFIG.runtimeMode === "local") return observeLocalAuth(callback);
   const auth = getFirebaseAuth();
   if (!auth) return null;
   return onAuthStateChanged(auth, callback);

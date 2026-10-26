@@ -49,6 +49,22 @@ class Settings:
             return raw.strip().lower() in {"1", "true", "yes", "on"}
 
         self.app_name = os.getenv("APP_NAME", "SupportHR Backend")
+        self.data_provider = os.getenv("DATA_PROVIDER", "firebase").strip().lower()
+        self.auth_provider = os.getenv("AUTH_PROVIDER", "firebase").strip().lower()
+        self.ai_provider = os.getenv("AI_PROVIDER", "gemini").strip().lower()
+        if self.data_provider not in {"firebase", "sqlite"} or self.auth_provider not in {"firebase", "sql"} or self.ai_provider not in {"gemini", "ollama"}:
+            raise ValueError("Unsupported data, authentication or AI provider")
+        self.sqlite_path = os.getenv("SQLITE_DB_PATH", "data/aimatch.db")
+        self.local_llm_model = os.getenv("LOCAL_LLM_MODEL", "qwen2.5-coder:7b")
+        self.local_embedding_model = os.getenv("LOCAL_EMBEDDING_MODEL", "nomic-embed-text:latest")
+        self.local_llm_temperature = _float_env("LOCAL_LLM_TEMPERATURE", 0.1)
+        self.local_llm_top_p = _float_env("LOCAL_LLM_TOP_P", 0.85)
+        self.local_llm_num_ctx = _int_env("LOCAL_LLM_NUM_CTX", 8192, 2048, 32768)
+        self.local_llm_num_predict = _int_env("LOCAL_LLM_NUM_PREDICT", 2048, 256, 8192)
+        self.local_llm_repeat_penalty = _float_env("LOCAL_LLM_REPEAT_PENALTY", 1.05)
+        self.local_auth_redirect_uri = os.getenv("LOCAL_AUTH_REDIRECT_URI", "http://localhost:8010/api/auth/google/callback")
+        self.local_session_seconds = _int_env("LOCAL_SESSION_SECONDS", 28800, 300, 604800)
+        self.local_admin_email = os.getenv("ADMIN_EMAIL", "hoanphuc135@gmail.com").strip().casefold()
         self.maintenance_mode = os.getenv("MAINTENANCE_MODE", "0").strip().lower() in {"1", "true", "yes", "on"}
         self.firebase_project_id = os.getenv("FIREBASE_PROJECT_ID", "").strip()
         self.firebase_client_email = os.getenv("FIREBASE_CLIENT_EMAIL", "").strip()
@@ -78,6 +94,19 @@ class Settings:
             or self.gemini_default_model
         )
         self.gemini_thinking_budget = int(os.getenv("GEMINI_THINKING_BUDGET", "8000"))
+        # Only CV screening uses this provider; chat, JD tools and embeddings keep their own settings.
+        self.cv_analysis_provider = os.getenv("CV_ANALYSIS_PROVIDER", "gemini").strip().lower()
+        if self.cv_analysis_provider not in {"gemini", "ollama"}:
+            raise ValueError("CV_ANALYSIS_PROVIDER must be gemini or ollama")
+        self.ollama_base_url = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434").rstrip("/")
+        self.local_cv_model = os.getenv("LOCAL_CV_MODEL", "cv-match:7b").strip()
+        self.local_cv_num_ctx = _int_env("LOCAL_CV_NUM_CTX", 8192, 2048, 32768)
+        self.local_cv_num_predict = _int_env("LOCAL_CV_NUM_PREDICT", 2048, 256, 8192)
+        self.local_cv_timeout = _float_env("LOCAL_CV_TIMEOUT_SECONDS", 240.0)
+        self.local_cv_keep_alive = os.getenv("LOCAL_CV_KEEP_ALIVE", "10m")
+        self.local_cv_seed = _int_env("LOCAL_CV_SEED", 42, 0, 2147483647)
+        self.local_cv_tokenizer_path = os.getenv("LOCAL_CV_TOKENIZER_PATH", ".cache/cv-match/tokenizer.json")
+        self.local_cv_tokenizer_model = os.getenv("LOCAL_CV_TOKENIZER_MODEL", "cv-match:7b")
         raw_embedding_model = os.getenv("GEMINI_EMBEDDING_MODEL", "").strip()
         retired_embedding_models = {
             "",

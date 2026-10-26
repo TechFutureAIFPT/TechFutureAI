@@ -59,7 +59,7 @@ export function AIAssistantSection() {
   const [threadLoading, setThreadLoading] = useState(false);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // State Deep Research
   const [researchQuery, setResearchQuery] = useState("");
@@ -178,7 +178,7 @@ export function AIAssistantSection() {
 
       setSessions((prev) => {
         const updated = prev.filter((s) => s.id !== sid);
-        const curr = prev.find((s) => s.id !== sid);
+        const curr = prev.find((s) => s.id === sid);
         return [{ id: sid, title: curr?.title || text.slice(0, 30), updatedAt: Date.now() }, ...updated];
       });
     } catch (err: any) {
@@ -188,7 +188,7 @@ export function AIAssistantSection() {
         {
           id: `err-${Date.now()}`,
           author: "bot",
-          content: "⚠️ Đã xảy ra lỗi khi kết nối tới Trợ lý AI (Port 8080). Vui lòng thử lại.",
+          content: "Chưa thể kết nối với trợ lý AI. Vui lòng thử lại sau ít phút.",
           timestamp: Date.now(),
         },
       ]);
@@ -222,18 +222,18 @@ export function AIAssistantSection() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-slate-50 font-sans">
+    <div className="relative flex h-full min-h-0 overflow-hidden bg-white font-sans">
       {/* Cột danh sách phiên (chỉ hiện ở tab chat) */}
       {activeTab === "chat" && (
         <aside
-          className={`flex flex-col border-r border-slate-200 bg-white transition-all duration-200 ${
-            sidebarOpen ? "w-72" : "w-0 overflow-hidden border-r-0"
+          className={`absolute inset-y-0 left-0 z-20 flex flex-col border-r border-slate-200 bg-white transition-all duration-200 xl:static ${
+            sidebarOpen ? "w-64 shadow-lg xl:shadow-none" : "hidden"
           }`}
         >
           <div className="p-4 border-b border-slate-100 flex items-center justify-between">
             <button
               onClick={handleNewSession}
-              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors w-full justify-center"
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-primary hover:bg-primary/90 rounded-lg shadow-sm transition-colors w-full justify-center"
             >
               <Plus className="w-4 h-4" /> Cuộc trò chuyện mới
             </button>
@@ -241,7 +241,7 @@ export function AIAssistantSection() {
 
           <div className="flex-1 overflow-y-auto p-3 space-y-1">
             <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-2 py-1">
-              Lịch sử hội thoại
+              Lịch sử trò chuyện
             </div>
             {sessionsLoading ? (
               <div className="space-y-2 p-2">
@@ -260,7 +260,7 @@ export function AIAssistantSection() {
                   onClick={() => selectSession(s.id)}
                   className={`group flex items-center justify-between px-3 py-2 rounded-lg text-sm cursor-pointer transition-colors ${
                     activeSessionId === s.id
-                      ? "bg-indigo-50 text-indigo-700 font-medium"
+                      ? "bg-secondary text-secondary-foreground font-medium"
                       : "text-slate-600 hover:bg-slate-100"
                   }`}
                 >
@@ -282,59 +282,22 @@ export function AIAssistantSection() {
 
           <div className="p-3 border-t border-slate-100 text-xs text-slate-400 flex items-center gap-1.5 justify-center">
             <Cpu className="w-3.5 h-3.5 text-indigo-500" />
-            Backend Port 8080 (FastAPI AI)
+            Không gian trò chuyện của bạn
           </div>
         </aside>
       )}
 
       {/* Vùng làm việc chính */}
-      <main className="flex-1 flex flex-col min-w-0 bg-white">
+      <section className="flex-1 flex flex-col min-w-0 bg-white" aria-label="Trợ lý tuyển dụng">
         {/* Thanh công cụ đỉnh */}
-        <header className="h-14 border-b border-slate-200 px-4 flex items-center justify-between bg-white shrink-0">
-          <div className="flex items-center gap-3">
-            {activeTab === "chat" && (
-              <button
-                onClick={() => setSidebarOpen((v) => !v)}
-                className="p-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
-                title={sidebarOpen ? "Thu gọn thanh bên" : "Mở thanh bên"}
-              >
-                <PanelLeft className="w-5 h-5" />
-              </button>
-            )}
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-slate-900 text-base flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-indigo-600" />
-                Trợ Lý Tuyển Dụng AI & Deep Research
-              </span>
-              <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200">
-                Port 8080
-              </span>
-            </div>
+        <header className="chat-toolbar">
+          <div className="chat-toolbar-title">
+            {activeTab === "chat" && <button aria-expanded={sidebarOpen} aria-label={sidebarOpen ? "Đóng lịch sử trò chuyện" : "Mở lịch sử trò chuyện"} onClick={() => setSidebarOpen((value) => !value)} className="icon-button"><PanelLeft size={18} /></button>}
+            <Sparkles size={19} className="text-primary" /><span>Trợ lý AI & nghiên cứu</span>
           </div>
-
-          {/* Toggle Chế độ Chat vs Deep Research */}
-          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200">
-            <button
-              onClick={() => setActiveTab("chat")}
-              className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
-                activeTab === "chat"
-                  ? "bg-white text-indigo-600 shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              Trò chuyện AI
-            </button>
-            <button
-              onClick={() => setActiveTab("research")}
-              className={`flex items-center gap-1 px-3 py-1 text-xs font-medium rounded-md transition-all ${
-                activeTab === "research"
-                  ? "bg-white text-indigo-600 shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <Globe className="w-3.5 h-3.5" />
-              Deep Research
-            </button>
+          <div className="chat-mode-tabs" role="group" aria-label="Chế độ trợ lý AI">
+            <button aria-pressed={activeTab === "chat"} onClick={() => { setActiveTab("chat"); setSidebarOpen(false); }}>Trò chuyện</button>
+            <button aria-pressed={activeTab === "research"} onClick={() => { setActiveTab("research"); setSidebarOpen(false); }}>Nghiên cứu chuyên sâu</button>
           </div>
         </header>
 
@@ -345,14 +308,14 @@ export function AIAssistantSection() {
             <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
               {messages.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center max-w-xl mx-auto text-center px-4">
-                  <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4 shadow-xs">
+                  <div className="w-14 h-14 rounded-2xl bg-secondary text-primary flex items-center justify-center mb-4 shadow-xs">
                     <Sparkles className="w-7 h-7" />
                   </div>
                   <h2 className="text-xl font-bold text-slate-900 mb-2">
-                    Tôi có thể giúp gì cho đợt tuyển dụng của bạn?
+                    Bạn cần hỗ trợ công việc nào?
                   </h2>
                   <p className="text-sm text-slate-500 mb-6 leading-relaxed">
-                    Hỏi đáp tự do về phân tích JD, lọc CV, tiêu chí chấm điểm, câu hỏi phỏng vấn hoặc chiến lược nhân sự.
+                    Trao đổi về yêu cầu công việc, đánh giá hồ sơ và chuẩn bị phỏng vấn. Chọn một gợi ý hoặc nhập câu hỏi để bắt đầu.
                   </p>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full text-left">
@@ -360,7 +323,7 @@ export function AIAssistantSection() {
                       <button
                         key={idx}
                         onClick={() => setInput(s)}
-                        className="p-3 text-xs text-slate-700 bg-slate-50 hover:bg-indigo-50/60 hover:text-indigo-700 rounded-xl border border-slate-200 transition-all text-left"
+                        className="p-3 text-xs text-slate-700 bg-slate-50 hover:bg-secondary/60 hover:text-secondary-foreground rounded-xl border border-slate-200 transition-all text-left"
                       >
                         {s}
                       </button>
@@ -379,7 +342,7 @@ export function AIAssistantSection() {
                       className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 ${
                         m.author === "user"
                           ? "bg-slate-900 text-white"
-                          : "bg-indigo-600 text-white shadow-xs"
+                          : "bg-primary text-white shadow-xs"
                       }`}
                     >
                       {m.author === "user" ? "HR" : <Sparkles className="w-4 h-4" />}
@@ -387,7 +350,7 @@ export function AIAssistantSection() {
                     <div
                       className={`p-4 rounded-2xl text-sm leading-relaxed ${
                         m.author === "user"
-                          ? "bg-indigo-600 text-white rounded-tr-xs"
+                          ? "bg-primary text-white rounded-tr-xs"
                           : "bg-slate-100 text-slate-800 rounded-tl-xs whitespace-pre-wrap"
                       }`}
                     >
@@ -399,12 +362,12 @@ export function AIAssistantSection() {
 
               {sending && (
                 <div className="flex gap-3 max-w-3xl mr-auto">
-                  <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs shrink-0 shadow-xs animate-pulse">
+                  <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-xs shrink-0 shadow-xs animate-pulse">
                     <Sparkles className="w-4 h-4" />
                   </div>
                   <div className="p-4 rounded-2xl bg-slate-100 text-slate-500 text-sm flex items-center gap-2">
-                    <RefreshCw className="w-4 h-4 animate-spin text-indigo-600" />
-                    Trợ lý AI đang suy nghĩ và tổng hợp dữ liệu...
+                    <RefreshCw className="w-4 h-4 animate-spin text-primary" />
+                    Đang tổng hợp câu trả lời…
                   </div>
                 </div>
               )}
@@ -413,7 +376,7 @@ export function AIAssistantSection() {
 
             {/* Khung nhập tin nhắn */}
             <div className="p-4 border-t border-slate-200 bg-white">
-              <div className="max-w-3xl mx-auto relative flex items-end bg-slate-50 border border-slate-300 rounded-2xl focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100 transition-all p-2">
+              <div className="max-w-3xl mx-auto relative flex items-end bg-slate-50 border border-slate-300 rounded-2xl focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/10 transition-all p-2">
                 <textarea
                   ref={textareaRef}
                   value={input}
@@ -424,20 +387,21 @@ export function AIAssistantSection() {
                       handleSend();
                     }
                   }}
-                  placeholder="Nhập câu hỏi cho Trợ lý tuyển dụng AI... (Enter để gửi)"
+                  aria-label="Câu hỏi cho trợ lý AI" placeholder="Nhập câu hỏi… Enter để gửi, Shift + Enter để xuống dòng"
                   rows={1}
                   className="w-full resize-none bg-transparent border-0 focus:outline-hidden text-sm text-slate-800 placeholder-slate-400 px-2 py-1 max-h-48"
                 />
                 <button
                   onClick={handleSend}
+                  aria-label="Gửi câu hỏi"
                   disabled={!input.trim() || sending}
-                  className="p-2 text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl shrink-0 transition-colors"
+                  className="p-2 text-white bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl shrink-0 transition-colors"
                 >
                   <ArrowUp className="w-4 h-4" />
                 </button>
               </div>
               <p className="text-[11px] text-slate-400 text-center mt-2">
-                SupportHR AI có thể đưa ra câu trả lời dựa trên kho tri thức tuyển dụng. Hãy kiểm tra các thông tin pháp lý quan trọng.
+                Thông tin AI mang tính tham khảo. hãy xác minh các dữ liệu quan trọng trước khi sử dụng.
               </p>
             </div>
           </div>
@@ -450,13 +414,13 @@ export function AIAssistantSection() {
               {/* Tiêu đề & Ô tìm kiếm Deep Research */}
               <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 space-y-4">
                 <div className="flex items-center gap-2.5">
-                  <Globe className="w-6 h-6 text-indigo-600" />
+                  <Globe className="w-6 h-6 text-primary" />
                   <div>
                     <h3 className="text-lg font-bold text-slate-900">
-                      Nghiên cứu Chuyên sâu Tuyển dụng & Thị trường (Deep Research)
+                      Nghiên cứu tuyển dụng & thị trường
                     </h3>
                     <p className="text-xs text-slate-500">
-                      Truy xuất đa nguồn dữ liệu thời gian thực, tổng hợp báo cáo chuyên sâu và trích dẫn bằng chứng.
+                      Tổng hợp thông tin từ nhiều nguồn, kèm tài liệu tham khảo để bạn kiểm tra.
                     </p>
                   </div>
                 </div>
@@ -476,7 +440,7 @@ export function AIAssistantSection() {
                   <button
                     onClick={() => handleRunDeepResearch()}
                     disabled={!researchQuery.trim() || researching}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-xl transition-colors shadow-xs"
+                    className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary/90 disabled:opacity-50 text-white text-sm font-medium rounded-xl transition-colors shadow-xs"
                   >
                     {researching ? (
                       <>
@@ -496,7 +460,7 @@ export function AIAssistantSection() {
                     <button
                       key={idx}
                       onClick={() => handleRunDeepResearch(s)}
-                      className="px-2.5 py-1 text-xs bg-white text-slate-600 hover:text-indigo-600 hover:border-indigo-300 border border-slate-200 rounded-lg transition-colors"
+                      className="px-2.5 py-1 text-xs bg-white text-slate-600 hover:text-primary hover:border-indigo-300 border border-slate-200 rounded-lg transition-colors"
                     >
                       {s}
                     </button>
@@ -507,11 +471,11 @@ export function AIAssistantSection() {
               {/* Kết quả Deep Research */}
               {researching ? (
                 <div className="p-12 text-center bg-white border border-slate-200 rounded-2xl space-y-4">
-                  <div className="w-12 h-12 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto animate-spin">
+                  <div className="w-12 h-12 rounded-full bg-secondary text-primary flex items-center justify-center mx-auto animate-spin">
                     <RefreshCw className="w-6 h-6" />
                   </div>
                   <h4 className="text-base font-semibold text-slate-900">
-                    Đang kích hoạt quy trình Deep Research...
+                    Đang kích hoạt quy trình deep research...
                   </h4>
                   <p className="text-xs text-slate-500 max-w-md mx-auto">
                     AI đang trích xuất các nguồn web, đối chiếu văn bản quy phạm và tổng hợp báo cáo luận chứng. Quá trình có thể mất 15-30 giây.
@@ -523,8 +487,8 @@ export function AIAssistantSection() {
                   <div className="p-6 bg-white border border-slate-200 rounded-2xl shadow-xs space-y-4">
                     <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                       <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-                        <BookOpen className="w-4 h-4 text-indigo-600" />
-                        Báo Cáo Nghiên Cứu Tổng Hợp
+                        <BookOpen className="w-4 h-4 text-primary" />
+                        Báo cáo nghiên cứu tổng hợp
                       </div>
                       <span className="text-xs text-slate-400">
                         Chủ đề: {researchResult.question}
@@ -553,10 +517,10 @@ export function AIAssistantSection() {
                             className="p-3 bg-white border border-slate-200 hover:border-indigo-400 rounded-xl transition-all block group"
                           >
                             <div className="flex items-center justify-between mb-1">
-                              <span className="text-xs font-semibold text-slate-900 group-hover:text-indigo-600 truncate">
+                              <span className="text-xs font-semibold text-slate-900 group-hover:text-primary truncate">
                                 {src.title || "Tài liệu trích dẫn"}
                               </span>
-                              <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-600 shrink-0 ml-1" />
+                              <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-primary shrink-0 ml-1" />
                             </div>
                             <p className="text-xs text-slate-500 line-clamp-2">
                               {src.content}
@@ -571,7 +535,7 @@ export function AIAssistantSection() {
             </div>
           </div>
         )}
-      </main>
+      </section>
     </div>
   );
 }

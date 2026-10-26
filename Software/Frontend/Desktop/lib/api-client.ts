@@ -31,6 +31,8 @@ export function getActiveBaseUrl(): string {
 }
 
 function getCandidateBaseUrls(): string[] {
+  // Keep SQL sessions and private CVs on the explicitly selected local backend.
+  if (APP_CONFIG.runtimeMode === "local") return [APP_CONFIG.apiBaseUrl];
   const primary = APP_CONFIG.apiBaseUrl;
   const fallback = APP_CONFIG.apiFallbackUrl;
   const local = APP_CONFIG.localApiUrl;
@@ -121,6 +123,7 @@ async function requestOnce<T = unknown>(
 
   const url = buildUrl(path, query, baseUrl);
   const headers = new Headers(customHeaders);
+  if (APP_CONFIG.runtimeMode === "local") headers.set("X-Requested-With", "AI-Match-Local");
   const requestId = `req-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
   headers.set("X-Request-Id", requestId);
   headers.set("Accept", "application/json");

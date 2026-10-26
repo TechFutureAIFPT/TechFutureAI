@@ -53,6 +53,7 @@ export function InterviewQuestionsSection() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [questionsList, setQuestionsList] = useState<QuestionItem[]>([]);
   const [hasGenerated, setHasGenerated] = useState(false);
+  const [resultSource, setResultSource] = useState<"ai" | "template" | null>(null);
 
   const currentCandidate = candidates.find((c) => c.id === selectedCandidateId);
   const isReadyToGenerate = Boolean(selectedJob && selectedCandidateId);
@@ -64,16 +65,19 @@ export function InterviewQuestionsSection() {
   const displayCandidatesList = eligibleCandidates.length > 0 ? eligibleCandidates : candidates;
 
   const handleGenerate = async () => {
+    if (isGenerating) return;
     if (!selectedJob) {
       toast.error("Vui lòng chọn Vị Trí Tuyển Dụng trước khi sinh câu hỏi.");
       return;
     }
     if (!currentCandidate) {
-      toast.error("Vui lòng chọn Ứng Viên Mục Tiêu trước khi sinh câu hỏi.");
+      toast.error("Vui lòng chọn Ứng viên Mục Tiêu trước khi sinh câu hỏi.");
       return;
     }
 
     setIsGenerating(true);
+    setResultSource(null);
+    setQuestionsList([]);
     setHasGenerated(true);
     const toastId = toast.loading(`Đang phân tích hồ sơ ${currentCandidate.name} và sinh bộ câu hỏi...`);
 
@@ -96,6 +100,7 @@ export function InterviewQuestionsSection() {
         }));
 
         setQuestionsList(mapped);
+        setResultSource("ai");
         toast.success(`Đã sinh thành công ${mapped.length} câu hỏi cho ${currentCandidate.name}!`, { id: toastId });
         setIsGenerating(false);
         return;
@@ -140,15 +145,20 @@ export function InterviewQuestionsSection() {
     ];
 
     setQuestionsList(customQuestions.slice(0, parseInt(questionCount, 10) || 4));
-    toast.success(`Đã sinh bộ câu hỏi chuẩn hóa cho ${currentCandidate.name}!`, { id: toastId });
+    setResultSource("template");
+    toast.info("Dịch vụ AI chưa khả dụng. Đã tạo câu hỏi từ mẫu tham khảo.", { id: toastId });
     setIsGenerating(false);
   };
 
-  const handleCopyQuestion = (id: string, text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedId(id);
-    toast.success("Đã sao chép câu hỏi và đáp án vào clipboard!");
-    setTimeout(() => setCopiedId(null), 2000);
+  const handleCopyQuestion = async (id: string, text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedId(id);
+      toast.success("Đã sao chép câu hỏi và gợi ý đánh giá.");
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch {
+      toast.error("Chưa thể sao chép. Hãy chọn và sao chép nội dung câu hỏi trực tiếp.");
+    }
   };
 
   return (
@@ -246,6 +256,7 @@ export function InterviewQuestionsSection() {
 
       {/* Results */}
       <div className="min-w-0">
+        {resultSource === "template" && <div role="status" className="service-note">Bộ câu hỏi được tạo từ mẫu tham khảo vì dịch vụ AI chưa khả dụng. hãy điều chỉnh câu hỏi cho yêu cầu thực tế của vị trí.</div>}
         {(!hasGenerated || questionsList.length === 0) ? (
           <div className="flex flex-col items-center justify-center text-center py-20 px-6 rounded-2xl border border-dashed border-slate-200 bg-white">
             <div className="w-12 h-12 rounded-2xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 mb-3">

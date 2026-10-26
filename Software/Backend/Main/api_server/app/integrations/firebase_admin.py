@@ -72,6 +72,10 @@ def get_firebase_app() -> Any:
 
 
 def get_firestore_client() -> Any:
+    from app.core.config import get_settings
+    if get_settings().data_provider == "sqlite":
+        from app.integrations.sqlite_documents import get_sqlite_client
+        return get_sqlite_client()
     if firestore is None:
         raise RuntimeError("Firebase Firestore client chưa sẵn sàng.")
     return firestore.client(get_firebase_app())

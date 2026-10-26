@@ -83,12 +83,14 @@ def _load_model() -> Any:
             raise FileNotFoundError(_model_error)
 
         try:
-            _model_manifest = _load_and_validate_manifest()
-            _model_cache = joblib.load(MODEL_PATH)
-            expected_labels = [str(value) for value in (_model_manifest.get("labels") or [])]
-            actual_labels = [str(value) for value in getattr(_model_cache, "classes_", [])]
+            manifest = _load_and_validate_manifest()
+            model = joblib.load(MODEL_PATH)
+            expected_labels = [str(value) for value in (manifest.get("labels") or [])]
+            actual_labels = [str(value) for value in getattr(model, "classes_", [])]
             if expected_labels and actual_labels != expected_labels:
                 raise RuntimeError("Classifier labels do not match the artifact manifest.")
+            _model_manifest = manifest
+            _model_cache = model
             _model_error = None
         except Exception as error:  # pragma: no cover - defensive path for runtime failures
             _model_error = f"Failed to load local classifier model: {error}"
@@ -208,6 +210,13 @@ def _rank_predictions(model: Any, cleaned_text: str, top_k: int) -> list[dict[st
             raw_scores = raw_scores[0]
         if not isinstance(raw_scores, list):
             raw_scores = [float(raw_scores)]
+        if len(classes) == 2 and len(raw_scores) == 1:
+            # Binary LinearSVC returns one margin for classes_[1]. A single
+            # softmax value used to assign score 1 to classes_[0] unconditionally.
+            margin = float(raw_scores[0])
+            raw_scores = [-margin, margin]
+        if len(raw_scores) != len(classes):
+            raise ValueError("Classifier margin count does not match its labels.")
         probabilities = _softmax([float(value) for value in raw_scores])
         scored = [
             {"label": label, "score": round(float(score), 4)}

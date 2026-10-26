@@ -21,6 +21,7 @@ import {
   sendPasswordReset,
   mapAuthError,
 } from "@/lib/firebase";
+import { APP_CONFIG } from "@/lib/config";
 import { LogIn, UserPlus, Sparkles, CheckCircle2, Shield, Lock, Mail, User } from "lucide-react";
 import { toast } from "sonner";
 
@@ -117,15 +118,15 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
       <DialogContent className="sm:max-w-md p-6 bg-white border-border shadow-2xl">
         <DialogHeader className="text-center space-y-2">
           <div className="w-12 h-12 rounded-2xl bg-secondary mx-auto flex items-center justify-center p-2 border border-border">
-            <img src="/brand/cvmatch-icon.png" alt="CV Match" className="w-full h-full object-contain" />
+            <img src="/brand/ai-match-suite/ai-match-mark.svg" alt="AI Match" className="w-full h-full object-contain" />
           </div>
           <DialogTitle className="text-lg font-bold text-foreground">
-            {authUser ? "Tài Khoản Tuyển Dụng Support HR" : "Đăng Nhập CV Match"}
+            {authUser ? "Tài khoản AI Match" : "Đăng nhập AI Match"}
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
             {authUser
-              ? "Tài khoản thực tế đang kết nối an toàn với máy chủ đám mây"
-              : "Đăng nhập với Tài khoản Google để đồng bộ dữ liệu tuyển dụng trực tiếp"}
+              ? (APP_CONFIG.runtimeMode === "local" ? "Tài khoản và dữ liệu được quản lý trên SQL của máy này." : "Tài khoản đang kết nối với không gian làm việc của bạn.")
+              : "Đăng nhập để quản lý hồ sơ và lưu kết quả tuyển dụng trong tài khoản của bạn."}
           </DialogDescription>
         </DialogHeader>
 
@@ -144,7 +145,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
                   <p className="text-xs text-muted-foreground truncate">{authUser.email}</p>
                   <Badge className="bg-emerald-50 text-emerald-800 border-emerald-200 text-[10px] mt-1 font-bold">
                     <CheckCircle2 className="w-3 h-3 mr-1 text-emerald-600" />
-                    Google Cloud Live Session (Bảo Mật SSL)
+                    {APP_CONFIG.runtimeMode === "local" ? "Phiên đăng nhập SQL local" : "Phiên đăng nhập đã xác thực"}
                   </Badge>
                 </div>
               </div>

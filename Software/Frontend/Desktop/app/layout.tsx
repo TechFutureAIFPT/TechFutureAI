@@ -4,11 +4,8 @@ import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
-// CSS gốc của landing page (vanilla-JS) — dùng lại nguyên vẹn để giao diện
-// landing khớp 100% bản gốc thay vì diễn giải lại bằng Tailwind.
-import "@/styles/legacy/tokens.css";
-import "@/styles/legacy/animations.css";
-import "@/styles/legacy/landing.css";
+import "@/styles/platform.css";
+import "@/styles/platform-home.css";
 
 const inter = Inter({
   subsets: ["latin", "vietnamese"],
@@ -18,17 +15,17 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.aimatching.com.vn"),
-  title: "CV Match - Support HR | Nền Tảng Tuyển Dụng & Đối Chiếu CV Bằng AI",
-  description: "Hệ thống tự động hóa phân tích CV, đối chiếu tiêu chí JD, xếp hạng ứng viên và dự báo nhân sự thông minh.",
+  title: { default: "AI Match | Tuyển dụng & phát triển nghề nghiệp", template: "%s | AI Match" },
+  description: "Nền tảng sàng lọc và đánh giá CV, quản lý tuyển dụng, trợ lý AI và tư vấn định hướng nghề nghiệp.",
   icons: {
-    icon: "/brand/favicon-32.png",
-    apple: "/brand/apple-touch-icon.png",
+    icon: "/brand/ai-match-suite/ai-match-favicon-32.png",
+    apple: "/brand/ai-match-suite/ai-match-apple-touch.png",
   },
   openGraph: {
-    title: "CV Match - Support HR | Nền Tảng Tuyển Dụng & Đối Chiếu CV Bằng AI",
-    description: "Hệ thống tự động hóa phân tích CV, đối chiếu tiêu chí JD, xếp hạng ứng viên và dự báo nhân sự thông minh.",
+    title: "AI Match | Tuyển dụng & phát triển nghề nghiệp",
+    description: "Kết nối sàng lọc hồ sơ, quản lý tuyển dụng và định hướng nghề nghiệp trong một nền tảng.",
     url: "https://www.aimatching.com.vn",
-    siteName: "AIMatching",
+    siteName: "AI Match",
     locale: "vi_VN",
     type: "website",
   },

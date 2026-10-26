@@ -2,7 +2,10 @@
 from __future__ import annotations
 
 import json
+import os
+from urllib.parse import urlsplit
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field
@@ -20,6 +23,42 @@ from app.services.admin_auth_service import (
 )
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
+
+
+class ProviderUpdate(BaseModel):
+    provider: str = Field(pattern="^(gemini|ollama)$")
+
+
+class GeminiConfigUpdate(BaseModel):
+    api_key: str | None = Field(default=None, max_length=512)
+    model: str | None = Field(default=None, max_length=128)
+
+
+def _local_core_request(method: str, path: str, payload: dict | None = None) -> dict:
+    base_url = os.getenv("LOCAL_CORE_API_URL", "http://127.0.0.1:8010").rstrip("/")
+    if urlsplit(base_url).hostname not in {"localhost", "127.0.0.1"}:
+        raise HTTPException(503, "Local backend URL is not loopback-only.")
+    token = os.getenv("LOCAL_AI_CONTROL_TOKEN", "")
+    if not token:
+        raise HTTPException(503, "Local AI control is not configured. Restart the local stack.")
+    try:
+        response = httpx.request(
+            method,
+            f"{base_url}/api/local-control{path}",
+            json=payload,
+            headers={"X-Local-AI-Control-Token": token},
+            timeout=300 if path == "/provider" else 15,
+        )
+    except httpx.HTTPError:
+        raise HTTPException(503, "Could not connect to the local backend on port 8010.") from None
+    try:
+        result = response.json()
+    except ValueError:
+        result = {}
+    if not response.is_success:
+        message = result.get("detail") if isinstance(result, dict) else None
+        raise HTTPException(response.status_code, message if isinstance(message, str) else "Local AI control request failed.")
+    return result
 
 
 class OAuthStart(BaseModel):
@@ -75,6 +114,31 @@ def google_callback(request: Request, code: str = "", state: str = "", error: st
 @router.get("/session")
 def session(actor: dict[str, str] = Depends(require_admin)) -> dict:
     return {"success": True, "data": actor, "error": None}
+
+
+@router.get("/ai-runtime")
+def ai_runtime(actor: dict[str, str] = Depends(require_admin)) -> dict:
+    return _local_core_request("GET", "/status")
+
+
+@router.put("/ai-runtime/provider")
+def set_ai_provider(
+    payload: ProviderUpdate,
+    request: Request,
+    actor: dict[str, str] = Depends(require_admin),
+) -> dict:
+    require_csrf(request)
+    return _local_core_request("PUT", "/provider", payload.model_dump())
+
+
+@router.put("/ai-runtime/gemini")
+def save_gemini_config(
+    payload: GeminiConfigUpdate,
+    request: Request,
+    actor: dict[str, str] = Depends(require_admin),
+) -> dict:
+    require_csrf(request)
+    return _local_core_request("PUT", "/gemini", payload.model_dump(exclude_unset=True))
 
 
 @router.delete("/session")

@@ -124,6 +124,9 @@ def apply_request_rate_limits(request: Request) -> None:
     method = request.method.upper()
     ip = resolve_client_ip(request)
     actor = resolve_actor(request)
+    if path.startswith("/api/auth/") and method == "POST":
+        enforce_window_limit(f"local_auth:{ip}", 15, 60)
+        return
 
     if path.startswith("/health"):
         enforce_window_limit(f"health:{ip}", 30, 60)

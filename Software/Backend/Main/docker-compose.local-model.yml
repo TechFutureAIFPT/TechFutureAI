@@ -1,0 +1,90 @@
+services:
+  ollama:
+    image: ollama/ollama:0.40.7
+    container_name: supporthr-local-ollama
+    environment:
+      OLLAMA_HOST: 0.0.0.0:11434
+      OLLAMA_MODELS: /root/.ollama/models
+      OLLAMA_SEED_MODELS: /seed-models
+      OLLAMA_MODEFILE: /models/Modelfile
+      OLLAMA_NO_CLOUD: "1"
+      OLLAMA_NUM_PARALLEL: "1"
+      OLLAMA_MAX_LOADED_MODELS: "1"
+      OLLAMA_KEEP_ALIVE: 10m
+    ports:
+      - "127.0.0.1:11435:11434"
+    volumes:
+      - ollama-models:/root/.ollama/models
+      - "${USERPROFILE}/.ollama/models:/seed-models:ro"
+      - ./deploy/kubernetes/overlays/local-model/Modelfile:/models/Modelfile:ro
+      - ./deploy/kubernetes/overlays/local-model/start-local-ollama.sh:/usr/local/bin/start-local-ollama.sh:ro
+    entrypoint: ["/bin/sh", "/usr/local/bin/start-local-ollama.sh"]
+    healthcheck:
+      test: ["CMD-SHELL", "ollama show cv-match:7b-local-sft-v2 >/dev/null 2>&1"]
+      interval: 20s
+      timeout: 10s
+      retries: 6
+      start_period: 10m
+    restart: unless-stopped
+    networks:
+      - local-only
+
+  backend:
+    image: supporthr-backend:local-model
+    build:
+      context: ./api_server
+      dockerfile: Dockerfile
+    env_file:
+      - path: ./api_server/.env.local-runtime
+        required: false
+    environment:
+      PORT: "8000"
+      DATA_PROVIDER: sqlite
+      AUTH_PROVIDER: sql
+      AI_PROVIDER: ollama
+      CV_ANALYSIS_PROVIDER: ollama
+      ANALYSIS_JOB_MODE: in_process
+      REDIS_URL: ""
+      REDIS_INTERNAL_URL: ""
+      FIREBASE_APPCHECK_ENFORCE: "0"
+      SQLITE_DB_PATH: /app/data/supporthr_local.db
+      LOCAL_CV_MODEL: cv-match:7b-local-sft-v2
+      LOCAL_CV_TOKENIZER_MODEL: cv-match:7b-local-sft-v2
+      LOCAL_LLM_MODEL: qwen2.5-coder:7b
+      LOCAL_EMBEDDING_MODEL: nomic-embed-text:latest
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_HOST: http://ollama:11434
+      GEMINI_EMBEDDING_MODEL: nomic-embed-text:latest
+      VECTOR_INDEX_VERSION: nomic-embed-text-768-local-v2
+      FRONTEND_ORIGIN: http://localhost:3010
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    depends_on:
+      ollama:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8011:8000"
+    volumes:
+      - backend-data:/app/data
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/live', timeout=5).read()",
+        ]
+      interval: 20s
+      timeout: 8s
+      retries: 5
+      start_period: 90s
+    restart: unless-stopped
+    networks:
+      - local-only
+
+networks:
+  local-only:
+    driver: bridge
+
+volumes:
+  ollama-models:
+  backend-data:

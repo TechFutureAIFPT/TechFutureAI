@@ -67,12 +67,12 @@ export function JobsSection() {
   return (
     <div className="space-y-6">
       {/* Top Action Bar */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <Badge className="bg-sky-50 text-sky-700 border border-sky-200 text-xs font-bold">
           Tổng cộng: {jobs.length} Vị trí tuyển dụng
         </Badge>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
           <Button
             variant="outline"
             size="sm"
@@ -80,7 +80,7 @@ export function JobsSection() {
             className="border-slate-200 hover:bg-sky-50 hover:text-sky-700 text-xs"
           >
             <Download className="w-3.5 h-3.5 mr-1.5 text-sky-600" />
-            Xuất File CSV
+            Xuất CSV
           </Button>
 
           <Button
@@ -92,7 +92,7 @@ export function JobsSection() {
             className="bg-sky-600 text-white hover:bg-sky-700 text-xs shadow-xs font-bold"
           >
             <Plus className="w-4 h-4 mr-1.5" />
-            Tạo Chiến Dịch JD
+            Thêm vị trí
           </Button>
         </div>
       </div>
@@ -269,14 +269,14 @@ export function JobsSection() {
             <table className="w-full text-xs text-left">
               <thead className="bg-sky-50/50 border-b border-border text-slate-700 uppercase tracking-wider font-bold">
                 <tr>
-                  <th className="py-3 px-4">Tên Vị Trí JD</th>
-                  <th className="py-3 px-4">Phòng Ban</th>
-                  <th className="py-3 px-4">Cấp Bậc</th>
-                  <th className="py-3 px-4">Mức Lương Đề Xuất</th>
-                  <th className="py-3 px-4">Tiến Độ Tuyển</th>
-                  <th className="py-3 px-4">Ứng Viên</th>
-                  <th className="py-3 px-4">Trạng Thái</th>
-                  <th className="py-3 px-4 text-right">Thao Tác</th>
+                  <th className="py-3 px-4">Vị trí tuyển dụng</th>
+                  <th className="py-3 px-4">Phòng ban</th>
+                  <th className="py-3 px-4">Cấp bậc</th>
+                  <th className="py-3 px-4">Mức lương đề xuất</th>
+                  <th className="py-3 px-4">Tiến độ</th>
+                  <th className="py-3 px-4">Ứng viên</th>
+                  <th className="py-3 px-4">Trạng thái</th>
+                  <th className="py-3 px-4 text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">

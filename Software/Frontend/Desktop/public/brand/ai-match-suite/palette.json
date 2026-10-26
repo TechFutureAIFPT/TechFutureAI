@@ -1,0 +1,114 @@
+[
+  {
+    "name": "AI Match",
+    "slug": "ai-match",
+    "purpose": "Nền tảng tuyển dụng & phát triển nghề nghiệp",
+    "accent": "#085dc5",
+    "core_colors": {
+      "cobalt": "#085dc5",
+      "fold": "#353389",
+      "indigo": "#211e55"
+    },
+    "dark_core_colors": {
+      "cobalt": "#6ba7ff",
+      "fold": "#737bd9",
+      "indigo": "#a5b4fc"
+    }
+  },
+  {
+    "name": "CV Match",
+    "slug": "cv-match",
+    "purpose": "Sàng lọc & chấm điểm hồ sơ",
+    "accent": "#085dc5",
+    "core_colors": {
+      "cobalt": "#085dc5",
+      "fold": "#353389",
+      "indigo": "#211e55"
+    },
+    "dark_core_colors": {
+      "cobalt": "#6ba7ff",
+      "fold": "#737bd9",
+      "indigo": "#a5b4fc"
+    }
+  },
+  {
+    "name": "Career Match",
+    "slug": "career-match",
+    "purpose": "Định hướng nghề nghiệp",
+    "accent": "#087f73",
+    "core_colors": {
+      "cobalt": "#085dc5",
+      "fold": "#353389",
+      "indigo": "#211e55"
+    },
+    "dark_core_colors": {
+      "cobalt": "#6ba7ff",
+      "fold": "#737bd9",
+      "indigo": "#a5b4fc"
+    }
+  },
+  {
+    "name": "Insight Match",
+    "slug": "insight-match",
+    "purpose": "Trợ lý AI & nghiên cứu",
+    "accent": "#7251b5",
+    "core_colors": {
+      "cobalt": "#085dc5",
+      "fold": "#353389",
+      "indigo": "#211e55"
+    },
+    "dark_core_colors": {
+      "cobalt": "#6ba7ff",
+      "fold": "#737bd9",
+      "indigo": "#a5b4fc"
+    }
+  },
+  {
+    "name": "Interview Match",
+    "slug": "interview-match",
+    "purpose": "Câu hỏi & lịch phỏng vấn",
+    "accent": "#af6710",
+    "core_colors": {
+      "cobalt": "#085dc5",
+      "fold": "#353389",
+      "indigo": "#211e55"
+    },
+    "dark_core_colors": {
+      "cobalt": "#6ba7ff",
+      "fold": "#737bd9",
+      "indigo": "#a5b4fc"
+    }
+  },
+  {
+    "name": "Salary Match",
+    "slug": "salary-match",
+    "purpose": "Tham khảo & so sánh mức lương",
+    "accent": "#087e9c",
+    "core_colors": {
+      "cobalt": "#085dc5",
+      "fold": "#353389",
+      "indigo": "#211e55"
+    },
+    "dark_core_colors": {
+      "cobalt": "#6ba7ff",
+      "fold": "#737bd9",
+      "indigo": "#a5b4fc"
+    }
+  },
+  {
+    "name": "Talent Match",
+    "slug": "talent-match",
+    "purpose": "Quản lý tuyển dụng",
+    "accent": "#3f5eab",
+    "core_colors": {
+      "cobalt": "#085dc5",
+      "fold": "#353389",
+      "indigo": "#211e55"
+    },
+    "dark_core_colors": {
+      "cobalt": "#6ba7ff",
+      "fold": "#737bd9",
+      "indigo": "#a5b4fc"
+    }
+  }
+]

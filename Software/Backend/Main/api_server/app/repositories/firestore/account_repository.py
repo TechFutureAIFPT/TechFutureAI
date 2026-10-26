@@ -38,6 +38,10 @@ def db():
 
 
 def server_timestamp():
+    from app.core.config import get_settings
+    if get_settings().data_provider == "sqlite":
+        from datetime import timezone
+        return datetime.now(timezone.utc)
     if firestore is None:
         raise RuntimeError("Firebase Admin SDK chưa được cài đặt.")
     return firestore.SERVER_TIMESTAMP

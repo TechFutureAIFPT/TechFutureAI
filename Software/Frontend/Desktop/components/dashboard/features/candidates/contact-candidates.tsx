@@ -38,10 +38,10 @@ export function ContactCandidatesSection() {
 
   const [templateType, setTemplateType] = useState("invite");
   const [subject, setSubject] = useState(
-    "Thư Mời Tham Gia Phỏng Vấn Tuyển Dụng - Support HR & CV Match"
+    "Thư Mời Tham Gia Phỏng Vấn Tuyển Dụng - AI Match & CV Match"
   );
   const [emailBody, setEmailBody] = useState(
-    `Chào {{name}},\n\nCảm ơn bạn đã quan tâm và ứng tuyển vị trí {{job}} tại công ty chúng tôi.\n\nSau khi đối chiếu hồ sơ và đánh giá sơ bộ (Điểm Match AI: {{score}}%), chúng tôi rất ấn tượng với năng lực của bạn. Bộ phận Tuyển dụng trân trọng kính mời bạn tham gia buổi phỏng vấn trực tuyến để trao đổi chi tiết hơn về dự án và các kỳ vọng công việc.\n\n- Thời gian dự kiến: Thứ Năm tuần này lúc 10:00 AM\n- Hình thức: Google Meet trực tuyến\n\nVui lòng phản hồi email này để xác nhận lịch họp.\n\nTrân trọng,\nĐội ngũ Tuyển Dụng Support HR`
+    `Chào {{name}},\n\nCảm ơn bạn đã quan tâm và ứng tuyển vị trí {{job}} tại công ty chúng tôi.\n\nSau khi đối chiếu hồ sơ và đánh giá sơ bộ (Điểm phù hợp: {{score}}%), chúng tôi rất ấn tượng với năng lực của bạn. Bộ phận Tuyển dụng trân trọng kính mời bạn tham gia buổi phỏng vấn trực tuyến để trao đổi chi tiết hơn về dự án và các kỳ vọng công việc.\n\n- Thời gian dự kiến: Thứ Năm tuần này lúc 10:00 AM\n- Hình thức: Google Meet trực tuyến\n\nVui lòng phản hồi email này để xác nhận lịch họp.\n\nTrân trọng,\nĐội ngũ Tuyển Dụng AI Match`
   );
 
   const [isSending, setIsSending] = useState(false);
@@ -82,7 +82,7 @@ export function ContactCandidatesSection() {
   const handleTemplateChange = (val: string) => {
     setTemplateType(val);
     if (val === "invite") {
-      setSubject("Thư Mời Tham Gia Phỏng Vấn Tuyển Dụng - Support HR");
+      setSubject("Thư Mời Tham Gia Phỏng Vấn Tuyển Dụng - AI Match");
       setEmailBody(
         `Chào {{name}},\n\nCảm ơn bạn đã quan tâm và ứng tuyển vị trí {{job}}.\n\nHồ sơ của bạn đạt điểm đối chiếu AI xuất sắc ({{score}}%). Chúng tôi trân trọng mời bạn tham gia buổi phỏng vấn kỹ thuật vào tuần này.\n\nTrân trọng,\nBan Tuyển Dụng`
       );
@@ -108,7 +108,7 @@ export function ContactCandidatesSection() {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-sm font-bold text-slate-900">
-                  Chọn Ứng Viên Nhận Mail
+                  Chọn ứng viên nhận mail
                 </CardTitle>
                 <CardDescription className="text-xs">
                   Đã chọn {selectedCandidateIds.length} / {candidates.length} hồ sơ
@@ -181,21 +181,21 @@ export function ContactCandidatesSection() {
           <form onSubmit={handleSendBulkEmail} className="p-6 space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-900">Mẫu Thư Tuyển Dụng</Label>
+                <Label className="text-xs font-semibold text-slate-900">Mẫu thư tuyển dụng</Label>
                 <Select value={templateType} onValueChange={handleTemplateChange}>
                   <SelectTrigger className="bg-slate-50 border-sky-100 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="invite">Thư Mời Phỏng Vấn (Interview Invitation)</SelectItem>
-                    <SelectItem value="offer">Thư Mời Nhận Việc (Job Offer Letter)</SelectItem>
-                    <SelectItem value="thankyou">Thư Cảm Ơn & Phản Hồi (Thank You Letter)</SelectItem>
+                    <SelectItem value="invite">Thư mời phỏng vấn (interview invitation)</SelectItem>
+                    <SelectItem value="offer">Thư mời nhận việc (job offer letter)</SelectItem>
+                    <SelectItem value="thankyou">Thư cảm ơn & phản hồi (thank you letter)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-900">Thẻ Biến Tự Động (Merge Tags)</Label>
+                <Label className="text-xs font-semibold text-slate-900">Thẻ biến tự động (merge tags)</Label>
                 <div className="flex flex-wrap gap-1.5 text-[11px]">
                   <span className="px-2 py-1 rounded bg-sky-50 text-sky-700 font-mono border border-sky-200">
                     {"{{name}}"}
@@ -211,7 +211,7 @@ export function ContactCandidatesSection() {
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-slate-900">Tiêu Đề Email *</Label>
+              <Label className="text-xs font-semibold text-slate-900">Tiêu đề email *</Label>
               <Input
                 required
                 value={subject}
@@ -221,7 +221,7 @@ export function ContactCandidatesSection() {
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-slate-900">Nội Dung Thư Điện Tử *</Label>
+              <Label className="text-xs font-semibold text-slate-900">Nội dung thư điện tử *</Label>
               <Textarea
                 required
                 rows={10}

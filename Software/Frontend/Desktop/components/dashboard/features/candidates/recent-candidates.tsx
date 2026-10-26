@@ -45,7 +45,7 @@ export function RecentCandidates() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-base font-bold text-slate-900">
-              Ứng Viên Điểm Match AI Cao Gần Đây
+              Ứng viên điểm phù hợp cao gần đây
             </h3>
             <p className="text-xs text-muted-foreground mt-0.5">
               Hồ sơ ứng viên có độ tương thích cao nhất với yêu cầu JD

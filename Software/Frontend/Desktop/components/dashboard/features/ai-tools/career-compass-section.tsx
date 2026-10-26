@@ -95,7 +95,7 @@ export function CareerCompassSection() {
     {
       sender: "assistant",
       content:
-        "Xin chào! Tôi là Cố Vấn Định Hướng Nghề Nghiệp AI (Career Compass). Tôi có thể giúp bạn giải đáp về xu hướng việc làm, phân tích tính cách nghề nghiệp Holland RIASEC, chọn ngành học và tư vấn lộ trình tuyển sinh 2026. Bạn đang băn khoăn về định hướng nào?",
+        "Tôi có thể giúp bạn tìm hiểu nghề nghiệp, khám phá sở thích qua Holland RIASEC và tham khảo ngành học. Hãy chia sẻ mục tiêu, sở thích hoặc điều bạn đang cân nhắc để bắt đầu.",
     },
   ]);
   const [chatInput, setChatInput] = useState("");
@@ -109,6 +109,7 @@ export function CareerCompassSection() {
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [surveySubmitting, setSurveySubmitting] = useState(false);
   const [profileResult, setProfileResult] = useState<CareerProfileResult | null>(null);
+  const [localResult, setLocalResult] = useState(false);
 
   // State Lộ trình
   const [roadmap, setRoadmap] = useState<RoadmapMilestone[]>(DEFAULT_ROADMAP);
@@ -116,7 +117,7 @@ export function CareerCompassSection() {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    bottomRef.current?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "nearest" });
   }, [messages, chatLoading]);
 
   // Tải danh sách câu hỏi RIASEC từ API khi mở tab
@@ -166,7 +167,7 @@ export function CareerCompassSection() {
         ...prev,
         {
           sender: "assistant",
-          content: "⚠️ Đã xảy ra lỗi khi kết nối tới Career Compass API (Port 8001). Vui lòng kiểm tra lại kết nối mạng.",
+          content: "Chưa thể kết nối với cố vấn nghề nghiệp. Vui lòng thử lại sau ít phút.",
         },
       ]);
     } finally {
@@ -176,14 +177,19 @@ export function CareerCompassSection() {
 
   const handleAnswerChange = (qId: string, val: number) => {
     setAnswers((prev) => ({ ...prev, [qId]: val }));
+    setProfileResult(null);
+    setLocalResult(false);
   };
 
   const handleSubmitSurvey = async () => {
-    const answeredCount = Object.keys(answers).length;
+    if (surveySubmitting) return;
+    const answeredCount = questions.filter((question) => answers[question.id] !== undefined).length;
     if (answeredCount < questions.length) {
-      toast.warning(`Bạn đã trả lời ${answeredCount}/${questions.length} câu. Hãy hoàn thành tất cả các câu để có kết quả chính xác nhất.`);
+      toast.warning(`Bạn đã trả lời ${answeredCount}/${questions.length} câu. Hãy hoàn thành các câu còn lại trước khi xem kết quả.`);
+      return;
     }
 
+    setLocalResult(false);
     setSurveySubmitting(true);
     try {
       const res = await careerCompassApi.submitSurvey({
@@ -217,19 +223,12 @@ export function CareerCompassSection() {
           `Nhóm nổi trội 2: ${sorted[1][0]} (${sorted[1][1]} điểm)`,
           `Nhóm nổi trội 3: ${sorted[2][0]} (${sorted[2][1]} điểm)`,
         ],
-        recommended_majors: [
-          "Công nghệ Thông tin & Khoa học Dữ liệu",
-          "Kỹ thuật Phần mềm & Trí tuệ Nhân tạo",
-          "Quản trị Kinh doanh & Phân tích Tài chính",
-        ],
-        recommended_careers: [
-          "Kỹ sư Trí tuệ nhân tạo (AI Engineer)",
-          "Chuyên viên Phân tích Dữ liệu (Data Analyst)",
-          "Quản lý Dự án Công nghệ (Technical Product Manager)",
-        ],
-        guidance_summary: `Hồ sơ của bạn thuộc nhóm mã ${hollandCode}. Bạn có xu hướng kết hợp giữa tư duy phân tích logic và năng lực giải quyết vấn đề thực tiễn. Hãy tập trung phát triển các kỹ năng chuyên môn sâu kết hợp giao tiếp đội nhóm.`,
+        recommended_majors: [],
+        recommended_careers: [],
+        guidance_summary: `Mã sở thích tham khảo của bạn là ${hollandCode}, được tổng hợp từ câu trả lời trên thiết bị. Kết quả này chưa bao gồm tư vấn cá nhân từ dịch vụ. Hãy đối chiếu với kinh nghiệm, năng lực và mục tiêu thực tế của bạn.`,
       });
-      toast.info("Đã tính toán kết quả theo mô hình RIASEC chuẩn.");
+      setLocalResult(true);
+      toast.info("Đã tổng hợp điểm sở thích trên thiết bị. Dịch vụ tư vấn hiện chưa khả dụng.");
     } finally {
       setSurveySubmitting(false);
     }
@@ -245,55 +244,12 @@ export function CareerCompassSection() {
   ];
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)] bg-slate-50 font-sans overflow-hidden">
+    <div className="flex flex-col h-full min-h-0 bg-white font-sans overflow-hidden">
       {/* Header thanh điều hướng */}
-      <header className="h-14 border-b border-slate-200 bg-white px-4 md:px-6 flex items-center justify-between shrink-0 shadow-xs">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center font-bold">
-            <Compass className="w-5 h-5" />
-          </div>
-          <div>
-            <h1 className="font-bold text-slate-900 text-base flex items-center gap-2">
-              Chatbot Định Hướng Nghề Nghiệp & Cố Vấn Tuyển Sinh
-              <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-teal-50 text-teal-700 border border-teal-200">
-                Port 8001
-              </span>
-            </h1>
-          </div>
-        </div>
-
-        {/* 3 Tabs chính */}
-        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-medium">
-          <button
-            onClick={() => setActiveTab("advisor")}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
-              activeTab === "advisor"
-                ? "bg-white text-teal-700 shadow-xs font-semibold"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            Cố Vấn AI
-          </button>
-          <button
-            onClick={() => setActiveTab("riasec")}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
-              activeTab === "riasec"
-                ? "bg-white text-teal-700 shadow-xs font-semibold"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            Trắc Nghiệm RIASEC
-          </button>
-          <button
-            onClick={() => setActiveTab("roadmap")}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
-              activeTab === "roadmap"
-                ? "bg-white text-teal-700 shadow-xs font-semibold"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            Lộ Trình Tuyển Sinh
-          </button>
+      <header className="chat-toolbar">
+        <div className="chat-toolbar-title"><Compass size={19} className="text-primary" /><span>Cố vấn nghề nghiệp</span></div>
+        <div className="chat-mode-tabs" role="group" aria-label="Công cụ định hướng nghề nghiệp">
+          {([{ id: "advisor", label: "Cố vấn AI" }, { id: "riasec", label: "Khảo sát RIASEC" }, { id: "roadmap", label: "Lộ trình tham khảo" }] as const).map((tab) => <button key={tab.id} aria-pressed={activeTab === tab.id} onClick={() => setActiveTab(tab.id)}>{tab.label}</button>)}
         </div>
       </header>
 
@@ -304,7 +260,16 @@ export function CareerCompassSection() {
           <div className="flex-1 flex flex-col h-full min-h-0">
             {/* Vùng tin nhắn */}
             <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
-              {messages.map((m, idx) => (
+              {messages.length === 1 ? (
+                <div className="h-full flex flex-col items-center justify-center max-w-2xl mx-auto text-center px-2 py-6">
+                  <span className="w-14 h-14 rounded-2xl bg-secondary text-primary flex items-center justify-center mb-5"><Compass size={28} strokeWidth={1.5} /></span>
+                  <h2 className="text-xl font-semibold tracking-tight text-slate-900">Tìm hướng đi phù hợp với bạn</h2>
+                  <p className="text-sm text-muted-foreground mt-3 mb-6 leading-relaxed max-w-lg">Bắt đầu từ sở thích, thế mạnh hoặc mục tiêu của bạn. cố vấn AI giúp bạn tìm hiểu các lựa chọn và những bước chuẩn bị tiếp theo.</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left w-full max-w-xl">
+                    {["Tôi chưa biết mình phù hợp với nhóm nghề nào.", "Tôi muốn tìm hiểu cơ hội trong ngành công nghệ.", "Tôi cần chuẩn bị gì khi muốn chuyển hướng nghề nghiệp?", "Giải thích giúp tôi về khảo sát Holland RIASEC."].map((suggestion) => <button key={suggestion} onClick={() => setChatInput(suggestion)} className="p-3.5 rounded-xl border border-border bg-slate-50 text-xs text-slate-600 hover:bg-secondary hover:text-primary text-left leading-relaxed">{suggestion}</button>)}
+                  </div>
+                </div>
+              ) : messages.map((m, idx) => (
                 <div
                   key={idx}
                   className={`flex gap-3 max-w-3xl ${
@@ -344,7 +309,7 @@ export function CareerCompassSection() {
                             >
                               <span className="flex items-center gap-1.5">
                                 <BrainCircuit className="w-3.5 h-3.5 text-amber-600" />
-                                Chuỗi Suy Luận Logic AI (Chain-of-Thought)
+                                Phân tích bổ sung
                               </span>
                               {expandedReasoning ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                             </button>
@@ -403,7 +368,7 @@ export function CareerCompassSection() {
                   </div>
                   <div className="p-4 rounded-2xl bg-slate-100 text-slate-500 text-sm flex items-center gap-2">
                     <RefreshCw className="w-4 h-4 animate-spin text-teal-600" />
-                    Cố vấn AI đang phân tích dữ liệu tuyển sinh & ma trận nghề nghiệp...
+                    Đang tổng hợp thông tin cho câu hỏi của bạn…
                   </div>
                 </div>
               )}
@@ -413,7 +378,7 @@ export function CareerCompassSection() {
             {/* Input thanh gửi câu hỏi */}
             <div className="p-4 border-t border-slate-200 bg-white">
               <div className="max-w-3xl mx-auto space-y-2">
-                <div className="flex items-center justify-between text-xs text-slate-500 px-1">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 px-1">
                   <label className="flex items-center gap-1.5 cursor-pointer">
                     <input
                       type="checkbox"
@@ -421,9 +386,9 @@ export function CareerCompassSection() {
                       onChange={(e) => setUseDeepResearch(e.target.checked)}
                       className="rounded text-teal-600 focus:ring-teal-500"
                     />
-                    <span>Kích hoạt Deep Research (Tra cứu quy chế 2026 thời gian thực)</span>
+                    <span>Tham khảo thêm nguồn trực tuyến</span>
                   </label>
-                  <span className="text-[11px] text-slate-400">DeepSeek Reasoner + RAG Tuyển sinh</span>
+                  <span className="text-[11px] text-slate-400">Thông tin hỗ trợ định hướng</span>
                 </div>
 
                 <div className="relative flex items-center bg-slate-50 border border-slate-300 rounded-2xl focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-100 p-2">
@@ -432,11 +397,12 @@ export function CareerCompassSection() {
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-                    placeholder="Hỏi về chọn ngành, trường đại học, cơ hội việc làm hoặc mã Holland..."
+                    aria-label="Câu hỏi định hướng nghề nghiệp" placeholder="Chia sẻ mục tiêu hoặc câu hỏi về nghề nghiệp…"
                     className="w-full bg-transparent border-0 focus:outline-hidden text-sm text-slate-800 placeholder-slate-400 px-2"
                   />
                   <button
                     onClick={() => handleSendMessage()}
+                    aria-label="Gửi câu hỏi hướng nghiệp"
                     disabled={!chatInput.trim() || chatLoading}
                     className="p-2 text-white bg-teal-600 hover:bg-teal-700 disabled:opacity-40 rounded-xl shrink-0 transition-colors"
                   >
@@ -455,11 +421,11 @@ export function CareerCompassSection() {
               {/* Giới thiệu bài trắc nghiệm */}
               <div className="bg-teal-50/60 border border-teal-200 rounded-2xl p-6">
                 <h2 className="text-lg font-bold text-teal-950 mb-1">
-                  Bài Trắc Nghiệm Tâm Lý Nghề Nghiệp Holland (RIASEC)
+                  Khảo sát sở thích nghề nghiệp Holland RIASEC
                 </h2>
                 <p className="text-xs text-teal-800 leading-relaxed">
                   Đánh giá mức độ yêu thích của bạn đối với từng hoạt động (từ 1: Hoàn toàn không thích đến 5: Rất thích).
-                  Hệ thống sẽ tổng hợp để tìm ra Mã Nghề Nghiệp (Holland Code) và gợi ý các ngành đào tạo tối ưu nhất.
+                  Kết quả giúp bạn tham khảo các nhóm sở thích nghề nghiệp, kết hợp với năng lực và mục tiêu cá nhân.
                 </p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-4 pt-3 border-t border-teal-200/60 text-xs">
                   {RIASEC_CATEGORIES.map((c) => (
@@ -473,7 +439,7 @@ export function CareerCompassSection() {
               {/* Danh sách câu hỏi */}
               <div className="space-y-4">
                 <h3 className="font-semibold text-slate-900 text-sm flex items-center justify-between">
-                  <span>Bảng Câu Hỏi Khảo Sát ({questions.length} câu)</span>
+                  <span>Câu hỏi khảo sát ({questions.length} câu)</span>
                   <span className="text-xs text-slate-500 font-normal">
                     Đã hoàn thành: {Object.keys(answers).length}/{questions.length}
                   </span>
@@ -500,6 +466,8 @@ export function CareerCompassSection() {
                             <button
                               key={val}
                               onClick={() => handleAnswerChange(q.id, val)}
+                              aria-label={`Câu ${idx + 1}: mức ${val} trên 5`}
+                              aria-pressed={currentVal === val}
                               className={`w-8 h-8 rounded-lg text-xs font-semibold transition-all ${
                                 currentVal === val
                                   ? "bg-teal-600 text-white shadow-xs"
@@ -527,7 +495,7 @@ export function CareerCompassSection() {
                       </>
                     ) : (
                       <>
-                        <Award className="w-4 h-4" /> Nộp Bài & Xem Kết Quả Hướng Nghiệp
+                        <Award className="w-4 h-4" /> Xem kết quả khảo sát
                       </>
                     )}
                   </button>
@@ -540,10 +508,10 @@ export function CareerCompassSection() {
                   <div className="flex items-center justify-between pb-4 border-b border-slate-100">
                     <div>
                       <span className="text-xs uppercase tracking-wider font-bold text-teal-600">
-                        Kết Quả Phân Tích Cá Nhân Hóa
+                        {localResult ? "Kết quả tổng hợp trên thiết bị" : "Kết quả khảo sát nghề nghiệp"}
                       </span>
                       <h3 className="text-xl font-bold text-slate-900 mt-0.5">
-                        Mã Nghề Nghiệp Holland:{" "}
+                        Mã sở thích Holland:{" "}
                         <span className="text-teal-600 font-extrabold">{profileResult.holland_code}</span>
                       </h3>
                     </div>
@@ -556,7 +524,7 @@ export function CareerCompassSection() {
                   {profileResult.riasec_scores && (
                     <div>
                       <h4 className="text-xs font-semibold text-slate-500 uppercase mb-3">
-                        Phân bố điểm năng lực 6 nhóm tính cách
+                        Phân bố điểm sở thích theo nhóm
                       </h4>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                         {Object.entries(profileResult.riasec_scores).map(([key, val]) => (
@@ -568,7 +536,7 @@ export function CareerCompassSection() {
                             <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
                               <div
                                 className="bg-teal-600 h-2 rounded-full transition-all duration-500"
-                                style={{ width: `${Math.min(100, (Number(val) / 20) * 100)}%` }}
+                                style={{ width: `${Math.min(100, (Number(val) / Math.max(1, questions.filter((question) => question.category === key).length * 5)) * 100)}%` }}
                               />
                             </div>
                           </div>
@@ -578,11 +546,11 @@ export function CareerCompassSection() {
                   )}
 
                   {/* Đề xuất ngành & nghề nghiệp */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {!localResult && <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="p-4 bg-teal-50/50 rounded-xl border border-teal-100 space-y-2">
                       <h5 className="text-xs font-bold text-teal-900 uppercase flex items-center gap-1.5">
                         <GraduationCap className="w-4 h-4 text-teal-700" />
-                        Ngành Học Đề Xuất
+                        Ngành học tham khảo
                       </h5>
                       <ul className="text-xs text-slate-700 space-y-1 list-disc pl-4">
                         {profileResult.recommended_majors?.map((m, idx) => (
@@ -594,7 +562,7 @@ export function CareerCompassSection() {
                     <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
                       <h5 className="text-xs font-bold text-slate-900 uppercase flex items-center gap-1.5">
                         <TrendingUp className="w-4 h-4 text-slate-700" />
-                        Vị Trí Việc Làm Phù Hợp
+                        Nhóm nghề tham khảo
                       </h5>
                       <ul className="text-xs text-slate-700 space-y-1 list-disc pl-4">
                         {profileResult.recommended_careers?.map((c, idx) => (
@@ -602,7 +570,7 @@ export function CareerCompassSection() {
                         ))}
                       </ul>
                     </div>
-                  </div>
+                  </div>}
 
                   {profileResult.guidance_summary && (
                     <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-700 leading-relaxed">
@@ -622,10 +590,10 @@ export function CareerCompassSection() {
             <div className="max-w-3xl mx-auto space-y-6">
               <div className="text-center space-y-1 mb-8">
                 <h2 className="text-xl font-bold text-slate-900">
-                  Bản Đồ Lộ Trình Tuyển Sinh & Định Hướng Nghề Nghiệp 2026
+                  Lộ trình chuẩn bị học tập & nghề nghiệp
                 </h2>
                 <p className="text-xs text-slate-500">
-                  Từng bước chuẩn bị hồ sơ xét tuyển, thi đánh giá năng lực và đăng ký nguyện vọng đại học.
+                  Lộ trình mẫu để tham khảo. Điều chỉnh theo mục tiêu của bạn và kiểm tra lịch chính thức của từng cơ sở đào tạo.
                 </p>
               </div>
 

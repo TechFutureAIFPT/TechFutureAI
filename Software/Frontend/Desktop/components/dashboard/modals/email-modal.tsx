@@ -49,7 +49,7 @@ const recruitmentEmailTemplates = [
   {
     id: "interview_invite",
     label: "Thư Mời Phỏng Vấn Kỹ Thuật (Interview Invitation)",
-    subject: "Thư Mời Phỏng Vấn Tuyển Dụng - Vị Trí {{job}} - CV Match & Support HR",
+    subject: "Thư Mời Phỏng Vấn Tuyển Dụng - Vị Trí {{job}} - CV Match & AI Match",
     body: `Chào {{name}},
 
 Cảm ơn bạn đã quan tâm và ứng tuyển vị trí {{job}} tại công ty chúng tôi.
@@ -63,7 +63,7 @@ Sau khi đối chiếu hồ sơ bằng công nghệ AI CV Match (Điểm tương
 Vui lòng phản hồi email này để xác nhận khung giờ thuận tiện nhất cho bạn.
 
 Trân trọng,
-Ban Tuyển Dụng Support HR`,
+Ban Tuyển Dụng AI Match`,
   },
   {
     id: "job_offer",
@@ -101,7 +101,7 @@ Chúng tôi đã lưu trữ hồ sơ của bạn vào Cơ sở dữ liệu Nhân
 Chúc bạn luôn thành công và phát triển mạnh mẽ trên con đường sự nghiệp!
 
 Trân trọng,
-Đội ngũ Tuyển dụng Support HR`,
+Đội ngũ Tuyển dụng AI Match`,
   },
 ];
 
@@ -326,10 +326,10 @@ export function EmailModal({
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleInsertTag("Support HR")}
+                    onClick={() => handleInsertTag("AI Match")}
                     className="px-2 py-0.5 rounded bg-sky-50 text-sky-700 text-[11px] font-mono hover:bg-sky-100 border border-sky-200 transition-colors cursor-pointer"
                   >
-                    + {"Support HR"}
+                    + {"AI Match"}
                   </button>
                 </div>
               </div>
@@ -365,7 +365,7 @@ export function EmailModal({
                   {/* Email Mock Header */}
                   <div className="border-b border-border/80 pb-2.5 space-y-1 text-xs">
                     <div className="flex items-center justify-between text-muted-foreground text-[11px]">
-                      <span>Từ: <strong>Ban Tuyển Dụng Support HR</strong> &lt;recruiter@supporthr.vn&gt;</span>
+                      <span>Từ: <strong>Ban Tuyển Dụng AI Match</strong> &lt;recruiter@supporthr.vn&gt;</span>
                       <span>Hôm nay</span>
                     </div>
                     <div className="text-muted-foreground text-[11px]">
@@ -388,7 +388,7 @@ export function EmailModal({
                     HR
                   </div>
                   <div>
-                    <p className="font-bold text-slate-900 text-[11px]">Support HR Recruiter Team</p>
+                    <p className="font-bold text-slate-900 text-[11px]">AI Match Recruiter Team</p>
                     <p className="text-[10px] text-muted-foreground">Hệ thống Lọc CV & Đối Chiếu Chuẩn Hóa AI</p>
                   </div>
                 </div>

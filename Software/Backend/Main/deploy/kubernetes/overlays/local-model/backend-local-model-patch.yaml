@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: supporthr-api
+spec:
+  template:
+    spec:
+      containers:
+        - name: api
+          env:
+            - name: DATA_PROVIDER
+              value: sqlite
+            - name: AUTH_PROVIDER
+              value: sql
+            - name: AI_PROVIDER
+              value: ollama
+            - name: CV_ANALYSIS_PROVIDER
+              value: ollama
+            - name: ANALYSIS_JOB_MODE
+              value: redis
+            - name: SQLITE_DB_PATH
+              value: /app/data/supporthr_local.db
+            - name: LOCAL_CV_MODEL
+              value: cv-match:7b-local-sft-v2
+            - name: LOCAL_CV_TOKENIZER_MODEL
+              value: cv-match:7b-local-sft-v2
+            - name: LOCAL_LLM_MODEL
+              value: qwen2.5-coder:7b
+            - name: LOCAL_EMBEDDING_MODEL
+              value: nomic-embed-text:latest
+            - name: OLLAMA_BASE_URL
+              value: http://ollama:11434
+            - name: OLLAMA_HOST
+              value: http://ollama:11434
+            - name: GEMINI_EMBEDDING_MODEL
+              value: nomic-embed-text:latest
+            - name: VECTOR_INDEX_VERSION
+              value: nomic-embed-text-768-local-v2
+          volumeMounts:
+            - name: local-database
+              mountPath: /app/data
+      volumes:
+        - name: local-database
+          hostPath:
+            path: /supporthr-k8s-data
+            type: Directory
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: supporthr-worker
+spec:
+  template:
+    spec:
+      containers:
+        - name: worker
+          env:
+            - name: DATA_PROVIDER
+              value: sqlite
+            - name: AUTH_PROVIDER
+              value: sql
+            - name: AI_PROVIDER
+              value: ollama
+            - name: CV_ANALYSIS_PROVIDER
+              value: ollama
+            - name: ANALYSIS_JOB_MODE
+              value: redis
+            - name: SQLITE_DB_PATH
+              value: /app/data/supporthr_local.db
+            - name: LOCAL_CV_MODEL
+              value: cv-match:7b-local-sft-v2
+            - name: LOCAL_CV_TOKENIZER_MODEL
+              value: cv-match:7b-local-sft-v2
+            - name: LOCAL_LLM_MODEL
+              value: qwen2.5-coder:7b
+            - name: LOCAL_EMBEDDING_MODEL
+              value: nomic-embed-text:latest
+            - name: OLLAMA_BASE_URL
+              value: http://ollama:11434
+            - name: OLLAMA_HOST
+              value: http://ollama:11434
+            - name: GEMINI_EMBEDDING_MODEL
+              value: nomic-embed-text:latest
+            - name: VECTOR_INDEX_VERSION
+              value: nomic-embed-text-768-local-v2
+          volumeMounts:
+            - name: local-database
+              mountPath: /app/data
+      volumes:
+        - name: local-database
+          hostPath:
+            path: /supporthr-k8s-data
+            type: Directory

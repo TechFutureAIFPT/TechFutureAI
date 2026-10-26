@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import math
+from app.core.config import get_settings
 from app.integrations.firebase_admin import get_firestore_client
 
 
@@ -20,6 +22,30 @@ def find_nearest_approved_exemplars(
     limit: int,
     similarity_threshold: float,
 ) -> list[dict]:
+    if get_settings().data_provider == "sqlite":
+        if not query_vector or not all(math.isfinite(value) for value in query_vector):
+            return []
+        norm = math.sqrt(sum(value * value for value in query_vector))
+        if norm == 0:
+            return []
+        records = []
+        query = (vector_library(collection_name).where("status", "==", "approved")
+                 .where("approved", "==", True).where("rubricVersion", "==", rubric_version)
+                 .where("vectorIndexVersion", "==", vector_index_version))
+        for snapshot in query.stream():
+            data = snapshot.to_dict() or {}
+            vector = data.get("embedding")
+            if not isinstance(vector, list) or len(vector) != len(query_vector):
+                continue
+            if not all(isinstance(value, (int, float)) and math.isfinite(value) for value in vector):
+                continue
+            denominator = norm * math.sqrt(sum(value * value for value in vector))
+            if denominator == 0:
+                continue
+            similarity = max(-1.0, min(1.0, sum(a * b for a, b in zip(query_vector, vector)) / denominator))
+            if similarity >= similarity_threshold:
+                records.append({**data, "_id": snapshot.id, "similarity": similarity})
+        return sorted(records, key=lambda item: (-item["similarity"], item["_id"]))[:max(0, limit)]
     from google.cloud.firestore_v1.base_query import FieldFilter
     from google.cloud.firestore_v1.base_vector_query import DistanceMeasure
     from google.cloud.firestore_v1.vector import Vector
