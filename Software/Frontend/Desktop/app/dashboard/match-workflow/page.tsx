@@ -1,7 +1,6 @@
-"use client";
-
-import { MatchWorkflowSection } from "@/components/dashboard/features/matching";
+import { redirect } from "next/navigation";
+import { sectionHref } from "@/lib/navigation";
 
 export default function MatchWorkflowPage() {
-  return <MatchWorkflowSection />;
+  redirect(sectionHref("match-workflow"));
 }

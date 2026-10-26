@@ -28,6 +28,26 @@ function asNumberOrNull(value: unknown): number | null {
   return Number.isFinite(num) ? num : null;
 }
 
+export function normalizeScoringWeights(weights: Record<string, unknown>): Record<string, unknown> {
+  const names: Record<string, string> = {
+    job_fit: "Phù hợp JD", role_skills: "Kỹ năng chuyên môn", experience: "Kinh nghiệm",
+    impact: "Thành tích và tác động", education: "Học vấn", soft_skills: "Kỹ năng mềm",
+  };
+  return Object.fromEntries(Object.entries(weights).map(([key, value]) => [
+    key, typeof value === "number" ? { name: names[key] || key, weight: value } : value,
+  ]));
+}
+
+export function criterionPercentage(details: Array<{ criterion: string; score: string | number }>, criterionName: string): number {
+  const normalized = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  const detail = details.find((item) => normalized(item.criterion).startsWith(normalized(criterionName)));
+  const values = detail ? String(detail.score).match(/(-?\d+(?:[.,]\d+)?)\s*\/\s*(\d+(?:[.,]\d+)?)/) : null;
+  if (!values) return 0;
+  const earned = Number(values[1].replace(",", "."));
+  const maximum = Number(values[2].replace(",", "."));
+  return maximum > 0 ? Math.max(0, Math.min(100, earned / maximum * 100)) : 0;
+}
+
 export function normalizeGrade(grade: unknown): RankGrade {
   const upper = asText(grade).toUpperCase().trim();
   if (upper === "A" || upper === "B" || upper === "C") return upper;
@@ -89,8 +109,8 @@ export function mapCandidate(raw: unknown, index = 0): StructuredCandidateOutput
   const analysis = (pick<Record<string, unknown>>(raw, "analysis") || {}) as Record<string, unknown>;
   const hrSummary = (pick<Record<string, unknown>>(raw, "hrSummary", "hr_summary") || {}) as Record<string, unknown>;
 
-  const totalScore = asNumberOrNull(pick(analysis, "Tong diem", "total_score", "totalScore")) || 0;
-  const grade = normalizeGrade(pick(analysis, "Hang", "rank"));
+  const totalScore = asNumberOrNull(pick(analysis, "Tổng điểm", "Tong diem", "total_score", "totalScore")) ?? 0;
+  const grade = normalizeGrade(pick(analysis, "Hạng", "Hang", "rank"));
   const hardFailure = asText(pick(raw, "hardFilterFailureReason", "hard_filter_failure_reason"));
 
   return {
@@ -106,7 +126,7 @@ export function mapCandidate(raw: unknown, index = 0): StructuredCandidateOutput
     softFilterWarnings: asArray<string>(pick(raw, "softFilterWarnings", "soft_filter_warnings")),
     detectedLocation: asText(pick(raw, "detectedLocation", "detected_location")),
     hrSummary: {
-      tong_diem_phu_hop: Number(pick(hrSummary, "tong_diem_phu_hop", "tongDiemPhuHop")) || totalScore,
+      tong_diem_phu_hop: asNumberOrNull(pick(hrSummary, "tong_diem_phu_hop", "tongDiemPhuHop")) ?? totalScore,
       nhan_xet_tong_quan: asText(pick(hrSummary, "nhan_xet_tong_quan", "nhanXetTongQuan")),
       canh_bao_red_flag: asArray<string>(pick(hrSummary, "canh_bao_red_flag", "canhBaoRedFlag")),
       kinh_nghiem: {
@@ -123,16 +143,16 @@ export function mapCandidate(raw: unknown, index = 0): StructuredCandidateOutput
     analysis: {
       total_score: totalScore,
       rank: grade,
-      details: asArray<Record<string, unknown>>(pick(analysis, "Chi tiet", "details")).map((d) => ({
-        criterion: asText(pick(d, "Tieu chi", "criterion")),
-        score: asText(pick(d, "Diem", "score")),
-        formula: asText(pick(d, "Cong thuc", "formula")),
-        evidence: asText(pick(d, "Dan chung", "evidence")),
-        explanation: asText(pick(d, "Giai thich", "explanation")),
+      details: asArray<Record<string, unknown>>(pick(analysis, "Chi tiết", "Chi tiet", "details")).map((d) => ({
+        criterion: asText(pick(d, "Tiêu chí", "Tieu chi", "criterion")),
+        score: asText(pick(d, "Điểm", "Diem", "score")),
+        formula: asText(pick(d, "Công thức", "Cong thuc", "formula")),
+        evidence: asText(pick(d, "Dẫn chứng", "Dan chung", "evidence")),
+        explanation: asText(pick(d, "Giải thích", "Giai thich", "explanation")),
       })),
-      strengths: asArray<string>(pick(analysis, "Diem manh CV", "strengths")),
-      weaknesses: asArray<string>(pick(analysis, "Diem yeu CV", "weaknesses")),
-      interview_questions: asArray<string>(pick(analysis, "Cau hoi phong van", "interview_questions", "interviewQuestions")),
+      strengths: asArray<string>(pick(analysis, "Điểm mạnh CV", "Diem manh CV", "strengths")),
+      weaknesses: asArray<string>(pick(analysis, "Điểm yếu CV", "Diem yeu CV", "weaknesses")),
+      interview_questions: asArray<string>(pick(analysis, "Câu hỏi phỏng vấn", "Cau hoi phong van", "interview_questions", "interviewQuestions")),
       review_basis: asText(pick(analysis, "Can cu tham dinh", "review_basis")),
       self_review: asText(pick(analysis, "Tu tham dinh", "self_review")),
     },

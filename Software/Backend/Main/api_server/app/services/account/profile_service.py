@@ -118,9 +118,14 @@ def save_cv_history(user: AuthenticatedUser, email: str, jd_text: str, jd_title:
         {
             "uid": user.uid,
             "email": email or user.email,
+            "userEmail": email or user.email,
             "jdText": jd_text or "",
+            "jdTextSnippet": (jd_text or "")[:300],
             "jdTitle": jd_title or "Vị trí tuyển dụng",
             "cvCount": int(cv_count or 0),
+            "totalCandidates": int(cv_count or 0),
+            "jobPosition": jd_title or "Vị trí tuyển dụng",
+            "createdAt": repo.server_timestamp(),
             "results": [item for item in results if item is not None],
             "timestamp": repo.server_timestamp(),
         }

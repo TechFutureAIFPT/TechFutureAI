@@ -4,6 +4,34 @@ This directory is the canonical training and exemplar-ingestion source for the b
 It is intentionally **not** copied into the production image. The server only receives the reviewed
 classifier artifact and manifest under `api_server/app/models/`.
 
+## Diagnose overfitting and underfitting before a new training run
+
+Use the registered source snapshot to measure a reference LinearSVC without writing a model:
+
+```powershell
+python ml_pipeline/diagnose_classifier.py `
+  --source-id kaggle-resume-dataset `
+  --dataset-csv D:/datasets/Resume.csv `
+  --output ml_pipeline/artifacts/fit-diagnostics.json
+```
+
+The command fixes an outer grouped holdout in advance, selects regularization C using inner grouped
+cross-validation only, fits TF-IDF inside each fold, prefers smaller C within one standard error of
+the best validation score, and records train/validation scores, group learning curves, per-class
+holdout metrics and a dummy baseline. It rejects folds lacking a class or sufficient independent
+groups. It never exports or installs a model. Diagnostic thresholds are configurable in the Python
+evaluation function and are not approved hiring thresholds.
+
+The source checksum must match the reviewed registry before fitting. To inspect a changed local
+snapshot without training, append `--audit-only`; its report explicitly records the checksum
+mismatch. Resolve source provenance before changing the registry. Do not bypass this gate by copying
+a checksum into the registry without reviewing the source.
+
+These diagnostics evaluate industry classification, not CV–JD matching accuracy or the local LLM.
+Near-duplicate groups are not guaranteed to identify all versions of one person. For release,
+collect candidate/JD-family group identifiers, HR-reviewed criterion labels and a new locked test
+set. Repeatedly consulting a holdout turns it into development data.
+
 ## Safety contract
 
 - Register every source in `configs/datasets.json` with a pinned revision, license decision, intended

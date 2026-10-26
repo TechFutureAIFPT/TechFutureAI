@@ -6,6 +6,8 @@
  */
 
 import { apiFetch } from "./api-client";
+import type { DriveStatus, DriveFile, DriveImport } from "./types/google-drive";
+import { normalizeScoringWeights } from "./mappers";
 import {
   type CoreCvAnalysisRequest,
   type AnalysisJobStatusResponse,
@@ -58,7 +60,7 @@ export const ai = {
   createAnalysisJob: (payload: CoreCvAnalysisRequest, signal?: AbortSignal) =>
     apiFetch<{ job_id: string; status: "queued" | "processing"; status_url: string }>(
       "/api/analysis/jobs",
-      { method: "POST", body: payload, auth: "optional", signal }
+      { method: "POST", body: { ...payload, weights: normalizeScoringWeights(payload.weights) }, auth: "optional", signal }
     ),
 
   /** GET /api/analysis/status/{job_id} → AnalysisJobStatusResponse */
@@ -196,17 +198,17 @@ export const ai = {
 
 export const files = {
   /** POST /api/files/extract-text — multipart/form-data */
-  extractText: (file: File, opts: { forceOcr?: boolean; documentType?: string } = {}, signal?: AbortSignal) => {
+  extractText: async (file: File, opts: { forceOcr?: boolean; documentType?: string } = {}, signal?: AbortSignal) => {
     const form = new FormData();
     form.append("file", file);
     form.append("force_ocr", opts.forceOcr ? "true" : "false");
     if (opts.documentType) form.append("document_type", opts.documentType);
 
-    return apiFetch<{
-      extracted_text: string;
-      filename: string;
-      file_size: number;
-      ocr_applied: boolean;
+    const response = await apiFetch<{
+      text?: string;
+      extracted_text?: string;
+      saved_record_id?: string;
+      ocr_applied?: boolean;
       page_count?: number;
     }>("/api/files/extract-text", {
       method: "POST",
@@ -214,6 +216,9 @@ export const files = {
       auth: "optional",
       signal,
     });
+    const text = response.text ?? response.extracted_text;
+    if (typeof text !== "string") throw new Error("Dịch vụ chưa trả về văn bản trích xuất hợp lệ.");
+    return { ...response, extracted_text: text, filename: file.name, file_size: file.size };
   },
 };
 
@@ -317,7 +322,22 @@ export const account = {
 
   /* --- Google Drive --- */
   driveStatus: (signal?: AbortSignal) =>
-    apiFetch<{ connected: boolean; email?: string }>("/api/account/google-drive/status", { auth: true, signal }),
+    apiFetch<DriveStatus>("/api/account/google-drive/status", { auth: true, signal }),
+
+  driveOAuthUrl: (redirectUri: string) =>
+    apiFetch<{ authUrl: string; state: string }>("/api/account/google-drive/oauth-url", { method: "POST", body: { redirectUri }, auth: true }),
+
+  driveExchange: (code: string, state: string, redirectUri: string) =>
+    apiFetch<DriveStatus>("/api/account/google-drive/exchange-code", { method: "POST", body: { code, state, redirectUri }, auth: true }),
+
+  driveDisconnect: () =>
+    apiFetch<{ ok: boolean }>("/api/account/google-drive/connection", { method: "DELETE", auth: true }),
+
+  driveFiles: (query: { search?: string; folder_id?: string; page_token?: string }, signal?: AbortSignal) =>
+    apiFetch<{ files: DriveFile[]; nextPageToken?: string | null }>("/api/account/google-drive/files", { query: { ...query, page_size: 30, mime_types: "application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,image/png,image/jpeg,application/vnd.google-apps.document" }, auth: true, signal }),
+
+  driveImport: (fileId: string, forceOcr = false) =>
+    apiFetch<DriveImport>("/api/account/google-drive/import", { method: "POST", body: { fileId, fileType: "cv", forceOcr, persistUploadedFile: true }, auth: true, timeoutMs: 180000 }),
 
   /* --- Email --- */
   sendEmail: (payload: {

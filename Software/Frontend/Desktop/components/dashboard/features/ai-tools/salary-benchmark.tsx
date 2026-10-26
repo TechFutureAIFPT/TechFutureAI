@@ -289,7 +289,7 @@ export function SalaryBenchmarkSection() {
       if (errors.location) missingList.push("Khu vực làm việc");
       if (errors.exp) missingList.push("Số năm kinh nghiệm");
 
-      toast.error(`Vui lòng chọn đầy đủ thông tin: ${missingList.join(", ")} trước khi tra cứu!`, {
+      toast.error(`Chọn thông tin: ${missingList.join(", ")} trước khi tra cứu!`, {
         duration: 4000,
       });
 
@@ -490,16 +490,16 @@ export function SalaryBenchmarkSection() {
       accent: "text-sky-600 bg-sky-50 border border-sky-100",
     },
     {
-      title: "Khoảng Lương Phổ Biến",
+      title: "Dải lương tham khảo",
       value: `${report.popularMin} - ${report.popularMax} Tr`,
       unit: "VNĐ/tháng",
-      subtext: `Hơn 75% doanh nghiệp chi trả`,
+      subtext: `Khoảng giá trị trong bộ dữ liệu tham khảo`,
       icon: TrendingUp,
       trend: "P25 – P75",
       accent: "text-blue-600 bg-blue-50 border border-blue-100",
     },
     {
-      title: "Dải Lương Toàn Thị Trường",
+      title: "Dải lương tổng hợp",
       value: `${report.overallMin} - ${report.overallMax} Tr`,
       unit: "VNĐ/tháng",
       subtext: `Khởi điểm đến cấp quản lý`,
@@ -508,7 +508,7 @@ export function SalaryBenchmarkSection() {
       accent: "text-cyan-600 bg-cyan-50 border border-cyan-100",
     },
     {
-      title: "Khu Vực & Hình Thức",
+      title: "Khu vực & hình thức",
       value: report.locationLabel.split("(")[0].trim(),
       unit: report.workModeLabel.split("(")[0].trim(),
       subtext: `${report.category}`,
@@ -531,10 +531,10 @@ export function SalaryBenchmarkSection() {
               <div>
                 <h2 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
                   <Search className="w-4.5 h-4.5 text-sky-600" />
-                  <span>Tra Cứu Mức Lương Thị Trường Lao Động Việt Nam 2026</span>
+                  <span>Thiết lập thông tin tham khảo</span>
                 </h2>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Vui lòng chọn đầy đủ <strong>Chức danh</strong>, <strong>Ngành nghề</strong>, <strong>Khu vực</strong> và <strong>Kinh nghiệm</strong> để nhận báo cáo chuẩn xác
+                  Chọn <strong>Chức danh</strong>, <strong>Ngành nghề</strong>, <strong>Khu vực</strong> và <strong>Kinh nghiệm</strong> để xem dải lương tham khảo
                 </p>
               </div>
             </div>
@@ -714,7 +714,7 @@ export function SalaryBenchmarkSection() {
                       className="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs h-9 rounded-md shadow-xs transition-all"
                     >
                       <Search className="w-3.5 h-3.5 mr-1" />
-                      <span>Tra Cứu Lương</span>
+                      <span>Tra cứu lương</span>
                     </Button>
                   </div>
                 </div>
@@ -785,7 +785,7 @@ export function SalaryBenchmarkSection() {
           <div className="flex items-center justify-between">
             <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
               <Building2 className="w-4.5 h-4.5 text-sky-600" />
-              <span>Khám Phá Mức Lương Theo Nhóm Ngành Nghề</span>
+              <span>Khám phá mức lương theo nhóm ngành nghề</span>
             </h3>
             <span className="text-xs text-muted-foreground">Nhấp vào ngành để nạp danh sách vị trí và chọn tiêu chí tra cứu</span>
           </div>
@@ -894,7 +894,7 @@ export function SalaryBenchmarkSection() {
           {/* Dynamic Status Text */}
           <div className="space-y-2">
             <h3 className="text-lg font-bold text-slate-900">
-              Đang Phân Tích Mức Lương Thị Trường
+              Đang phân tích mức lương thị trường
             </h3>
             <div className="flex items-center justify-center gap-1.5 flex-wrap">
               <span className="text-xs font-semibold text-sky-700 bg-sky-50 py-1 px-3 rounded-full border border-sky-100">
@@ -939,7 +939,7 @@ export function SalaryBenchmarkSection() {
             className="h-9 px-3 text-xs font-bold text-slate-800 hover:text-sky-700 hover:bg-sky-50 border-slate-200 bg-white shadow-2xs gap-1.5"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Quay lại Tra Cứu Khác</span>
+            <span>Quay lại tra cứu khác</span>
           </Button>
 
           <div className="hidden sm:block w-px h-6 bg-border" />
@@ -970,7 +970,7 @@ export function SalaryBenchmarkSection() {
           className="h-9 text-xs font-semibold bg-sky-600 hover:bg-sky-700 text-white shadow-xs self-start sm:self-auto shrink-0"
         >
           <Download className="w-3.5 h-3.5 mr-1.5" />
-          Xuất Báo Cáo Lương (CSV)
+          Xuất báo cáo lương (CSV)
         </Button>
       </div>
 
@@ -1030,7 +1030,7 @@ export function SalaryBenchmarkSection() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="p-4 rounded-xl bg-gradient-to-br from-sky-50 to-blue-50/40 border border-sky-200/80">
               <span className="text-xs font-bold text-sky-800 uppercase tracking-wide block">
-                Mức Lương Trung Bình (P50)
+                Mức lương tham chiếu
               </span>
               <p className="text-2xl sm:text-3xl font-extrabold text-sky-950 mt-1 tracking-tight">
                 {report.avgSalary} Triệu VNĐ/tháng
@@ -1042,7 +1042,7 @@ export function SalaryBenchmarkSection() {
 
             <div className="p-4 rounded-xl bg-gradient-to-br from-cyan-50 to-sky-50/40 border border-cyan-200/80">
               <span className="text-xs font-bold text-cyan-800 uppercase tracking-wide block">
-                Khoảng Lương Phổ Biến (P25 - P75)
+                Dải lương tham khảo (P25 - P75)
               </span>
               <p className="text-2xl sm:text-3xl font-extrabold text-cyan-950 mt-1 tracking-tight">
                 {report.popularMin} – {report.popularMax} Triệu VNĐ/tháng
@@ -1109,7 +1109,7 @@ export function SalaryBenchmarkSection() {
           <CardHeader className="pb-3 border-b border-border/70">
             <CardTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
               <GraduationCap className="w-4 h-4 text-sky-600" />
-              <span>Theo Kinh Nghiệm Làm Việc</span>
+              <span>Theo kinh nghiệm làm việc</span>
             </CardTitle>
             <CardDescription className="text-xs text-muted-foreground">
               Lương trung bình/tháng vị trí {report.jobTitle} phân tích theo số năm kinh nghiệm
@@ -1163,7 +1163,7 @@ export function SalaryBenchmarkSection() {
           <CardHeader className="pb-3 border-b border-border/70">
             <CardTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
               <MapPin className="w-4 h-4 text-sky-600" />
-              <span>Theo Khu Vực Địa Lý</span>
+              <span>Theo khu vực địa lý</span>
             </CardTitle>
             <CardDescription className="text-xs text-muted-foreground">
               So sánh mức lương bình quân tại các tỉnh thành
@@ -1213,7 +1213,7 @@ export function SalaryBenchmarkSection() {
             <CardHeader className="pb-3 border-b border-border/70">
               <CardTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
                 <Tag className="w-4 h-4 text-sky-600" />
-                <span>Kỹ Năng & Yếu Tố Giúp Nâng Cao Mức Thu Nhập: {report.jobTitle}</span>
+                <span>Kỹ năng & Yếu Tố Giúp Nâng Cao Mức Thu Nhập: {report.jobTitle}</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-5 space-y-4">
@@ -1241,7 +1241,7 @@ export function SalaryBenchmarkSection() {
             <CardHeader className="pb-3 border-b border-border/70">
               <CardTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
                 <Calculator className="w-4 h-4 text-sky-600" />
-                <span>Định Giá Mức Offer Tuyển Dụng</span>
+                <span>Ước tính mức lương đề xuất</span>
               </CardTitle>
               <CardDescription className="text-xs">
                 Ước lượng dải lương phù hợp cho ứng viên
@@ -1279,11 +1279,11 @@ export function SalaryBenchmarkSection() {
                 className="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs h-9 shadow-xs"
               >
                 <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-                Tính Toán Mức Offer
+                Ước tính mức lương
               </Button>
 
               <div className="p-3 rounded-xl bg-sky-50/80 border border-sky-200 space-y-1.5 mt-2">
-                <span className="text-[11px] font-bold text-sky-900 block">Dải Lương Khuyến Nghị:</span>
+                <span className="text-[11px] font-bold text-sky-900 block">Dải lương khuyến nghị:</span>
                 <p className="text-base font-extrabold text-sky-950 tracking-tight">{simOffer}</p>
               </div>
             </CardContent>

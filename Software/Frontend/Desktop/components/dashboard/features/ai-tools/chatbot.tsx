@@ -177,7 +177,7 @@ export function ChatbotSection() {
         <div className="w-16 h-16 rounded-2xl bg-sky-50 border border-sky-100 flex items-center justify-center mb-5">
           <MessageSquare className="w-7 h-7 text-sky-600" />
         </div>
-        <h3 className="font-bold text-slate-900 text-lg">Cần đăng nhập để dùng Trợ Lý AI</h3>
+        <h3 className="font-bold text-slate-900 text-lg">Cần đăng nhập để dùng trợ lý AI</h3>
         <p className="text-sm text-muted-foreground max-w-sm mt-1.5">
           Đăng nhập để trò chuyện và lưu lại lịch sử hội thoại trên nhiều thiết bị.
         </p>
@@ -274,7 +274,7 @@ export function ChatbotSection() {
           >
             <PanelLeft className="w-4 h-4" />
           </button>
-          <span className="text-sm font-semibold text-slate-800">Trợ lý AI CV Match</span>
+          <span className="text-sm font-semibold text-slate-800">Trợ lý AI CV match</span>
         </header>
 
         <div className="flex-1 overflow-y-auto">

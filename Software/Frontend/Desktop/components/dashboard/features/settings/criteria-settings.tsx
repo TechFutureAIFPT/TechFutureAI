@@ -241,7 +241,7 @@ export function CriteriaSettingsSection() {
     <div className="space-y-4 w-full">
       {/* 1. TOP DUAL-PAGE NAVIGATION SWITCHER */}
       <div className="flex items-center justify-between p-1.5 rounded-2xl bg-slate-100 border border-slate-200 shadow-2xs">
-        <div className="grid grid-cols-2 gap-1.5 w-full sm:w-auto">
+        <div className="grid grid-cols-1 min-[400px]:grid-cols-2 gap-1.5 w-full sm:w-auto">
           <Button
             type="button"
             variant="ghost"
@@ -249,7 +249,7 @@ export function CriteriaSettingsSection() {
             className="text-xs font-semibold h-9 px-4 text-slate-600 hover:text-sky-800 hover:bg-white/80 rounded-xl"
           >
             <User className="w-3.5 h-3.5 mr-2 text-slate-500" />
-            <span>Hồ Sơ & Cài Đặt</span>
+            <span>Hồ sơ & cài đặt</span>
           </Button>
 
           <Button
@@ -257,7 +257,7 @@ export function CriteriaSettingsSection() {
             className="text-xs font-bold h-9 px-4 bg-white text-sky-700 shadow-xs border border-sky-200/80 rounded-xl hover:bg-white"
           >
             <Sliders className="w-3.5 h-3.5 mr-2 text-sky-600" />
-            <span>Tiêu Chí Chấm Điểm JD</span>
+            <span>Tiêu chí đánh giá</span>
           </Button>
         </div>
 
@@ -270,7 +270,7 @@ export function CriteriaSettingsSection() {
             className="text-xs font-semibold h-8 text-slate-600 hover:text-sky-800 border-slate-200 bg-white shadow-2xs"
           >
             <RotateCcw className="w-3.5 h-3.5 mr-1.5 text-sky-600" />
-            <span>Khôi Phục Chuẩn Ban Đầu</span>
+            <span>Khôi phục chuẩn ban đầu</span>
           </Button>
         </div>
       </div>
@@ -281,10 +281,10 @@ export function CriteriaSettingsSection() {
           <div className="space-y-0.5">
             <p className="font-bold text-xs text-sky-950 flex items-center gap-2">
               <Zap className="w-4 h-4 text-sky-600 shrink-0" />
-              <span>Tự Động Áp Dụng Bộ Tiêu Chí & Bộ Lọc Này Cho Các JD Tiếp Theo</span>
+              <span>Tự động áp dụng cho các vị trí mới</span>
             </p>
             <p className="text-[11px] text-sky-800 leading-relaxed">
-              Hệ thống sẽ tự động nạp 6 trọng số Rubric và điều kiện lọc cứng này vào Bước 3 đối chiếu khi bạn chọn bất kỳ JD mới nào.
+              Hệ thống sẽ tự động nạp 6 trọng số rubric và điều kiện lọc cứng này vào bước 3 đối chiếu khi bạn chọn bất kỳ JD mới nào.
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -311,7 +311,7 @@ export function CriteriaSettingsSection() {
                     </div>
                     <div>
                       <CardTitle className="text-sm font-bold text-slate-900">
-                        1. Trọng Số Tiêu Chí Chấm Điểm Rubric (Tổng 100%)
+                        1. Trọng số tiêu chí đánh giá (tổng 100%)
                       </CardTitle>
                       <CardDescription className="text-xs">
                         Tỷ trọng điểm số phân bổ cho 6 trụ cột năng lực ứng viên
@@ -340,15 +340,15 @@ export function CriteriaSettingsSection() {
                   <div className="flex flex-wrap gap-1.5">
                     {[
                       {
-                        name: "Chuẩn Backend (20-35-20-10-5-10)",
+                        name: "Mặc định (20-35-20-10-5-10)",
                         w: { job_fit: 20, role_skills: 35, experience: 20, impact: 10, education: 5, soft_skills: 10 },
                       },
                       {
-                        name: "Chuyên Sâu Kỹ Năng (15-45-15-10-5-10)",
+                        name: "Chuyên Sâu Kỹ năng (15-45-15-10-5-10)",
                         w: { job_fit: 15, role_skills: 45, experience: 15, impact: 10, education: 5, soft_skills: 10 },
                       },
                       {
-                        name: "Ưu Tiên Kinh Nghiệm (15-25-35-10-5-10)",
+                        name: "Ưu Tiên Kinh nghiệm (15-25-35-10-5-10)",
                         w: { job_fit: 15, role_skills: 25, experience: 35, impact: 10, education: 5, soft_skills: 10 },
                       },
                       {
@@ -380,7 +380,7 @@ export function CriteriaSettingsSection() {
                   <div className="space-y-2 bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
                     <div className="flex items-center justify-between text-xs">
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-slate-900">1. Kỹ Năng Chuyên Môn (Role Skills)</span>
+                        <span className="font-bold text-slate-900">1. Kỹ năng chuyên môn (Role Skills)</span>
                         <Button
                           type="button"
                           variant="ghost"
@@ -470,7 +470,7 @@ export function CriteriaSettingsSection() {
                   <div className="space-y-2 bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
                     <div className="flex items-center justify-between text-xs">
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-slate-900">2. Số Năm Kinh Nghiệm (Experience)</span>
+                        <span className="font-bold text-slate-900">2. Số năm kinh nghiệm (Experience)</span>
                         <Button
                           type="button"
                           variant="ghost"
@@ -527,7 +527,7 @@ export function CriteriaSettingsSection() {
 
                         <div className="space-y-1">
                           <div className="flex items-center justify-between text-[11px]">
-                            <span className="font-medium text-slate-700">• Kinh nghiệm chuyên ngành / Domain Fit:</span>
+                            <span className="font-medium text-slate-700">• Kinh nghiệm chuyên ngành / domain fit:</span>
                             <strong className="text-sky-700">{subWeights.experience.domain_exp}%</strong>
                           </div>
                           <Slider
@@ -560,7 +560,7 @@ export function CriteriaSettingsSection() {
                   <div className="space-y-2 bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
                     <div className="flex items-center justify-between text-xs">
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-slate-900">3. Độ Phù Hợp Trực Tiếp Với JD (Job Fit)</span>
+                        <span className="font-bold text-slate-900">3. Độ phù hợp trực tiếp với JD (Job Fit)</span>
                         <Button
                           type="button"
                           variant="ghost"
@@ -636,7 +636,7 @@ export function CriteriaSettingsSection() {
                   <div className="space-y-2 bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
                     <div className="flex items-center justify-between text-xs">
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-slate-900">4. Mức Độ Tác Động & Kết Quả (Impact)</span>
+                        <span className="font-bold text-slate-900">4. Mức độ tác động & kết quả (Impact)</span>
                         <Button
                           type="button"
                           variant="ghost"
@@ -679,7 +679,7 @@ export function CriteriaSettingsSection() {
 
                         <div className="space-y-1">
                           <div className="flex items-center justify-between text-[11px]">
-                            <span className="font-medium text-slate-700">• Bằng chứng định lượng & Chỉ số KPI:</span>
+                            <span className="font-medium text-slate-700">• Bằng chứng định lượng & chỉ số KPI:</span>
                             <strong className="text-sky-700">{subWeights.impact.quantified_kpis}%</strong>
                           </div>
                           <Slider
@@ -712,7 +712,7 @@ export function CriteriaSettingsSection() {
                   <div className="space-y-2 bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
                     <div className="flex items-center justify-between text-xs">
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-slate-900">5. Kỹ Năng Mềm & Phối Hợp (Soft Skills)</span>
+                        <span className="font-bold text-slate-900">5. Kỹ năng mềm & phối hợp (Soft Skills)</span>
                         <Button
                           type="button"
                           variant="ghost"
@@ -788,7 +788,7 @@ export function CriteriaSettingsSection() {
                   <div className="space-y-2 bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
                     <div className="flex items-center justify-between text-xs">
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-slate-900">6. Học Vấn & Bằng Cấp (Education)</span>
+                        <span className="font-bold text-slate-900">6. Học vấn & bằng cấp (Education)</span>
                         <Button
                           type="button"
                           variant="ghost"
@@ -875,7 +875,7 @@ export function CriteriaSettingsSection() {
                   </div>
                   <div>
                     <CardTitle className="text-sm font-bold text-slate-900">
-                      2. Điều Kiện Lọc Cứng Mặc Định (Hard Filters)
+                      2. Điều kiện lọc cứng mặc định (hard filters)
                     </CardTitle>
                     <CardDescription className="text-xs">
                       Bộ lọc điều kiện bắt buộc tự động gán vào đợt lọc
@@ -887,7 +887,7 @@ export function CriteriaSettingsSection() {
               <CardContent className="p-4 space-y-4">
                 {/* Location */}
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-slate-800">Khu Vực Tuyển Dụng Mặc Định</Label>
+                  <Label className="text-xs font-semibold text-slate-800">Khu vực tuyển dụng mặc định</Label>
                   <Select
                     value={hardFilters.location}
                     onValueChange={(val) => setHardFilters((prev) => ({ ...prev, location: val }))}
@@ -907,7 +907,7 @@ export function CriteriaSettingsSection() {
                 {/* Min Experience */}
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs font-semibold text-slate-800">Kinh Nghiệm Tối Thiểu</Label>
+                    <Label className="text-xs font-semibold text-slate-800">Kinh nghiệm tối thiểu</Label>
                     <div className="flex items-center gap-1.5">
                       <span className="text-[10px] text-muted-foreground">Bắt buộc loại:</span>
                       <Switch
@@ -938,7 +938,7 @@ export function CriteriaSettingsSection() {
                 {/* Seniority & Education */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold text-slate-800">Cấp Bậc</Label>
+                    <Label className="text-xs font-semibold text-slate-800">Cấp bậc</Label>
                     <Select
                       value={hardFilters.seniority}
                       onValueChange={(val) => setHardFilters((prev) => ({ ...prev, seniority: val }))}
@@ -957,7 +957,7 @@ export function CriteriaSettingsSection() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold text-slate-800">Trình Độ Học Vấn</Label>
+                    <Label className="text-xs font-semibold text-slate-800">Trình độ học vấn</Label>
                     <Select
                       value={hardFilters.education}
                       onValueChange={(val) => setHardFilters((prev) => ({ ...prev, education: val }))}
@@ -995,7 +995,7 @@ export function CriteriaSettingsSection() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold text-slate-800">Loại Hợp Đồng</Label>
+                    <Label className="text-xs font-semibold text-slate-800">Loại hợp đồng</Label>
                     <Select
                       value={hardFilters.contractType}
                       onValueChange={(val) => setHardFilters((prev) => ({ ...prev, contractType: val }))}
@@ -1016,7 +1016,7 @@ export function CriteriaSettingsSection() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <Label className="text-xs font-semibold text-slate-800">Ngoại Ngữ Yêu Cầu</Label>
+                      <Label className="text-xs font-semibold text-slate-800">Ngoại ngữ yêu cầu</Label>
                       <div className="flex items-center gap-1.5">
                         <span className="text-[10px] text-muted-foreground">Bắt buộc:</span>
                         <Switch
@@ -1035,9 +1035,9 @@ export function CriteriaSettingsSection() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Tiếng Anh">Tiếng Anh (B2 / IELTS / Giao tiếp)</SelectItem>
-                        <SelectItem value="Tiếng Nhật">Tiếng Nhật (N1 / N2 / N3)</SelectItem>
-                        <SelectItem value="Tiếng Trung">Tiếng Trung (HSK 4+ / Giao tiếp)</SelectItem>
+                        <SelectItem value="Tiếng Anh">Tiếng anh (B2 / IELTS / giao tiếp)</SelectItem>
+                        <SelectItem value="Tiếng Nhật">Tiếng nhật (N1 / N2 / N3)</SelectItem>
+                        <SelectItem value="Tiếng Trung">Tiếng trung (HSK 4+ / giao tiếp)</SelectItem>
                         <SelectItem value="Không yêu cầu">Không yêu cầu ngoại ngữ</SelectItem>
                       </SelectContent>
                     </Select>
@@ -1064,11 +1064,11 @@ export function CriteriaSettingsSection() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="IT/Software">Công Nghệ Thông Tin / Phần Mềm</SelectItem>
-                        <SelectItem value="Kinh Doanh">Kinh Doanh / Bán Hàng / Sales</SelectItem>
-                        <SelectItem value="Tài Chính">Tài Chính / Ngân Hàng / Kế Toán</SelectItem>
-                        <SelectItem value="Marketing">Marketing / Truyền Thông</SelectItem>
-                        <SelectItem value="Nhân Sự">Nhân Sự / Hành Chính</SelectItem>
+                        <SelectItem value="IT/Software">Công nghệ thông tin / phần mềm</SelectItem>
+                        <SelectItem value="Kinh Doanh">Kinh doanh / bán hàng / sales</SelectItem>
+                        <SelectItem value="Tài Chính">Tài chính / ngân hàng / kế toán</SelectItem>
+                        <SelectItem value="Marketing">Marketing / truyền thông</SelectItem>
+                        <SelectItem value="Nhân Sự">Nhân sự / hành chính</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1076,7 +1076,7 @@ export function CriteriaSettingsSection() {
 
                 <div className="p-2.5 rounded-lg bg-sky-50/70 border border-sky-100 flex items-start gap-2 text-[11px] text-sky-900">
                   <ShieldCheck className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
-                  <span>Các tiêu chí lọc cứng này được chuẩn hóa đồng bộ với dữ liệu Firebase Database, tự động phân loại ứng viên Đạt chuẩn hay Bị loại.</span>
+                  <span>Các tiêu chí lọc cứng này được chuẩn hóa đồng bộ với dữ liệu Firebase database, tự động phân loại ứng viên đạt chuẩn hay bị loại.</span>
                 </div>
               </CardContent>
             </Card>
@@ -1090,7 +1090,7 @@ export function CriteriaSettingsSection() {
                   </div>
                   <div>
                     <CardTitle className="text-sm font-bold text-slate-900">
-                      3. Ngưỡng Điểm Đạt & Động Cơ OCR
+                      3. Ngưỡng điểm đạt & động cơ OCR
                     </CardTitle>
                     <CardDescription className="text-xs">
                       Thiết lập mức điểm phân loại chất lượng ứng viên
@@ -1103,7 +1103,7 @@ export function CriteriaSettingsSection() {
                 <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-bold text-xs text-slate-900">Ngưỡng Đạt Chuẩn (Min Score)</p>
+                      <p className="font-bold text-xs text-slate-900">Ngưỡng đạt chuẩn (min score)</p>
                       <p className="text-[10px] text-muted-foreground">Tự động gắn nhãn "Đạt Chuẩn"</p>
                     </div>
 
@@ -1139,7 +1139,7 @@ export function CriteriaSettingsSection() {
 
                 <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-200/80">
                   <div className="space-y-0.5 pr-2">
-                    <p className="font-semibold text-xs text-slate-900">Tự Động Trích Xuất OCR</p>
+                    <p className="font-semibold text-xs text-slate-900">Tự động trích xuất OCR</p>
                     <p className="text-[10px] text-muted-foreground">Nhận diện tệp ảnh PNG/JPG & PDF quét</p>
                   </div>
                   <Switch checked={autoOcr} onCheckedChange={setAutoOcr} />
@@ -1165,12 +1165,12 @@ export function CriteriaSettingsSection() {
               {isSaving ? (
                 <>
                   <RefreshCw className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                  <span>Đang Lưu Tiêu Chí...</span>
+                  <span>Đang lưu tiêu chí...</span>
                 </>
               ) : (
                 <>
                   <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
-                  <span>Lưu Cấu Hình Tiêu Chí JD Mặc Định</span>
+                  <span>Lưu cấu hình tiêu chí JD mặc định</span>
                 </>
               )}
             </Button>

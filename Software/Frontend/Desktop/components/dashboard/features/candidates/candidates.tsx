@@ -134,12 +134,12 @@ export function CandidatesSection() {
   return (
     <div className="space-y-6">
       {/* Top Action Bar */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <Badge className="bg-sky-50 text-sky-700 border border-sky-200 text-xs font-bold">
           Tổng cộng: {filtered.length} Hồ sơ ứng viên
         </Badge>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
           <Button
             variant="outline"
             size="sm"
@@ -147,7 +147,7 @@ export function CandidatesSection() {
             className="border-slate-200 hover:bg-sky-50 hover:text-sky-700 text-xs"
           >
             <Download className="w-3.5 h-3.5 mr-1.5 text-sky-600" />
-            Xuất File CSV
+            Xuất CSV
           </Button>
 
           <Button
@@ -159,7 +159,7 @@ export function CandidatesSection() {
             className="bg-sky-600 text-white hover:bg-sky-700 text-xs shadow-xs font-bold"
           >
             <Plus className="w-4 h-4 mr-1.5" />
-            Tiếp Nhận CV
+            Thêm hồ sơ
           </Button>
         </div>
       </div>
@@ -252,17 +252,17 @@ export function CandidatesSection() {
                   className="py-3 px-4 cursor-pointer hover:text-sky-600"
                 >
                   <div className="flex items-center gap-1">
-                    Ứng Viên
+                    Ứng viên
                     <ArrowUpDown className="w-3 h-3" />
                   </div>
                 </th>
-                <th className="py-3 px-4">Vị Trí Ứng Tuyển</th>
+                <th className="py-3 px-4">Vị trí ứng tuyển</th>
                 <th
                   onClick={() => handleSort("matchScore")}
                   className="py-3 px-4 cursor-pointer hover:text-sky-600"
                 >
                   <div className="flex items-center gap-1">
-                    Điểm Match AI
+                    Điểm phù hợp
                     <ArrowUpDown className="w-3 h-3" />
                   </div>
                 </th>
@@ -271,7 +271,7 @@ export function CandidatesSection() {
                   className="py-3 px-4 cursor-pointer hover:text-sky-600"
                 >
                   <div className="flex items-center gap-1">
-                    Kinh Nghiệm
+                    Kinh nghiệm
                     <ArrowUpDown className="w-3 h-3" />
                   </div>
                 </th>
@@ -280,13 +280,13 @@ export function CandidatesSection() {
                   className="py-3 px-4 cursor-pointer hover:text-sky-600"
                 >
                   <div className="flex items-center gap-1">
-                    Lương Kỳ Vọng
+                    Lương kỳ vọng
                     <ArrowUpDown className="w-3 h-3" />
                   </div>
                 </th>
-                <th className="py-3 px-4">Giai Đoạn</th>
+                <th className="py-3 px-4">Giai đoạn</th>
                 <th className="py-3 px-4">Recruiter</th>
-                <th className="py-3 px-4 text-right">Thao Tác</th>
+                <th className="py-3 px-4 text-right">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -418,7 +418,7 @@ export function CandidatesSection() {
                                   setDetailCandidate(c);
                                 }}
                               >
-                                Xem Chi Tiết
+                                Xem chi tiết
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={(e) => {
@@ -439,7 +439,7 @@ export function CandidatesSection() {
                                 className="text-destructive focus:text-destructive"
                               >
                                 <Trash2 className="w-3.5 h-3.5 mr-2" />
-                                Xóa Hồ Sơ
+                                Xóa hồ sơ
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>

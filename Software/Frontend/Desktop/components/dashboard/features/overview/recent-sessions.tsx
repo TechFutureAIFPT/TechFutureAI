@@ -13,7 +13,7 @@ export function RecentSessionsReport() {
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-base font-bold text-slate-900">
-            Báo Cáo Các Phiên Lọc Hồ Sơ Gần Nhất
+            Báo cáo các phiên lọc hồ sơ gần nhất
           </h3>
           <p className="text-xs text-muted-foreground mt-0.5">
             Dữ liệu đối chiếu AI, số lượng CV và xuất báo cáo CSV theo từng phiên lọc

@@ -269,7 +269,7 @@ export function InterviewHubSection() {
           <CardContent className="p-4 flex items-center justify-between">
             <div className="space-y-0.5">
               <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                Lịch Phỏng Vấn Sắp Tới
+                Phỏng vấn sắp tới
               </span>
               <div className="flex items-baseline gap-2">
                 <span className="text-2xl font-black text-slate-900">{upcomingCount}</span>
@@ -277,7 +277,7 @@ export function InterviewHubSection() {
               </div>
               <p className="text-[11px] text-muted-foreground">{completedCount} buổi đã hoàn thành</p>
             </div>
-            <div className="w-11 h-11 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center shadow-xs">
+            <div className="hidden sm:flex shrink-0 w-11 h-11 rounded-xl bg-sky-100 text-sky-700 items-center justify-center shadow-xs">
               <CalendarDays className="w-5 h-5" />
             </div>
           </CardContent>
@@ -288,15 +288,15 @@ export function InterviewHubSection() {
           <CardContent className="p-4 flex items-center justify-between">
             <div className="space-y-0.5">
               <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                Lịch Hẹn Hôm Nay
+                Lịch hẹn hôm nay
               </span>
               <div className="flex items-baseline gap-2">
                 <span className="text-2xl font-black text-blue-600">{todayCount}</span>
                 <span className="text-xs text-blue-600 font-bold">Ứng viên</span>
               </div>
-              <p className="text-[11px] text-emerald-600 font-medium">Đã sẵn sàng link họp</p>
+              <p className="text-[11px] text-emerald-600 font-medium">Theo lịch hẹn đã tạo</p>
             </div>
-            <div className="w-11 h-11 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center shadow-xs">
+            <div className="hidden sm:flex shrink-0 w-11 h-11 rounded-xl bg-blue-100 text-blue-700 items-center justify-center shadow-xs">
               <Clock className="w-5 h-5" />
             </div>
           </CardContent>
@@ -307,15 +307,15 @@ export function InterviewHubSection() {
           <CardContent className="p-4 flex items-center justify-between">
             <div className="space-y-0.5">
               <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                Email Tuyển Dụng Đã Gửi
+                Email đã ghi nhận
               </span>
               <div className="flex items-baseline gap-2">
                 <span className="text-2xl font-black text-slate-900">{totalEmailsSent}</span>
                 <span className="text-xs text-slate-500 font-bold">Thư</span>
               </div>
-              <p className="text-[11px] text-sky-600 font-medium">Thư mời & Job Offer</p>
+              <p className="text-[11px] text-sky-600 font-medium">Thư mời và đề nghị nhận việc</p>
             </div>
-            <div className="w-11 h-11 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center shadow-xs">
+            <div className="hidden sm:flex shrink-0 w-11 h-11 rounded-xl bg-indigo-100 text-indigo-700 items-center justify-center shadow-xs">
               <Mail className="w-5 h-5" />
             </div>
           </CardContent>
@@ -326,15 +326,15 @@ export function InterviewHubSection() {
           <CardContent className="p-4 flex items-center justify-between">
             <div className="space-y-0.5">
               <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                Tỉ Lệ Phản Hồi Ứng Viên
+                Nhật ký liên hệ
               </span>
               <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-black text-emerald-600">84.5%</span>
-                <span className="text-xs text-emerald-700 font-bold">Open Rate</span>
+                <span className="text-2xl font-black text-emerald-600">{emailLogs.length}</span>
+                <span className="text-xs text-emerald-700 font-bold">bản ghi</span>
               </div>
-              <p className="text-[11px] text-muted-foreground">68.2% Xác nhận tham gia</p>
+              <p className="text-[11px] text-muted-foreground">Theo dõi trao đổi với ứng viên</p>
             </div>
-            <div className="w-11 h-11 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shadow-xs">
+            <div className="hidden sm:flex shrink-0 w-11 h-11 rounded-xl bg-emerald-100 text-emerald-700 items-center justify-center shadow-xs">
               <TrendingUp className="w-5 h-5" />
             </div>
           </CardContent>
@@ -368,7 +368,7 @@ export function InterviewHubSection() {
             }`}
           >
             <Inbox className="w-3.5 h-3.5" />
-            <span>Hộp Thư & Gửi Email ({emailLogs.length})</span>
+            <span>Email tuyển dụng ({emailLogs.length})</span>
           </button>
 
           <button
@@ -393,7 +393,7 @@ export function InterviewHubSection() {
             className="bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs h-9 px-3.5 shadow-xs flex items-center gap-1.5"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>Lên Lịch Phỏng Vấn Mới</span>
+            <span>Tạo lịch phỏng vấn</span>
           </Button>
 
           <Button
@@ -406,7 +406,7 @@ export function InterviewHubSection() {
             className="text-slate-700 font-semibold text-xs h-9 px-3 border-slate-300 hover:bg-sky-50"
           >
             <Send className="w-3.5 h-3.5 text-sky-600 mr-1.5" />
-            <span>Soạn Email Nhanh</span>
+            <span>Soạn email</span>
           </Button>
         </div>
       </div>
@@ -427,7 +427,7 @@ export function InterviewHubSection() {
             </div>
 
             {/* Quick Status Filters */}
-            <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto">
+            <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
               {[
                 { id: "all", label: "Tất cả" },
                 { id: "today", label: "Hôm nay" },
@@ -582,7 +582,7 @@ export function InterviewHubSection() {
                                 className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs h-8 px-3"
                               >
                                 <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
-                                <span>Đánh Giá PV</span>
+                                <span>Đánh giá phỏng vấn</span>
                               </Button>
 
                               <Button
@@ -598,7 +598,7 @@ export function InterviewHubSection() {
                                 className="text-xs font-semibold h-8 px-2.5 border-slate-300 hover:bg-sky-50"
                               >
                                 <Clock className="w-3.5 h-3.5 mr-1 text-slate-500" />
-                                <span>Dời Lịch</span>
+                                <span>Đổi lịch</span>
                               </Button>
                             </>
                           ) : (
@@ -614,7 +614,7 @@ export function InterviewHubSection() {
                               className="text-xs font-semibold h-8 px-3 border-slate-300 hover:bg-sky-50"
                             >
                               <Edit3 className="w-3.5 h-3.5 mr-1 text-sky-600" />
-                              <span>Xem Đánh Giá</span>
+                              <span>Xem đánh giá</span>
                             </Button>
                           )}
 
@@ -669,7 +669,7 @@ export function InterviewHubSection() {
                   </div>
                   <div>
                     <h3 className="font-extrabold text-sm text-slate-900">
-                      Soạn & Gửi Email Tuyển Dụng Nhanh
+                      Soạn & gửi email tuyển dụng nhanh
                     </h3>
                     <p className="text-[11px] text-muted-foreground">
                       Tự động điền các biến cá nhân hóa của ứng viên theo mẫu chuẩn
@@ -686,7 +686,7 @@ export function InterviewHubSection() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Select Candidate */}
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-slate-800">1. Chọn Ứng Viên Nhận Thư</Label>
+                    <Label className="text-xs font-bold text-slate-800">1. Chọn người nhận</Label>
                     <Select
                       value={composeCandidateId}
                       onValueChange={(val) => {
@@ -709,7 +709,7 @@ export function InterviewHubSection() {
 
                   {/* Select Template */}
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-slate-800">2. Chọn Mẫu Thư (Template)</Label>
+                    <Label className="text-xs font-bold text-slate-800">2. Chọn mẫu thư</Label>
                     <Select
                       value={composeTemplateId}
                       onValueChange={(val) => {
@@ -733,7 +733,7 @@ export function InterviewHubSection() {
 
                 {/* Subject */}
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-bold text-slate-800">Tiêu Đề Email</Label>
+                  <Label className="text-xs font-bold text-slate-800">Tiêu đề email</Label>
                   <Input
                     value={composeSubject}
                     onChange={(e) => setComposeSubject(e.target.value)}
@@ -745,7 +745,7 @@ export function InterviewHubSection() {
 
                 {/* Body Textarea */}
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-bold text-slate-800">Nội Dung Thư Tuyển Dụng</Label>
+                  <Label className="text-xs font-bold text-slate-800">Nội dung email</Label>
                   <Textarea
                     rows={7}
                     value={composeBody}
@@ -759,7 +759,7 @@ export function InterviewHubSection() {
                 {/* Actions */}
                 <div className="flex items-center justify-between pt-1">
                   <span className="text-[11px] text-muted-foreground italic">
-                    💡 Thư sẽ được gửi qua máy chủ email kết nối với Support HR
+                    💡 Thư sẽ được gửi qua máy chủ email kết nối với AI Match
                   </span>
 
                   <Button
@@ -767,7 +767,7 @@ export function InterviewHubSection() {
                     className="bg-sky-600 hover:bg-sky-700 text-white font-extrabold text-xs h-9 px-5 shadow-md shadow-sky-500/20"
                   >
                     <Send className="w-3.5 h-3.5 mr-1.5" />
-                    <span>Gửi Email Ngay</span>
+                    <span>Gửi email</span>
                   </Button>
                 </div>
               </form>
@@ -778,7 +778,7 @@ export function InterviewHubSection() {
           <Card className="border-border bg-card shadow-2xs rounded-2xl overflow-hidden">
             <div className="p-4 border-b border-border flex items-center justify-between">
               <h3 className="font-extrabold text-sm text-slate-900">
-                Nhật Ký Email Đã Gửi Đi ({emailLogs.length})
+                Nhật ký email ({emailLogs.length})
               </h3>
               <Badge variant="outline" className="text-[10px] font-bold text-sky-700 bg-sky-50 border-sky-200">
                 Tự động đồng bộ
@@ -789,12 +789,12 @@ export function InterviewHubSection() {
               <table className="w-full text-xs text-left">
                 <thead className="bg-slate-100/80 text-slate-700 font-bold border-b border-border">
                   <tr>
-                    <th className="p-3.5">Ứng Viên Nhận Thư</th>
-                    <th className="p-3.5">Tiêu Đề Email</th>
-                    <th className="p-3.5">Loại Thư</th>
-                    <th className="p-3.5">Thời Gian</th>
-                    <th className="p-3.5">Trạng Thái</th>
-                    <th className="p-3.5 text-right">Hành Động</th>
+                    <th className="p-3.5">Người nhận</th>
+                    <th className="p-3.5">Tiêu đề email</th>
+                    <th className="p-3.5">Loại thư</th>
+                    <th className="p-3.5">Thời gian</th>
+                    <th className="p-3.5">Trạng thái</th>
+                    <th className="p-3.5 text-right">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -852,7 +852,7 @@ export function InterviewHubSection() {
                           onClick={() => setPreviewEmailLog(log)}
                           className="text-[11px] font-semibold h-7 px-2.5 border-slate-300 hover:bg-sky-50"
                         >
-                          Xem Chi Tiết
+                          Xem chi tiết
                         </Button>
                       </td>
                     </tr>
@@ -911,7 +911,7 @@ export function InterviewHubSection() {
                   }}
                   className="bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs h-8 px-3"
                 >
-                  Dùng Mẫu Này
+                  Dùng mẫu này
                 </Button>
               </div>
             </Card>
@@ -925,7 +925,7 @@ export function InterviewHubSection() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base font-extrabold">
               <CalendarDays className="w-4 h-4 text-sky-600" />
-              <span>Lên Lịch Phỏng Vấn Ứng Viên Mới</span>
+              <span>Tạo lịch phỏng vấn</span>
             </DialogTitle>
             <DialogDescription className="text-xs">
               Thiết lập ngày giờ, hình thức họp và hội đồng đánh giá phỏng vấn
@@ -935,7 +935,7 @@ export function InterviewHubSection() {
           <form onSubmit={handleCreateInterview} className="space-y-3.5 py-1">
             {/* Candidate */}
             <div className="space-y-1">
-              <Label className="text-xs font-bold">Ứng Viên</Label>
+              <Label className="text-xs font-bold">Ứng viên</Label>
               <Select value={newCandidateId} onValueChange={setNewCandidateId}>
                 <SelectTrigger className="text-xs h-8.5 bg-slate-50">
                   <SelectValue />
@@ -952,7 +952,7 @@ export function InterviewHubSection() {
 
             {/* Round */}
             <div className="space-y-1">
-              <Label className="text-xs font-bold">Vòng Phỏng Vấn</Label>
+              <Label className="text-xs font-bold">Vòng phỏng vấn</Label>
               <Select
                 value={newRound}
                 onValueChange={(val) => setNewRound(val as InterviewItem["round"])}
@@ -961,9 +961,9 @@ export function InterviewHubSection() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="screening" className="text-xs">Vòng 1: Sơ Vấn Nhân Sự (HR Screening)</SelectItem>
-                  <SelectItem value="technical" className="text-xs">Vòng 2: Đánh Giá Kỹ Thuật (Technical Round)</SelectItem>
-                  <SelectItem value="final" className="text-xs">Vòng 3: Phỏng Vấn Ban Giám Đốc (Executive / Culture Fit)</SelectItem>
+                  <SelectItem value="screening" className="text-xs">Vòng 1: sơ vấn nhân sự (hr screening)</SelectItem>
+                  <SelectItem value="technical" className="text-xs">Vòng 2: đánh giá kỹ thuật (technical round)</SelectItem>
+                  <SelectItem value="final" className="text-xs">Vòng 3: phỏng vấn ban giám đốc (executive / culture fit)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -971,7 +971,7 @@ export function InterviewHubSection() {
             {/* Date & Time */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label className="text-xs font-bold">Ngày Hẹn</Label>
+                <Label className="text-xs font-bold">Ngày hẹn</Label>
                 <Input
                   type="date"
                   value={newDate}
@@ -982,7 +982,7 @@ export function InterviewHubSection() {
               </div>
 
               <div className="space-y-1">
-                <Label className="text-xs font-bold">Giờ Bắt Đầu</Label>
+                <Label className="text-xs font-bold">Giờ bắt đầu</Label>
                 <Input
                   type="time"
                   value={newTime}
@@ -996,7 +996,7 @@ export function InterviewHubSection() {
             {/* Duration & Format */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label className="text-xs font-bold">Thời Lượng (Phút)</Label>
+                <Label className="text-xs font-bold">Thời lượng (phút)</Label>
                 <Select value={newDuration} onValueChange={setNewDuration}>
                   <SelectTrigger className="text-xs h-8.5 bg-slate-50">
                     <SelectValue />
@@ -1010,7 +1010,7 @@ export function InterviewHubSection() {
               </div>
 
               <div className="space-y-1">
-                <Label className="text-xs font-bold">Hình Thức Họp</Label>
+                <Label className="text-xs font-bold">Hình thức</Label>
                 <Select
                   value={newFormat}
                   onValueChange={(val) => setNewFormat(val as InterviewItem["format"])}
@@ -1030,7 +1030,7 @@ export function InterviewHubSection() {
             {/* Meeting Link */}
             {newFormat !== "onsite" && (
               <div className="space-y-1">
-                <Label className="text-xs font-bold">Link Phòng Họp Trực Tuyến</Label>
+                <Label className="text-xs font-bold">Liên kết phòng họp</Label>
                 <Input
                   value={newMeetingUrl}
                   onChange={(e) => setNewMeetingUrl(e.target.value)}
@@ -1042,7 +1042,7 @@ export function InterviewHubSection() {
 
             {/* Interviewers */}
             <div className="space-y-1">
-              <Label className="text-xs font-bold">Hội Đồng Phỏng Vấn (Cách nhau dấu phẩy)</Label>
+              <Label className="text-xs font-bold">Người phỏng vấn (phân cách bằng dấu phẩy)</Label>
               <Input
                 value={newInterviewers}
                 onChange={(e) => setNewInterviewers(e.target.value)}
@@ -1066,7 +1066,7 @@ export function InterviewHubSection() {
                 size="sm"
                 className="bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs"
               >
-                Tạo Lịch Phỏng Vấn
+                Tạo lịch phỏng vấn
               </Button>
             </DialogFooter>
           </form>
@@ -1079,7 +1079,7 @@ export function InterviewHubSection() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base font-extrabold">
               <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              <span>Đánh Giá Kết Quả Phỏng Vấn</span>
+              <span>Kết quả phỏng vấn</span>
             </DialogTitle>
             <DialogDescription className="text-xs">
               Ứng viên: <strong>{selectedInterviewForFeedback?.candidateName}</strong> —{" "}
@@ -1090,7 +1090,7 @@ export function InterviewHubSection() {
           <div className="space-y-3.5 py-1">
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <Label className="text-xs font-bold">Điểm Đánh Giá Sau Phỏng Vấn</Label>
+                <Label className="text-xs font-bold">Điểm đánh giá</Label>
                 <span className="text-sm font-black text-sky-700">{feedbackScore} / 100 Điểm</span>
               </div>
               <input
@@ -1104,7 +1104,7 @@ export function InterviewHubSection() {
             </div>
 
             <div className="space-y-1">
-              <Label className="text-xs font-bold">Nhận Xét Của Hội Đồng Tuyển Dụng</Label>
+              <Label className="text-xs font-bold">Nhận xét của người phỏng vấn</Label>
               <Textarea
                 rows={4}
                 value={feedbackNotes}
@@ -1130,7 +1130,7 @@ export function InterviewHubSection() {
                 onClick={handleSaveFeedback}
                 className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs"
               >
-                Lưu & Hoàn Tất Buổi PV
+                Lưu & hoàn tất buổi pv
               </Button>
             </DialogFooter>
           </div>
@@ -1141,7 +1141,7 @@ export function InterviewHubSection() {
       <Dialog open={Boolean(previewEmailLog)} onOpenChange={(open) => !open && setPreviewEmailLog(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-sm font-extrabold">Chi Tiết Email Đã Gửi</DialogTitle>
+            <DialogTitle className="text-sm font-extrabold">Chi tiết email</DialogTitle>
             <DialogDescription className="text-xs">
               Người nhận: <strong>{previewEmailLog?.candidateName}</strong> ({previewEmailLog?.candidateEmail})
             </DialogDescription>

@@ -152,32 +152,22 @@ export function ReportsSection() {
 
   // Rubric averages for radar
   const rubricRadarData = useMemo(() => {
-    if (filteredCandidates.length === 0) return [];
-    const avgSkills = Math.round(
-      filteredCandidates.reduce((acc, c) => acc + (c.criteriaScores?.skills || 80), 0) /
-        filteredCandidates.length
-    );
-    const avgExp = Math.round(
-      filteredCandidates.reduce((acc, c) => acc + (c.criteriaScores?.experience || 78), 0) /
-        filteredCandidates.length
-    );
-    const avgEdu = Math.round(
-      filteredCandidates.reduce((acc, c) => acc + (c.criteriaScores?.education || 82), 0) /
-        filteredCandidates.length
-    );
-    const avgSoft = Math.round(
-      filteredCandidates.reduce((acc, c) => acc + (c.criteriaScores?.softSkills || 85), 0) /
-        filteredCandidates.length
-    );
-
-    return [
-      { subject: "Kỹ năng chuyên môn", score: avgSkills, fullMark: 100 },
-      { subject: "Kinh nghiệm thực chiến", score: avgExp, fullMark: 100 },
-      { subject: "Học vấn & Bằng cấp", score: avgEdu, fullMark: 100 },
-      { subject: "Kỹ năng mềm & Văn hóa", score: avgSoft, fullMark: 100 },
-      { subject: "Mức độ phù hợp JD", score: Math.round((avgSkills + avgExp) / 2), fullMark: 100 },
-      { subject: "Thành tích định lượng", score: Math.round((avgSkills + avgSoft) / 2), fullMark: 100 },
-    ];
+    const criteria = [
+      { subject: "Kỹ năng", key: "role_skills", legacyKey: "skills" },
+      { subject: "Kinh nghiệm", key: "experience" },
+      { subject: "Học vấn", key: "education" },
+      { subject: "Kỹ năng mềm", key: "soft_skills", legacyKey: "softSkills" },
+      { subject: "Phù hợp vị trí", key: "job_fit" },
+      { subject: "Thành tích", key: "impact" },
+    ] as const;
+    return criteria.map((criterion) => {
+      const values = filteredCandidates.flatMap((candidate) => {
+        const scores = candidate.criteriaScores;
+        const score = scores?.[criterion.key] ?? ("legacyKey" in criterion ? scores?.[criterion.legacyKey] : undefined);
+        return typeof score === "number" && Number.isFinite(score) ? [score] : [];
+      });
+      return { subject: criterion.subject, score: values.length ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length) : null, fullMark: 100 };
+    });
   }, [filteredCandidates]);
 
   // Export current session to CSV
@@ -187,7 +177,7 @@ export function ReportsSection() {
     } else {
       // Export all sessions
       let csvRows = [
-        "ID,Họ Tên Ứng Viên,Email,Số Điện Thoại,Vị Trí Tuyển Dụng,Điểm Match AI,Kinh Nghiệm (Năm),Lương Mong Muốn,Trạng Thái,Giai Đoạn,Điểm Kỹ Năng,Điểm Kinh Nghiệm,Điểm Học Vấn,Điểm Kỹ Năng Mềm,Tóm Tắt Đánh Giá AI",
+        "ID,Họ Tên Ứng viên,Email,Số Điện Thoại,Vị Trí Tuyển Dụng,Điểm phù hợp,Kinh nghiệm (Năm),Lương Mong Muốn,Trạng thái,Giai đoạn,Điểm Kỹ năng,Điểm Kinh nghiệm,Điểm Học vấn,Điểm Kỹ năng mềm,Tóm Tắt Phân tích AI",
       ];
       candidates.forEach((c) => {
         csvRows.push(
@@ -217,14 +207,14 @@ export function ReportsSection() {
         <div>
           <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-sky-600" />
-            <span>Báo Cáo & Xuất Dữ Liệu Theo Từng Phiên Lọc Hồ Sơ</span>
+            <span>Báo cáo kết quả đánh giá</span>
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Dữ liệu đối chiếu AI thời gian thực, bảng điểm Rubric 6 tiêu chuẩn và tải file CSV
+            Tổng hợp kết quả các phiên đánh giá và tải bảng điểm dưới dạng CSV.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             size="sm"
             variant="outline"
@@ -232,7 +222,7 @@ export function ReportsSection() {
             className="text-xs font-semibold h-9 bg-slate-50 border-slate-200 hover:bg-sky-50 hover:text-sky-700"
           >
             <Filter className="w-3.5 h-3.5 mr-1.5 text-sky-600" />
-            Tùy Biến Cột Xuất
+            Tùy chỉnh cột
           </Button>
 
           <Button
@@ -241,7 +231,7 @@ export function ReportsSection() {
             className="bg-sky-600 hover:bg-sky-700 text-white shadow-xs text-xs font-bold h-9"
           >
             <Download className="w-4 h-4 mr-1.5" />
-            {selectedBatch ? "Xuất CSV Phiên Này" : "Xuất Toàn Bộ Các Phiên (CSV)"}
+            {selectedBatch ? "Xuất CSV phiên này" : "Xuất tất cả CSV"}
           </Button>
         </div>
       </div>
@@ -250,7 +240,7 @@ export function ReportsSection() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-card border border-border rounded-xl p-4 shadow-xs">
           <div className="flex items-center justify-between">
-            <p className="text-xs text-muted-foreground font-medium">Tổng Số Phiên Lọc</p>
+            <p className="text-xs text-muted-foreground font-medium">Phiên đánh giá</p>
             <div className="w-8 h-8 rounded-lg bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600">
               <Layers className="w-4 h-4" />
             </div>
@@ -264,7 +254,7 @@ export function ReportsSection() {
 
         <div className="bg-card border border-border rounded-xl p-4 shadow-xs">
           <div className="flex items-center justify-between">
-            <p className="text-xs text-muted-foreground font-medium">Tổng CV Đã Xử Lý</p>
+            <p className="text-xs text-muted-foreground font-medium">Hồ sơ đã xử lý</p>
             <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
               <Users className="w-4 h-4" />
             </div>
@@ -273,12 +263,12 @@ export function ReportsSection() {
             {totalCVsAllBatches}{" "}
             <span className="text-xs font-normal text-muted-foreground">hồ sơ</span>
           </p>
-          <p className="text-[11px] text-blue-700 mt-1 font-medium">100% qua bóc tách AI Gemini</p>
+          <p className="text-[11px] text-blue-700 mt-1 font-medium">Hồ sơ trong các phiên đánh giá</p>
         </div>
 
         <div className="bg-card border border-border rounded-xl p-4 shadow-xs">
           <div className="flex items-center justify-between">
-            <p className="text-xs text-muted-foreground font-medium">Hồ Sơ Đạt Chuẩn (≥ 75%)</p>
+            <p className="text-xs text-muted-foreground font-medium">Hồ sơ đạt ngưỡng 75 điểm</p>
             <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600">
               <CheckCircle2 className="w-4 h-4" />
             </div>
@@ -289,12 +279,12 @@ export function ReportsSection() {
               ({Math.round((totalQualifiedAllBatches / (totalCVsAllBatches || 1)) * 100)}%)
             </span>
           </p>
-          <p className="text-[11px] text-emerald-600 mt-1 font-medium">Đủ điều kiện vào vòng phỏng vấn</p>
+          <p className="text-[11px] text-emerald-600 mt-1 font-medium">Đáp ứng ngưỡng điểm tham khảo</p>
         </div>
 
         <div className="bg-card border border-border rounded-xl p-4 shadow-xs">
           <div className="flex items-center justify-between">
-            <p className="text-xs text-muted-foreground font-medium">Điểm Match AI Trung Bình</p>
+            <p className="text-xs text-muted-foreground font-medium">Điểm phù hợp trung bình</p>
             <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
               <Sparkles className="w-4 h-4" />
             </div>
@@ -302,7 +292,7 @@ export function ReportsSection() {
           <p className="text-2xl font-bold text-indigo-700 mt-2">
             {avgScoreAllBatches}%
           </p>
-          <p className="text-[11px] text-indigo-600 mt-1 font-medium">Theo khung 6 tiêu chí chuẩn</p>
+          <p className="text-[11px] text-indigo-600 mt-1 font-medium">Theo tiêu chí của từng phiên</p>
         </div>
       </div>
 
@@ -310,7 +300,7 @@ export function ReportsSection() {
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-            Chọn Phiên Lọc Hồ Sơ Để Xem Dữ Liệu & Xuất File:
+            Chọn phiên lọc hồ sơ để xem dữ liệu & xuất file:
           </h3>
           <span className="text-xs text-muted-foreground">
             Đang hiển thị:{" "}
@@ -332,7 +322,7 @@ export function ReportsSection() {
             )}
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-900">Tất Cả Phiên Lọc</span>
+              <span className="text-xs font-bold text-slate-900">Tất cả phiên đánh giá</span>
               <Badge className="bg-sky-100 text-sky-800 text-[10px] px-1.5 py-0">
                 {historyBatches.length} Đợt
               </Badge>
@@ -389,7 +379,7 @@ export function ReportsSection() {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-sm font-bold text-slate-900">
-                  Phân Bổ Phổ Điểm Match AI Trong Phiên Lọc
+                  Phân bổ phổ điểm phù hợp trong phiên lọc
                 </CardTitle>
                 <CardDescription className="text-xs text-muted-foreground">
                   {selectedBatch
@@ -403,7 +393,7 @@ export function ReportsSection() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="h-64 w-full">
+            <div className="h-64 w-full min-w-0 overflow-hidden">
               {chartsLoaded ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={scoreDistribution} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -430,17 +420,17 @@ export function ReportsSection() {
         <Card className="lg:col-span-1 border-border shadow-xs">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-bold text-slate-900">
-              Đánh Giá 6 Trọng Số Rubric
+              Điểm theo tiêu chí
             </CardTitle>
             <CardDescription className="text-xs text-muted-foreground">
-              Điểm năng lực trung bình của phiên
+              Điểm trung bình từ dữ liệu đã lưu. Tiêu chí thiếu dữ liệu được để trống.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-64 w-full">
+            <div className="h-64 w-full min-w-0 overflow-hidden">
               {chartsLoaded ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <RadarChart cx="50%" cy="50%" outerRadius="70%" data={rubricRadarData}>
+                  <RadarChart cx="50%" cy="50%" outerRadius="52%" data={rubricRadarData}>
                     <PolarGrid stroke="#e2e8f0" />
                     <PolarAngleAxis dataKey="subject" tick={{ fontSize: 9, fill: "#475569" }} />
                     <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 8, fill: "#94a3b8" }} />
@@ -465,9 +455,9 @@ export function ReportsSection() {
               <CardTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
                 <FileText className="w-4 h-4 text-sky-600" />
                 <span>
-                  Bảng Dữ Liệu Chi Tiết Ứng Viên:{" "}
+                  Hồ sơ ứng viên:{" "}
                   <span className="text-sky-700">
-                    {selectedBatch ? selectedBatch.batchName : "Tất Cả Các Phiên"}
+                    {selectedBatch ? selectedBatch.batchName : "Tất cả phiên đánh giá"}
                   </span>
                 </span>
               </CardTitle>
@@ -477,8 +467,8 @@ export function ReportsSection() {
             </div>
 
             {/* Table Filters */}
-            <div className="flex items-center gap-2">
-              <div className="relative w-48 sm:w-60">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 min-w-0">
+              <div className="relative w-full sm:w-60 min-w-0">
                 <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder="Lọc tên, kỹ năng..."
@@ -516,16 +506,16 @@ export function ReportsSection() {
             <table className="w-full text-xs text-left">
               <thead className="bg-slate-100/70 border-b border-border text-slate-700 font-semibold uppercase tracking-wider text-[10px]">
                 <tr>
-                  <th className="py-3 px-4">Ứng Viên</th>
-                  <th className="py-3 px-4">Vị Trí Ứng Tuyển</th>
-                  <th className="py-3 px-4 text-center">Điểm Match AI</th>
-                  <th className="py-3 px-4 text-center">Kỹ Năng</th>
-                  <th className="py-3 px-4 text-center">Kinh Nghiệm</th>
-                  <th className="py-3 px-4 text-center">Học Vấn</th>
-                  <th className="py-3 px-4 text-center">Kỹ Năng Mềm</th>
-                  <th className="py-3 px-4">Kỳ Vọng Lương</th>
-                  <th className="py-3 px-4">Đánh Giá AI</th>
-                  <th className="py-3 px-4 text-right">Trạng Thái</th>
+                  <th className="py-3 px-4">Ứng viên</th>
+                  <th className="py-3 px-4">Vị trí ứng tuyển</th>
+                  <th className="py-3 px-4 text-center">Điểm phù hợp</th>
+                  <th className="py-3 px-4 text-center">Kỹ năng</th>
+                  <th className="py-3 px-4 text-center">Kinh nghiệm</th>
+                  <th className="py-3 px-4 text-center">Học vấn</th>
+                  <th className="py-3 px-4 text-center">Kỹ năng mềm</th>
+                  <th className="py-3 px-4">Mức lương kỳ vọng</th>
+                  <th className="py-3 px-4">Phân tích AI</th>
+                  <th className="py-3 px-4 text-right">Trạng thái</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60 bg-white">

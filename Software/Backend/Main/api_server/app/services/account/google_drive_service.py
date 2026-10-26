@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import base64
+import hashlib
 import mimetypes
 import secrets
 import time
@@ -138,7 +140,10 @@ def _request_bytes(
     req = request.Request(url, method=method, headers=headers or {})
     try:
         with request.urlopen(req, timeout=timeout) as response:
-            payload = response.read()
+            limit = get_settings().upload_file_size_limit_mb * 1024 * 1024
+            payload = response.read(limit + 1)
+            if len(payload) > limit:
+                raise GoogleDriveValidationError(f"Tệp Drive vượt giới hạn {get_settings().upload_file_size_limit_mb} MB.")
             metadata = {key: value for key, value in response.headers.items()}
             return payload, metadata
     except error.HTTPError as exc:
@@ -193,6 +198,7 @@ def create_oauth_url(user: AuthenticatedUser, redirect_uri: str | None = None) -
     resolved_redirect_uri = _resolve_redirect_uri(redirect_uri)
     state = secrets.token_urlsafe(32)
     now = int(time.time() * 1000)
+    verifier = secrets.token_urlsafe(48) if get_settings().data_provider == "sqlite" else ""
 
     _state_ref(state).set(
         {
@@ -200,6 +206,7 @@ def create_oauth_url(user: AuthenticatedUser, redirect_uri: str | None = None) -
             "redirectUri": resolved_redirect_uri,
             "createdAt": repo.server_timestamp(),
             "expiresAt": now + GOOGLE_DRIVE_STATE_TTL_MS,
+            **({"codeVerifier": verifier} if verifier else {}),
         }
     )
 
@@ -214,6 +221,7 @@ def create_oauth_url(user: AuthenticatedUser, redirect_uri: str | None = None) -
             # prompt=consent helps ensure refresh_token is returned on first clean connect.
             "prompt": "consent",
             "state": state,
+            **({"code_challenge": base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).rstrip(b"=").decode(), "code_challenge_method": "S256"} if verifier else {}),
         }
     )
     return {
@@ -224,13 +232,18 @@ def create_oauth_url(user: AuthenticatedUser, redirect_uri: str | None = None) -
     }
 
 
-def _consume_valid_state(user: AuthenticatedUser, state: str, redirect_uri: str) -> None:
+def _consume_valid_state(user: AuthenticatedUser, state: str, redirect_uri: str) -> dict[str, Any]:
+    if get_settings().data_provider == "sqlite":
+        from app.integrations.sqlite_documents import get_sqlite_client
+        data = get_sqlite_client().consume("googleDriveOAuthStates", state, expected={"uid": user.uid, "redirectUri": redirect_uri})
+        if not data or int(data.get("expiresAt") or 0) < int(time.time() * 1000):
+            raise GoogleDriveValidationError("OAuth state không hợp lệ, đã sử dụng hoặc đã hết hạn.")
+        return data
     snapshot = _state_ref(state).get()
     if not snapshot.exists:
         raise GoogleDriveValidationError("OAuth state không tồn tại hoặc đã hết hạn.")
 
     data = snapshot.to_dict() or {}
-    snapshot.reference.delete()
 
     if data.get("uid") != user.uid:
         raise GoogleDriveValidationError("OAuth state không thuộc về người dùng hiện tại.")
@@ -238,6 +251,8 @@ def _consume_valid_state(user: AuthenticatedUser, state: str, redirect_uri: str)
         raise GoogleDriveValidationError("Redirect URI không khớp với OAuth state.")
     if int(data.get("expiresAt") or 0) < int(time.time() * 1000):
         raise GoogleDriveValidationError("OAuth state đã hết hạn. Hãy kết nối lại Google Drive.")
+    snapshot.reference.delete()
+    return data
 
 
 def _fetch_google_user(access_token: str) -> dict[str, Any]:
@@ -250,7 +265,7 @@ def _fetch_google_user(access_token: str) -> dict[str, Any]:
 def exchange_code(user: AuthenticatedUser, code: str, state: str, redirect_uri: str | None = None) -> dict[str, Any]:
     client_id, client_secret = _require_oauth_config()
     resolved_redirect_uri = _resolve_redirect_uri(redirect_uri)
-    _consume_valid_state(user, state, resolved_redirect_uri)
+    state_data = _consume_valid_state(user, state, resolved_redirect_uri)
 
     token_payload = _request_json(
         GOOGLE_TOKEN_URL,
@@ -261,6 +276,7 @@ def exchange_code(user: AuthenticatedUser, code: str, state: str, redirect_uri: 
             "client_secret": client_secret,
             "redirect_uri": resolved_redirect_uri,
             "grant_type": "authorization_code",
+            **({"code_verifier": state_data["codeVerifier"]} if state_data.get("codeVerifier") else {}),
         },
     )
 
@@ -539,6 +555,8 @@ def _download_file_bytes(user: AuthenticatedUser, file_id: str) -> tuple[bytes, 
     metadata = get_file_metadata(user, file_id)
 
     source_mime_type = str(metadata.get("mimeType") or "")
+    if int(metadata.get("size") or 0) > get_settings().upload_file_size_limit_mb * 1024 * 1024:
+        raise GoogleDriveValidationError("Tệp Drive vượt giới hạn dung lượng tải lên.")
     filename = str(metadata.get("name") or file_id)
     download_mime_type = source_mime_type
 

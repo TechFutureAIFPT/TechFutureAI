@@ -483,6 +483,28 @@ async def run_smart_cv_analysis(
         rubric_version=settings.rubric_version,
     )
     weights = rubric["weights"]
+    if settings.cv_analysis_provider == "ollama":
+        # Enter before translation, cloud embeddings, RAG and enrichment. Only the
+        # CV task is local; authentication/history remain owned by Backend Main.
+        from fastapi import HTTPException
+        from app.services.cv_specialist_service import LocalCVError, analyze_local_entries
+
+        try:
+            local_result = await analyze_local_entries(jd_text, weights, hard_filters, cv_entries)
+        except LocalCVError as error:
+            raise HTTPException(status_code=error.status_code, detail=str(error)) from error
+        local_result["pipeline"]["rubric"] = {
+            "version": rubric["rubricVersion"], "roleKey": rubric["roleKey"],
+            "roleLabel": rubric["roleLabel"], "source": rubric["source"],
+        }
+        history_id = await _sync_history_safe(
+            user=current_user, jd_text=jd_text, weights=weights, hard_filters=hard_filters,
+            candidates=local_result["candidates"], pipeline=local_result["pipeline"],
+            cv_source_texts=[{"fileName": _entry_file_name(entry), "text": str(entry.get("text") or "")} for entry in cv_entries],
+        )
+        if history_id:
+            local_result["pipeline"]["historyId"] = history_id
+        return local_result
     classifier_status = get_classifier_status()
     classifier_version = str(classifier_status.get("model_version") or "unknown")
     started_at = time.perf_counter()

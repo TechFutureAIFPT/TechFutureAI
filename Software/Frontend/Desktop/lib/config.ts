@@ -1,31 +1,39 @@
 /**
- * Runtime Configuration for CV Match Support HR Frontend.
- * Public Firebase Web values & Backend API Base URLs.
+ * Runtime Configuration for AI Match frontend and backend API origins.
  */
 export const APP_CONFIG = {
-  // Port 8000: Core API Server tổng
+  runtimeMode: process.env.NEXT_PUBLIC_RUNTIME_MODE === "local" ? "local" : "cloud",
+  // Port 8088: unified local API and SQLite/Ollama runtime
   apiBaseUrl:
-    process.env.NEXT_PUBLIC_API_BASE_URL || "https://backendsupporthr.onrender.com",
+    process.env.NEXT_PUBLIC_RUNTIME_MODE === "local"
+      ? process.env.NEXT_PUBLIC_LOCAL_API_URL || "http://localhost:8088"
+      : process.env.NEXT_PUBLIC_API_BASE_URL || "https://backendsupporthr.onrender.com",
   apiFallbackUrl:
     process.env.NEXT_PUBLIC_API_FALLBACK_URL || "https://backendsupporthr.up.railway.app",
   localApiUrl:
-    process.env.NEXT_PUBLIC_LOCAL_API_URL || "http://127.0.0.1:8000",
+    process.env.NEXT_PUBLIC_LOCAL_API_URL || "http://127.0.0.1:8088",
 
   // Port 8080: Dịch vụ Trợ lý AI Tuyển dụng & Deep Research
   assistantApiBaseUrl:
-    process.env.NEXT_PUBLIC_ASSISTANT_API_BASE_URL || "https://supporthr-ai-assistant.onrender.com",
+    process.env.NEXT_PUBLIC_RUNTIME_MODE === "local"
+      ? process.env.NEXT_PUBLIC_LOCAL_ASSISTANT_API_URL || "http://localhost:8080"
+      : process.env.NEXT_PUBLIC_ASSISTANT_API_BASE_URL || "https://supporthr-ai-assistant.onrender.com",
   localAssistantApiUrl:
     process.env.NEXT_PUBLIC_LOCAL_ASSISTANT_API_URL || "http://127.0.0.1:8080",
 
   // Port 8001: Dịch vụ Chatbot Định hướng Nghề nghiệp & Khảo sát Holland (Career Compass)
   careerCompassApiBaseUrl:
-    process.env.NEXT_PUBLIC_CAREER_COMPASS_API_BASE_URL || "https://careercompass-ai-api.vercel.app",
+    process.env.NEXT_PUBLIC_RUNTIME_MODE === "local"
+      ? process.env.NEXT_PUBLIC_LOCAL_CAREER_COMPASS_API_URL || "http://localhost:8001"
+      : process.env.NEXT_PUBLIC_CAREER_COMPASS_API_BASE_URL || "https://careercompass-ai-api.vercel.app",
   localCareerCompassApiUrl:
     process.env.NEXT_PUBLIC_LOCAL_CAREER_COMPASS_API_URL || "http://127.0.0.1:8001",
 
   // Port 5000: Dịch vụ Microservice Phân loại Ngành nghề CV độc lập
   classifierApiBaseUrl:
-    process.env.NEXT_PUBLIC_CLASSIFIER_API_BASE_URL || "https://supporthr-classifier-service.onrender.com",
+    process.env.NEXT_PUBLIC_RUNTIME_MODE === "local"
+      ? process.env.NEXT_PUBLIC_LOCAL_CLASSIFIER_API_URL || "http://localhost:5000"
+      : process.env.NEXT_PUBLIC_CLASSIFIER_API_BASE_URL || "https://supporthr-classifier-service.onrender.com",
   localClassifierApiUrl:
     process.env.NEXT_PUBLIC_LOCAL_CLASSIFIER_API_URL || "http://127.0.0.1:5000",
 

@@ -119,13 +119,13 @@ export function SettingsSection() {
     <div className="space-y-4 w-full">
       {/* 1. TOP DUAL-PAGE NAVIGATION SWITCHER */}
       <div className="flex items-center justify-between p-1.5 rounded-2xl bg-slate-100 border border-slate-200 shadow-2xs">
-        <div className="grid grid-cols-2 gap-1.5 w-full sm:w-auto">
+        <div className="grid grid-cols-1 min-[400px]:grid-cols-2 gap-1.5 w-full sm:w-auto">
           <Button
             type="button"
             className="text-xs font-bold h-9 px-4 bg-white text-sky-700 shadow-xs border border-sky-200/80 rounded-xl hover:bg-white"
           >
             <User className="w-3.5 h-3.5 mr-2 text-sky-600" />
-            <span>Hồ Sơ & Cài Đặt</span>
+            <span>Hồ sơ & cài đặt</span>
           </Button>
 
           <Button
@@ -135,7 +135,7 @@ export function SettingsSection() {
             className="text-xs font-semibold h-9 px-4 text-slate-600 hover:text-sky-800 hover:bg-white/80 rounded-xl"
           >
             <Sliders className="w-3.5 h-3.5 mr-2 text-slate-500" />
-            <span>Tiêu Chí Chấm Điểm JD</span>
+            <span>Tiêu chí đánh giá</span>
           </Button>
         </div>
 
@@ -159,7 +159,7 @@ export function SettingsSection() {
           <div className="p-4 sm:p-5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
               {/* Avatar with Status Pin */}
-              <div className="flex items-center gap-3.5">
+              <div className="flex items-center gap-3.5 min-w-0">
                 <div className="relative shrink-0">
                   <Avatar className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl border-2 border-slate-200 bg-sky-50 shadow-xs">
                     <AvatarFallback className="bg-gradient-to-br from-sky-600 via-sky-700 to-blue-800 text-white text-xl font-black rounded-xl">
@@ -180,12 +180,12 @@ export function SettingsSection() {
                     </h3>
                     <Badge className="bg-sky-50 text-sky-700 border-sky-200 text-[10px] font-bold">
                       <Award className="w-3 h-3 mr-1 text-sky-600" />
-                      Verified Recruiter
+                      {authUser ? "Đã đăng nhập" : "Hồ sơ mẫu"}
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground font-medium flex items-center gap-1.5 flex-wrap truncate">
                     <Briefcase className="w-3.5 h-3.5 text-sky-600 shrink-0" />
-                    <span>{role}</span>
+                    <span className="min-w-0 break-words">{role}</span>
                     <span>•</span>
                     <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                     <span>{department}</span>
@@ -213,7 +213,7 @@ export function SettingsSection() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200/80">
               <div className="space-y-0.5">
                 <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider block">
-                  Văn Phòng Làm Việc
+                  Văn phòng làm việc
                 </span>
                 <p className="text-xs font-bold text-slate-900 flex items-center gap-1 truncate">
                   <MapPin className="w-3.5 h-3.5 text-sky-600 shrink-0" />
@@ -223,7 +223,7 @@ export function SettingsSection() {
 
               <div className="space-y-0.5">
                 <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider block">
-                  Múi Giờ Hoạt Động
+                  Múi giờ hoạt động
                 </span>
                 <p className="text-xs font-bold text-blue-700 flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5 text-blue-600 shrink-0" />
@@ -241,7 +241,7 @@ export function SettingsSection() {
 
               <div className="space-y-0.5">
                 <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider block">
-                  Đơn Vị Tiền Tệ
+                  Đơn vị tiền tệ
                 </span>
                 <p className="text-xs font-bold text-slate-800 flex items-center gap-1">
                   <Globe className="w-3.5 h-3.5 text-slate-600 shrink-0" />
@@ -251,11 +251,11 @@ export function SettingsSection() {
 
               <div className="space-y-0.5">
                 <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider block">
-                  Trạng Thái Tài Khoản
+                  Trạng thái tài khoản
                 </span>
                 <p className="text-xs font-bold text-emerald-700 flex items-center gap-1">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                  <span>Đang Hoạt Động</span>
+                  <span>Đang hoạt động</span>
                 </p>
               </div>
             </div>
@@ -274,7 +274,7 @@ export function SettingsSection() {
                   </div>
                   <div>
                     <CardTitle className="text-sm font-bold text-slate-900">
-                      Thông Tin Người Dùng & Chuyên Viên Tuyển Dụng
+                      Thông tin người dùng & chuyên viên tuyển dụng
                     </CardTitle>
                     <CardDescription className="text-xs">
                       Chi tiết định danh, địa điểm văn phòng công tác và múi giờ làm việc
@@ -288,7 +288,7 @@ export function SettingsSection() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label htmlFor="lastName" className="text-xs font-semibold text-slate-800">
-                      Họ và Tên Đệm
+                      Họ và tên đệm
                     </Label>
                     <Input
                       id="lastName"
@@ -313,12 +313,12 @@ export function SettingsSection() {
                   </div>
                 </div>
 
-                {/* Row 2: Chức Danh + Phòng Ban */}
+                {/* Row 2: Chức Danh + Phòng ban */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label htmlFor="role" className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
                       <Briefcase className="w-3.5 h-3.5 text-sky-600" />
-                      <span>Chức Danh / Vị Trí</span>
+                      <span>Chức danh / Vị trí</span>
                     </Label>
                     <Input
                       id="role"
@@ -331,7 +331,7 @@ export function SettingsSection() {
                   <div className="space-y-1.5">
                     <Label htmlFor="dept" className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
                       <Building2 className="w-3.5 h-3.5 text-sky-600" />
-                      <span>Khối / Phòng Ban Phụ Trách</span>
+                      <span>Khối / phòng ban phụ trách</span>
                     </Label>
                     <Select value={department} onValueChange={setDepartment}>
                       <SelectTrigger className="bg-slate-50 border-slate-200 text-xs h-9 font-medium">
@@ -353,7 +353,7 @@ export function SettingsSection() {
                   <div className="space-y-1.5">
                     <Label htmlFor="email" className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
                       <Mail className="w-3.5 h-3.5 text-sky-600" />
-                      <span>Email Công Vụ</span>
+                      <span>Email công việc</span>
                     </Label>
                     <Input
                       id="email"
@@ -367,7 +367,7 @@ export function SettingsSection() {
                   <div className="space-y-1.5">
                     <Label htmlFor="phone" className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
                       <Phone className="w-3.5 h-3.5 text-sky-600" />
-                      <span>Số Điện Thoại Liên Hệ</span>
+                      <span>Số điện thoại</span>
                     </Label>
                     <Input
                       id="phone"
@@ -384,18 +384,18 @@ export function SettingsSection() {
                   <div className="space-y-1.5">
                     <Label htmlFor="workLocation" className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
                       <MapPin className="w-3.5 h-3.5 text-sky-600" />
-                      <span>Địa Điểm / Văn Phòng Làm Việc</span>
+                      <span>Địa điểm làm việc</span>
                     </Label>
                     <Select value={workLocation} onValueChange={setWorkLocation}>
                       <SelectTrigger className="bg-slate-50 border-slate-200 text-xs h-9 font-medium">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="TP. Hồ Chí Minh - Trụ sở chính">TP. Hồ Chí Minh - Trụ sở chính (Q.1)</SelectItem>
-                        <SelectItem value="Hà Nội - Chi nhánh">Hà Nội - Chi nhánh (Cầu Giấy)</SelectItem>
-                        <SelectItem value="Đà Nẵng - Tech Hub">Đà Nẵng - Tech Hub (Hải Châu)</SelectItem>
-                        <SelectItem value="Cần Thơ - Văn phòng miền Tây">Cần Thơ - Văn phòng đại diện</SelectItem>
-                        <SelectItem value="Hải Phòng - Chi nhánh miền Bắc">Hải Phòng - Chi nhánh</SelectItem>
+                        <SelectItem value="TP. Hồ Chí Minh - Trụ sở chính">TP. Hồ Chí Minh - trụ sở chính (q.1)</SelectItem>
+                        <SelectItem value="Hà Nội - Chi nhánh">Hà Nội - chi nhánh (cầu giấy)</SelectItem>
+                        <SelectItem value="Đà Nẵng - Tech Hub">Đà Nẵng - tech hub (hải châu)</SelectItem>
+                        <SelectItem value="Cần Thơ - Văn phòng miền Tây">Cần Thơ - văn phòng đại diện</SelectItem>
+                        <SelectItem value="Hải Phòng - Chi nhánh miền Bắc">Hải Phòng - chi nhánh</SelectItem>
                         <SelectItem value="Linh hoạt từ xa (Remote / Hybrid)">Linh hoạt từ xa (Remote / Hybrid)</SelectItem>
                       </SelectContent>
                     </Select>
@@ -404,14 +404,14 @@ export function SettingsSection() {
                   <div className="space-y-1.5">
                     <Label htmlFor="timezone" className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5 text-sky-600" />
-                      <span>Múi Giờ Hoạt Động (Timezone)</span>
+                      <span>Múi giờ làm việc</span>
                     </Label>
                     <Select value={timezone} onValueChange={setTimezone}>
                       <SelectTrigger className="bg-slate-50 border-slate-200 text-xs h-9 font-medium">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="ict">Việt Nam (ICT UTC+7: Hà Nội / TP.HCM)</SelectItem>
+                        <SelectItem value="ict">Việt Nam (ICT UTC+7: Hà Nội / tp.hcm)</SelectItem>
                         <SelectItem value="gmt">Singapore / Malaysia / China (UTC+8)</SelectItem>
                         <SelectItem value="est">Tokyo / Seoul (JST/KST UTC+9)</SelectItem>
                         <SelectItem value="pst">London / Dublin (GMT UTC+0)</SelectItem>
@@ -424,7 +424,7 @@ export function SettingsSection() {
                 {/* Row 5: Địa chỉ văn phòng */}
                 <div className="space-y-1.5">
                   <Label htmlFor="officeAddress" className="text-xs font-semibold text-slate-800">
-                    Địa Chỉ Văn Phòng Chi Tiết
+                    Địa chỉ văn phòng chi tiết
                   </Label>
                   <Input
                     id="officeAddress"
@@ -437,7 +437,7 @@ export function SettingsSection() {
               </CardContent>
             </Card>
 
-            {/* Banner Lối Tắt Đến Trang Tiêu Chí Chấm Điểm JD */}
+            {/* Banner Lối Tắt Đến Trang Tiêu chí đánh giá */}
             <div className="p-4 rounded-xl bg-gradient-to-r from-sky-50 via-white to-blue-50/60 border border-sky-200 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-sky-600 text-white flex items-center justify-center font-bold shrink-0 shadow-xs">
@@ -445,7 +445,7 @@ export function SettingsSection() {
                 </div>
                 <div>
                   <h4 className="text-xs font-bold text-slate-900">
-                    Cấu Hình Tiêu Chí Chấm Điểm & Bộ Lọc JD
+                    Cấu hình tiêu chí chấm điểm & bộ lọc JD
                   </h4>
                   <p className="text-[11px] text-muted-foreground">
                     Chuyển sang trang riêng biệt để quản lý 6 trọng số Rubric và điều kiện lọc cứng tự động
@@ -460,7 +460,7 @@ export function SettingsSection() {
                 onClick={() => setActiveSection("criteria-settings")}
                 className="text-xs font-bold bg-white text-sky-700 border-sky-300 hover:bg-sky-50 shrink-0"
               >
-                <span>Mở Trang Tiêu Chí JD</span>
+                <span>Thiết lập tiêu chí đánh giá</span>
                 <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
               </Button>
             </div>
@@ -477,7 +477,7 @@ export function SettingsSection() {
                   </div>
                   <div>
                     <CardTitle className="text-sm font-bold text-slate-900">
-                      Tùy Chọn Hệ Thống
+                      Tùy chọn hệ thống
                     </CardTitle>
                     <CardDescription className="text-xs">
                       Tiền tệ & thông báo định kỳ
@@ -489,14 +489,14 @@ export function SettingsSection() {
               <CardContent className="p-4 space-y-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="currency" className="text-xs font-semibold text-slate-800">
-                    Đơn Vị Tiền Tệ Hiển Thị
+                    Đơn vị tiền tệ hiển thị
                   </Label>
                   <Select value={currency} onValueChange={setCurrency}>
                     <SelectTrigger className="bg-slate-50 border-slate-200 text-xs h-9 font-medium">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="VND">Việt Nam Đồng (VNĐ ₫)</SelectItem>
+                      <SelectItem value="VND">Việt Nam đồng (VNĐ ₫)</SelectItem>
                       <SelectItem value="USD">Đô la Mỹ (USD $)</SelectItem>
                     </SelectContent>
                   </Select>
@@ -504,7 +504,7 @@ export function SettingsSection() {
 
                 <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-200/80">
                   <div className="space-y-0.5 pr-2">
-                    <p className="font-semibold text-xs text-slate-900">Email Báo Cáo Hiệu Suất</p>
+                    <p className="font-semibold text-xs text-slate-900">Email tổng hợp hoạt động</p>
                     <p className="text-[10px] text-muted-foreground">Nhận thống kê đợt lọc mỗi tuần</p>
                   </div>
                   <Switch checked={weeklyDigest} onCheckedChange={setWeeklyDigest} />
@@ -521,7 +521,7 @@ export function SettingsSection() {
                   </div>
                   <div>
                     <CardTitle className="text-sm font-bold text-slate-900">
-                      Bảo Mật & Xác Thực Doanh Nghiệp
+                      Bảo mật & xác thực doanh nghiệp
                     </CardTitle>
                     <CardDescription className="text-xs">
                       Mã hóa chuẩn SSL 256-bit an toàn
@@ -533,10 +533,10 @@ export function SettingsSection() {
               <CardContent className="p-4 space-y-3.5">
                 <div className="p-3 rounded-xl bg-sky-50/70 border border-sky-200/80 space-y-2">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-slate-700">Trạng Thái Xác Thực:</span>
+                    <span className="font-semibold text-slate-700">Trạng thái xác thực:</span>
                     <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-[10px] font-bold">
                       <CheckCircle2 className="w-3 h-3 mr-1 text-emerald-600" />
-                      Tài Khoản Đã Xác Thực
+                      Tài khoản đã xác thực
                     </Badge>
                   </div>
 
@@ -546,7 +546,7 @@ export function SettingsSection() {
                       <strong className="text-slate-800 truncate max-w-[140px]">{authUser?.email || email}</strong>
                     </p>
                     <p className="flex items-center justify-between">
-                      <span className="font-medium text-slate-500">Chuẩn Bảo Mật:</span>
+                      <span className="font-medium text-slate-500">Chuẩn bảo mật:</span>
                       <span className="text-emerald-700 font-semibold">SSL 256-bit Encrypted</span>
                     </p>
                   </div>
@@ -571,7 +571,7 @@ export function SettingsSection() {
                     className="w-full text-xs font-semibold h-8.5 border-sky-200 bg-sky-50/50 hover:bg-sky-100 text-sky-800"
                   >
                     <Key className="w-3.5 h-3.5 mr-1.5 text-sky-600" />
-                    <span>Đăng Nhập / Quản Lý Tài Khoản</span>
+                    <span>Đăng nhập / Quản lý tài khoản</span>
                   </Button>
                 </div>
               </CardContent>
@@ -582,7 +582,7 @@ export function SettingsSection() {
               <div className="space-y-0.5 min-w-0">
                 <p className="font-bold text-xs text-sky-950 flex items-center gap-1.5">
                   <Sliders className="w-4 h-4 text-sky-600 shrink-0" />
-                  <span>Cài Đặt Tiêu Chí & Trọng Số JD</span>
+                  <span>Thiết lập tiêu chí & trọng số</span>
                 </p>
                 <p className="text-[11px] text-sky-800 truncate">
                   Cấu hình 6 trọng số Rubric và bộ lọc điều kiện cứng mặc định
@@ -616,12 +616,12 @@ export function SettingsSection() {
               {isSaving ? (
                 <>
                   <RefreshCw className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                  <span>Đang Lưu Hồ Sơ...</span>
+                  <span>Đang lưu thay đổi…</span>
                 </>
               ) : (
                 <>
                   <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
-                  <span>Lưu & Cập Nhật Hồ Sơ</span>
+                  <span>Lưu thay đổi</span>
                 </>
               )}
             </Button>

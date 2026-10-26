@@ -121,7 +121,7 @@ export function QuickScoreSection() {
       {/* Top Header */}
       <div>
         <div className="flex items-center gap-2">
-          <h2 className="text-xl font-bold text-slate-900">Công Cụ Chấm Điểm Nhanh 1-1 (Quick Score)</h2>
+          <h2 className="text-xl font-bold text-slate-900">Công cụ chấm điểm nhanh 1-1 (quick score)</h2>
           <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-xs font-bold">
             <Zap className="w-3 h-3 mr-1 text-emerald-600" />
             AI Engine Active
@@ -138,7 +138,7 @@ export function QuickScoreSection() {
         <Card className="border-border bg-card shadow-xs">
           <CardHeader className="pb-3 border-b border-border">
             <CardTitle className="text-sm font-bold flex items-center gap-1.5 text-slate-900">
-              1. Nội Dung Mô Tả Công Việc (JD)
+              1. Nội dung mô tả công việc (JD)
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 pt-3">
@@ -156,7 +156,7 @@ export function QuickScoreSection() {
         <Card className="border-border bg-card shadow-xs">
           <CardHeader className="pb-3 border-b border-border">
             <CardTitle className="text-sm font-bold flex items-center gap-1.5 text-slate-900">
-              2. Nội Dung Hồ Sơ Ứng Viên (CV Text)
+              2. Nội dung hồ sơ ứng viên (CV text)
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 pt-3">
@@ -191,7 +191,7 @@ export function QuickScoreSection() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
                 <CardTitle className="text-base font-bold flex items-center gap-2 text-slate-900">
-                  Kết Quả Chấm Điểm Đối Chiếu AI
+                  Kết quả chấm điểm đối chiếu AI
                 </CardTitle>
                 <CardDescription className="text-xs">
                   Phân tích chi tiết mức độ tương thích của ứng viên đối với yêu cầu công việc
@@ -200,7 +200,7 @@ export function QuickScoreSection() {
 
               <div className="flex items-center gap-2">
                 <div className="text-right">
-                  <span className="text-xs text-muted-foreground block">Điểm Tổng Hợp:</span>
+                  <span className="text-xs text-muted-foreground block">Điểm tổng hợp:</span>
                   <span className="text-2xl font-bold text-sky-600">
                     {scoreResult.overallScore}%
                   </span>
@@ -214,7 +214,7 @@ export function QuickScoreSection() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="p-3.5 rounded-xl bg-white border border-sky-100 shadow-2xs space-y-1.5">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Kỹ Năng (Skills)</span>
+                  <span className="text-muted-foreground">Kỹ năng (Skills)</span>
                   <span className="font-bold text-slate-900">{scoreResult.skillsScore}%</span>
                 </div>
                 <div className="w-full h-2 bg-sky-50 rounded-full overflow-hidden border border-sky-100">
@@ -227,7 +227,7 @@ export function QuickScoreSection() {
 
               <div className="p-3.5 rounded-xl bg-white border border-sky-100 shadow-2xs space-y-1.5">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Kinh Nghiệm (Exp)</span>
+                  <span className="text-muted-foreground">Kinh nghiệm (Exp)</span>
                   <span className="font-bold text-slate-900">{scoreResult.expScore}%</span>
                 </div>
                 <div className="w-full h-2 bg-sky-50 rounded-full overflow-hidden border border-sky-100">
@@ -240,7 +240,7 @@ export function QuickScoreSection() {
 
               <div className="p-3.5 rounded-xl bg-white border border-sky-100 shadow-2xs space-y-1.5">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Học Vấn & Bằng Cấp</span>
+                  <span className="text-muted-foreground">Học vấn & bằng cấp</span>
                   <span className="font-bold text-slate-900">{scoreResult.eduScore}%</span>
                 </div>
                 <div className="w-full h-2 bg-sky-50 rounded-full overflow-hidden border border-sky-100">
@@ -258,7 +258,7 @@ export function QuickScoreSection() {
               <div className="p-4 rounded-xl bg-sky-50/60 border border-sky-200 space-y-2">
                 <h4 className="font-bold text-xs text-sky-800 uppercase tracking-wider flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4 text-sky-600" />
-                  Điểm Mạnh Nổi Bật (Strengths)
+                  Điểm mạnh nổi bật (strengths)
                 </h4>
                 <ul className="space-y-1.5 text-xs text-slate-800">
                   {scoreResult.strengths.map((s, idx) => (
@@ -274,7 +274,7 @@ export function QuickScoreSection() {
               <div className="p-4 rounded-xl bg-amber-50/60 border border-amber-200 space-y-2">
                 <h4 className="font-bold text-xs text-amber-800 uppercase tracking-wider flex items-center gap-1.5">
                   <AlertTriangle className="w-4 h-4 text-amber-600" />
-                  Điểm Cần Lưu Ý & Khai Thác Thêm (Gap)
+                  Điểm cần lưu ý & khai thác thêm (gap)
                 </h4>
                 <ul className="space-y-1.5 text-xs text-slate-800">
                   {scoreResult.weaknesses.map((w, idx) => (
@@ -295,7 +295,7 @@ export function QuickScoreSection() {
                 </div>
                 <div>
                   <p className="font-bold text-xs text-sky-900 uppercase tracking-wider">
-                    Kết Luận Đề Xuất Tuyển Dụng
+                    Kết luận đề xuất tuyển dụng
                   </p>
                   <p className="text-sm font-semibold text-slate-900 mt-0.5">
                     {scoreResult.recommendation}
@@ -308,7 +308,7 @@ export function QuickScoreSection() {
                 onClick={() => setActiveSection("pipeline")}
                 className="bg-sky-600 text-white hover:bg-sky-700 text-xs shrink-0 font-bold shadow-xs"
               >
-                Mở Phễu Tuyển Dụng
+                Mở phễu tuyển dụng
                 <ArrowRight className="w-3.5 h-3.5 ml-1" />
               </Button>
             </div>

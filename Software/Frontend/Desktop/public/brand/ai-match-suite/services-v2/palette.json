@@ -1,0 +1,62 @@
+[
+  {
+    "name": "Career Match",
+    "slug": "career-match",
+    "motif": "La bàn gấp nếp",
+    "accent": "#087f73",
+    "darkAccent": "#55d5bd",
+    "core": {
+      "cobalt": "#085dc5",
+      "fold": "#353389",
+      "indigo": "#211e55"
+    }
+  },
+  {
+    "name": "Insight Match",
+    "slug": "insight-match",
+    "motif": "Lăng kính thấu hiểu",
+    "accent": "#7251b5",
+    "darkAccent": "#c2a6ff",
+    "core": {
+      "cobalt": "#085dc5",
+      "fold": "#353389",
+      "indigo": "#211e55"
+    }
+  },
+  {
+    "name": "Interview Match",
+    "slug": "interview-match",
+    "motif": "Đối thoại hai chiều",
+    "accent": "#af6710",
+    "darkAccent": "#ffd08d",
+    "core": {
+      "cobalt": "#085dc5",
+      "fold": "#353389",
+      "indigo": "#211e55"
+    }
+  },
+  {
+    "name": "Salary Match",
+    "slug": "salary-match",
+    "motif": "Dải tăng trưởng",
+    "accent": "#087e9c",
+    "darkAccent": "#62d8ef",
+    "core": {
+      "cobalt": "#085dc5",
+      "fold": "#353389",
+      "indigo": "#211e55"
+    }
+  },
+  {
+    "name": "Talent Match",
+    "slug": "talent-match",
+    "motif": "Kết nối đội ngũ",
+    "accent": "#3f5eab",
+    "darkAccent": "#a9c0ff",
+    "core": {
+      "cobalt": "#085dc5",
+      "fold": "#353389",
+      "indigo": "#211e55"
+    }
+  }
+]

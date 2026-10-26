@@ -102,6 +102,9 @@ def generate_content(
     config: Any = None,
     api_keys: Iterable[str] | None = None,
 ) -> str:
+    if getattr(get_settings(), "ai_provider", "gemini") == "ollama":
+        from app.services.ollama_service import generate_content as generate_local
+        return generate_local(model, contents, config)
     if genai is None:
         raise HTTPException(status_code=500, detail="Google GenAI SDK is not installed on server")
 
@@ -151,6 +154,13 @@ def embed_text(
     title: str = "none",
     output_dimensionality: int | None = None,
 ) -> List[float]:
+    if getattr(get_settings(), "ai_provider", "gemini") == "ollama":
+        from app.services.ollama_service import embed_text as embed_local
+        vector = embed_local(text, task=task)
+        expected = output_dimensionality or get_settings().gemini_embedding_dimension
+        if len(vector) != expected:
+            raise ValueError(f"Local embedding dimension mismatch: expected {expected}, received {len(vector)}")
+        return vector
     if genai is None:
         raise HTTPException(status_code=500, detail="Google GenAI SDK is not installed on server")
 

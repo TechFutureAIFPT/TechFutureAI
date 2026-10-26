@@ -62,6 +62,9 @@ def _ocr_image_bytes(
     api_keys: Iterable[str] | None = None,
 ) -> str:
     settings = get_settings()
+    if getattr(settings, "ai_provider", "gemini") == "ollama":
+        from app.services.local_ocr_service import extract_image
+        return extract_image(image_bytes)
     response = generate_content(
         settings.gemini_default_model,
         [

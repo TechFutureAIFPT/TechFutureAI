@@ -1,0 +1,3 @@
+-r requirements.txt
+cryptography>=44,<50
+rapidocr-onnxruntime>=1.4,<2

@@ -65,7 +65,8 @@ import { InterviewModal } from "@/components/dashboard/modals/interview-modal";
 import { EmailModal } from "@/components/dashboard/modals/email-modal";
 import { toast } from "sonner";
 import { ai, files } from "@/lib/api-endpoints";
-import { mapAnalysisResult } from "@/lib/mappers";
+import { criterionPercentage, mapAnalysisResult } from "@/lib/mappers";
+import { GoogleDrivePicker } from "./google-drive-picker";
 
 export function MatchWorkflowSection() {
   const {
@@ -110,6 +111,7 @@ export function MatchWorkflowSection() {
   const [isLiveRunning, setIsLiveRunning] = useState(false);
   const [liveProgress, setLiveProgress] = useState(0);
   const [liveLogs, setLiveLogs] = useState<string[]>([]);
+  const [liveError, setLiveError] = useState<string | null>(null);
 
   // Sub-weights state
   const [subWeights, setSubWeights] = useState<WorkflowSubWeights>(
@@ -176,7 +178,7 @@ export function MatchWorkflowSection() {
         toast.dismiss(toastId);
       }
     } catch {
-      toast.info("Đã tối ưu hóa định dạng JD cục bộ", { id: toastId });
+      toast.error("Chưa chuẩn hóa được mô tả công việc. Vui lòng kiểm tra kết nối model và thử lại.", { id: toastId });
     } finally {
       setIsStructuringJd(false);
     }
@@ -216,22 +218,22 @@ export function MatchWorkflowSection() {
     try {
       const res = await ai.suggestHardFilters(jdContentInput || jdTitleInput);
       if (res && res.filters) {
-        const f = res.filters as any;
+        const f = res.filters;
         setWorkflowHardFilters({
-          minExp: Number(f.minExp || f.min_exp || 2),
-          education: f.education || "Bachelor",
-          location: f.location || "TP. Hồ Chí Minh",
-          seniority: f.seniority || "Senior",
-          languageLevel: f.languageLevel || "B2",
-          workFormat: f.workFormat || "Hybrid",
-          contractType: f.contractType || "Full-time",
+          minExp: Number(f.minExp ?? f.min_exp ?? 0),
+          education: String(f.education ?? ""),
+          location: String(f.location ?? ""),
+          seniority: String(f.seniority ?? ""),
+          languageLevel: String(f.languageLevel ?? ""),
+          workFormat: String(f.workFormat ?? ""),
+          contractType: String(f.contractType ?? ""),
         });
         toast.success("Đã nạp các tiêu chí cứng được AI đề xuất!", { id: toastId });
       } else {
         toast.dismiss(toastId);
       }
     } catch {
-      toast.info("Đã áp dụng bộ tiêu chí cứng chuẩn cho vị trí", { id: toastId });
+      toast.error("Chưa trích xuất được điều kiện từ JD. Các thiết lập hiện tại được giữ nguyên.", { id: toastId });
     } finally {
       setIsSuggestingFilters(false);
     }
@@ -241,9 +243,16 @@ export function MatchWorkflowSection() {
   const handleRealFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const filesList = e.target.files;
     if (!filesList || filesList.length === 0) return;
+    if (workflow.uploadedFiles.length + filesList.length > 20) {
+      toast.error("Mỗi phiên phân tích hỗ trợ tối đa 20 hồ sơ. Vui lòng chia thành nhiều phiên.");
+      e.target.value = "";
+      return;
+    }
 
     setIsExtractingFiles(true);
     const toastId = toast.loading(`Đang trích xuất ${filesList.length} tệp hồ sơ (OCR: ${workflow.enableOCR ? "Bật" : "Tắt"})...`);
+    let extractedCount = 0;
+    const failedFiles: string[] = [];
 
     for (let i = 0; i < filesList.length; i++) {
       const file = filesList[i];
@@ -252,65 +261,63 @@ export function MatchWorkflowSection() {
 
       try {
         const extracted = await files.extractText(file, { forceOcr: workflow.enableOCR });
+        if (!extracted.extracted_text?.trim()) throw new Error("Không trích xuất được văn bản từ tệp.");
         addWorkflowFile({
           name: file.name,
           size: sizeStr,
           type: ext,
-          rawText: extracted.extracted_text || `${file.name} - Hồ sơ ứng viên đã trích xuất thành công.`,
+          rawText: extracted.extracted_text,
         });
+        extractedCount++;
       } catch {
-        addWorkflowFile({
-          name: file.name,
-          size: sizeStr,
-          type: ext,
-          rawText: `${file.name} - Ứng viên nhiều năm kinh nghiệm, có kỹ năng và thành tích phù hợp vị trí ${workflow.jdTitle}.`,
-        });
+        failedFiles.push(file.name);
       }
     }
     setIsExtractingFiles(false);
-    toast.success(`Đã nạp ${filesList.length} hồ sơ sẵn sàng cho bước phân tích!`, { id: toastId });
+    if (failedFiles.length) {
+      toast.error(`Đã trích xuất ${extractedCount}/${filesList.length} tệp. Không thể đọc: ${failedFiles.join(", ")}. Hãy kiểm tra tệp hoặc thử lại.`, { id: toastId });
+    } else {
+      toast.success(`Đã trích xuất ${extractedCount} hồ sơ.`, { id: toastId });
+    }
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   // Radar data for top 2 candidates
-  const topTwo = candidates.slice(0, 2);
+  const topTwo = [...candidates].sort((left, right) => right.matchScore - left.matchScore).slice(0, 2);
   const radarData = [
     {
       subject: "Kỹ năng (Skills)",
-      A: topTwo[0]?.criteriaScores?.skills || 94,
-      B: topTwo[1]?.criteriaScores?.skills || 90,
+      A: topTwo[0]?.criteriaScores?.skills ?? 0,
+      B: topTwo[1]?.criteriaScores?.skills ?? 0,
       fullMark: 100,
     },
     {
       subject: "Kinh nghiệm (Exp)",
-      A: topTwo[0]?.criteriaScores?.experience || 90,
-      B: topTwo[1]?.criteriaScores?.experience || 82,
+      A: topTwo[0]?.criteriaScores?.experience ?? 0,
+      B: topTwo[1]?.criteriaScores?.experience ?? 0,
       fullMark: 100,
     },
     {
       subject: "Học vấn (Edu)",
-      A: topTwo[0]?.criteriaScores?.education || 88,
-      B: topTwo[1]?.criteriaScores?.education || 90,
+      A: topTwo[0]?.criteriaScores?.education ?? 0,
+      B: topTwo[1]?.criteriaScores?.education ?? 0,
       fullMark: 100,
     },
     {
       subject: "Kỹ năng mềm (Soft)",
-      A: topTwo[0]?.criteriaScores?.softSkills || 92,
-      B: topTwo[1]?.criteriaScores?.softSkills || 85,
+      A: topTwo[0]?.criteriaScores?.softSkills ?? 0,
+      B: topTwo[1]?.criteriaScores?.softSkills ?? 0,
       fullMark: 100,
     },
   ];
 
   const handleSaveStep1 = () => {
-    if (!jdTitleInput.trim()) {
-      toast.error("Vui lòng nhập tên vị trí JD");
+    if (!jdTitleInput.trim() || !jdContentInput.trim()) {
+      toast.error("Vui lòng nhập tên vị trí và nội dung mô tả công việc.");
       return;
     }
     const lines = jdContentInput.split("\n").filter((l) => l.trim().startsWith("-"));
-    const reqs = lines.length > 0 ? lines.map((l) => l.replace(/^-\s*/, "")) : [
-      "Thành thạo các kỹ năng chuyên môn yêu cầu",
-      "Kinh nghiệm làm việc thực chiến trong dự án",
-    ];
+    const reqs = lines.length > 0 ? lines.map((l) => l.replace(/^-\s*/, "")) : jdContentInput.split("\n").map((line) => line.trim()).filter(Boolean);
 
     setWorkflowJD({
       title: jdTitleInput,
@@ -336,6 +343,11 @@ export function MatchWorkflowSection() {
   };
 
   const handleStartRealAnalysisJob = async () => {
+    if (isExtractingFiles || !workflow.uploadedFiles.length || workflow.uploadedFiles.some((file) => !file.rawText?.trim())) {
+      toast.error("Cần ít nhất một hồ sơ đã trích xuất văn bản trước khi phân tích.");
+      return;
+    }
+    setLiveError(null);
     setWorkflowStep(4);
     setIsLiveRunning(true);
     setLiveProgress(10);
@@ -348,9 +360,9 @@ export function MatchWorkflowSection() {
 
     try {
       // Build CoreCvAnalysisRequest payload
-      const cvEntries = workflow.uploadedFiles.map((f, idx) => ({
+      const cvEntries = workflow.uploadedFiles.map((f) => ({
         file_name: f.name,
-        text: f.rawText || `${f.name} - Ứng viên chuyên môn cao đáp ứng yêu cầu ${workflow.jdTitle}`,
+        text: f.rawText!,
         cv_id: f.id,
       }));
 
@@ -388,20 +400,34 @@ export function MatchWorkflowSection() {
       if (jobAccepted && jobAccepted.job_id) {
         setJobId(jobAccepted.job_id);
         logs.push(`[00:03] Job ID khởi tạo thành công: ${jobAccepted.job_id} (Status: ${jobAccepted.status})`);
-        logs.push(`[00:04] Đang thực hiện phân tích vector nhúng ngữ nghĩa trên máy chủ...`);
+        logs.push(`[00:04] Máy chủ đang đối chiếu hồ sơ theo tiêu chí đánh giá...`);
         setLiveLogs([...logs]);
         setLiveProgress(45);
 
         // Poll job status
         let attempts = 0;
+        let polling = false;
+        let failures = 0;
         const interval = setInterval(async () => {
+          if (polling) return;
+          polling = true;
           attempts++;
           try {
+            if (attempts > 400) throw new Error("Hết thời gian chờ kết quả.");
             const statusRes = await ai.analysisStatus(jobAccepted.job_id);
-            setLiveProgress(Math.min(95, 45 + attempts * 15));
+            failures = 0;
+            const progress = Number(statusRes.progress) || 0;
+            setLiveProgress(Math.min(95, Math.max(10, progress <= 1 ? progress * 100 : progress)));
 
             if (statusRes.status === "completed") {
               clearInterval(interval);
+              if (!statusRes.result?.candidates?.length) {
+                const message = "Máy chủ hoàn tất nhưng chưa trả về kết quả ứng viên hợp lệ.";
+                setLiveError(message);
+                setIsLiveRunning(false);
+                toast.error(message, { id: toastId });
+                return;
+              }
               logs.push(`[00:06] Hoàn tất chấm điểm toàn bộ ${cvEntries.length} hồ sơ ứng viên!`);
               logs.push(`[00:07] Nhận ma trận đối sánh, điểm mạnh, điểm yếu và câu hỏi phỏng vấn.`);
               setLiveLogs([...logs]);
@@ -414,26 +440,26 @@ export function MatchWorkflowSection() {
                   const realCands: import("@/lib/mock-data").Candidate[] = mapped.candidates.map((c, idx) => ({
                     id: `cand-ai-${Date.now()}-${idx}`,
                     name: c.candidateName || `Ứng viên #${idx + 1}`,
-                    email: c.email || "ungvien@gmail.com",
-                    phone: c.phone || "0900000000",
+                    email: c.email || "",
+                    phone: c.phone || "",
                     jobTarget: workflow.jdTitle,
-                    matchScore: c.hrSummary.tong_diem_phu_hop || c.analysis.total_score || 85,
-                    stage: ((c.hrSummary.tong_diem_phu_hop || c.analysis.total_score || 85) >= 75 ? "qualified" : "screening"),
+                    matchScore: c.hrSummary.tong_diem_phu_hop ?? c.analysis.total_score ?? 0,
+                    stage: ((c.hrSummary.tong_diem_phu_hop ?? c.analysis.total_score ?? 0) >= 75 ? "qualified" : "screening"),
                     status: (c.hardFilterFailureReason ? "rejected" : "active"),
                     skills: c.hrSummary.danh_gia_ky_nang.map((s) => s.ten_ky_nang) || ["Chuyên môn", "Kỹ năng"],
-                    experienceYears: parseInt(c.hrSummary.kinh_nghiem.so_nam_thuc_te, 10) || 4,
-                    education: c.experienceLevel || "Đại học chính quy",
-                    location: c.detectedLocation || "TP. Hồ Chí Minh",
-                    expectedSalary: 35000000,
+                    experienceYears: parseFloat(c.hrSummary.kinh_nghiem.so_nam_thuc_te) || 0,
+                    education: "Chưa xác định",
+                    location: c.detectedLocation || "Chưa xác định",
+                    expectedSalary: 0,
                     appliedDate: "Hôm nay",
                     recruiter: "Chuyên viên Tuyển dụng",
                     resumeUrl: "#",
-                    aiSummary: c.hrSummary.nhan_xet_tong_quan || "Ứng viên đạt yêu cầu chuyên môn",
+                    aiSummary: c.hrSummary.nhan_xet_tong_quan || "Chưa có nhận xét tổng quan.",
                     criteriaScores: {
-                      skills: c.hrSummary.tong_diem_phu_hop || 90,
-                      experience: Math.min(100, (c.hrSummary.tong_diem_phu_hop || 85) - 5),
-                      education: 88,
-                      softSkills: 85,
+                      skills: criterionPercentage(c.analysis.details, "Kỹ năng chuyên môn"),
+                      experience: criterionPercentage(c.analysis.details, "Kinh nghiệm"),
+                      education: criterionPercentage(c.analysis.details, "Học vấn"),
+                      softSkills: criterionPercentage(c.analysis.details, "Kỹ năng mềm"),
                     },
                     strengths: c.analysis.strengths || [],
                     weaknesses: c.analysis.weaknesses || [],
@@ -450,45 +476,40 @@ export function MatchWorkflowSection() {
               logs.push(`[!] Lỗi từ máy chủ: ${statusRes.error || "Không thể hoàn thành job"}`);
               setLiveLogs([...logs]);
               setIsLiveRunning(false);
-              setWorkflowStep(5);
-              toast.dismiss(toastId);
+              setLiveError(statusRes.error || "Không thể hoàn thành phiên phân tích.");
+              toast.error(statusRes.error || "Phân tích thất bại. Hãy kiểm tra kết nối và thử lại.", { id: toastId });
             }
           } catch {
-            if (attempts > 3) {
+            failures++;
+            if (failures >= 3) {
               clearInterval(interval);
               setIsLiveRunning(false);
-              setWorkflowStep(5);
-              toast.dismiss(toastId);
+              setLiveError("Mất kết nối khi nhận kết quả. Không thể xác nhận phiên phân tích đã hoàn tất.");
+              toast.error("Không thể nhận kết quả phân tích.", { id: toastId });
             }
+          } finally {
+            polling = false;
           }
         }, 1500);
         return;
       }
-    } catch {
-      // Local fallback execution
-      logs.push(`[00:03] Đang xử lý cục bộ với ma trận đối chiếu ngữ nghĩa...`);
-      logs.push(`[00:04] Áp dụng trọng số Rubric: Kỹ năng (${workflow.weights.role_skills}%), Kinh nghiệm (${workflow.weights.experience}%)...`);
+      throw new Error("Máy chủ chưa xác nhận phiên phân tích.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Không thể kết nối dịch vụ phân tích.";
+      logs.push(`[!] ${message}`);
       setLiveLogs([...logs]);
-      setLiveProgress(65);
-    }
-
-    setTimeout(() => {
-      logs.push(`[00:05] Trích xuất điểm mạnh, điểm yếu và gợi ý câu hỏi phỏng vấn.`);
-      logs.push(`[00:06] Xuất bảng xếp hạng và phân loại ứng viên thành công!`);
-      setLiveLogs([...logs]);
-      setLiveProgress(100);
+      setLiveError(message);
       setIsLiveRunning(false);
-      setWorkflowStep(5);
-      toast.success("Hoàn tất đối chiếu AI! Đã chuyển sang bảng kết quả xếp hạng.", { id: toastId });
-    }, 2000);
+      toast.error(message, { id: toastId });
+    }
   };
 
   const stepsList = [
-    { num: 1, label: "1. Mô Tả Công Việc (JD)", icon: FileText },
-    { num: 2, label: "2. Trọng Số Rubric", icon: Sliders },
-    { num: 3, label: "3. Tải Lên Hồ Sơ (CV)", icon: Upload },
-    { num: 4, label: "4. Chấm Điểm AI", icon: Sparkles },
-    { num: 5, label: "5. Kết Quả & Radar", icon: Award },
+    { num: 1, label: "Mô tả công việc", icon: FileText },
+    { num: 2, label: "Tiêu chí đánh giá", icon: Sliders },
+    { num: 3, label: "Tải hồ sơ", icon: Upload },
+    { num: 4, label: "Phân tích AI", icon: Sparkles },
+    { num: 5, label: "Kết quả đánh giá", icon: Award },
   ];
 
   return (
@@ -504,6 +525,8 @@ export function MatchWorkflowSection() {
             return (
               <button
                 key={step.num}
+                aria-current={isActive ? "step" : undefined}
+                aria-disabled={step.num > workflow.currentStep && workflow.currentStep !== 5}
                 onClick={() => {
                   if (step.num <= workflow.currentStep || workflow.currentStep === 5) {
                     setWorkflowStep(step.num as 1 | 2 | 3 | 4 | 5);
@@ -545,14 +568,14 @@ export function MatchWorkflowSection() {
                   <div>
                     <CardTitle className="text-base font-bold flex items-center gap-2">
                       <FileText className="w-4 h-4 text-sky-600" />
-                      Soạn Thảo Mô Tả Công Việc (JD)
+                      Mô tả công việc
                     </CardTitle>
                     <CardDescription className="text-xs mt-0.5">
-                      Nhập nội dung tiêu chuẩn hoặc sử dụng AI Engine để tự động chuẩn hóa và bóc tách tiêu chí
+                      Nhập mô tả công việc hoặc dùng AI để đề xuất cấu trúc và tiêu chí đánh giá.
                     </CardDescription>
                   </div>
                   <Badge className="bg-sky-50 text-sky-700 border-sky-200 text-xs w-fit">
-                    AI Contract Ready
+                    Thiết lập yêu cầu
                   </Badge>
                 </div>
               </CardHeader>
@@ -561,7 +584,7 @@ export function MatchWorkflowSection() {
                 <div className="p-3 rounded-xl bg-sky-50/60 border border-sky-100 flex flex-wrap items-center gap-2">
                   <span className="text-xs font-bold text-sky-900 flex items-center gap-1 shrink-0">
                     <Sparkles className="w-3.5 h-3.5 text-sky-600" />
-                    Trợ Năng AI:
+                    Hỗ trợ AI:
                   </span>
                   <Button
                     type="button"
@@ -572,7 +595,7 @@ export function MatchWorkflowSection() {
                     className="text-xs h-7 px-2.5 bg-white border-sky-200 text-sky-700 hover:bg-sky-50 font-medium"
                   >
                     {isStructuringJd ? <RefreshCw className="w-3 h-3 animate-spin mr-1 text-sky-600" /> : <Wand2 className="w-3 h-3 mr-1 text-sky-600" />}
-                    AI Chuẩn Hóa Cấu Trúc
+                    Chuẩn hóa nội dung
                   </Button>
                   <Button
                     type="button"
@@ -583,7 +606,7 @@ export function MatchWorkflowSection() {
                     className="text-xs h-7 px-2.5 bg-white border-sky-200 text-sky-700 hover:bg-sky-50 font-medium"
                   >
                     {isDetectingPosition ? <RefreshCw className="w-3 h-3 animate-spin mr-1 text-sky-600" /> : <Briefcase className="w-3 h-3 mr-1 text-sky-600" />}
-                    Nhận Diện Chức Danh
+                    Nhận diện chức danh
                   </Button>
                   <Button
                     type="button"
@@ -594,13 +617,13 @@ export function MatchWorkflowSection() {
                     className="text-xs h-7 px-2.5 bg-white border-sky-200 text-sky-700 hover:bg-sky-50 font-medium"
                   >
                     {isSuggestingFilters ? <RefreshCw className="w-3 h-3 animate-spin mr-1 text-sky-600" /> : <Filter className="w-3 h-3 mr-1 text-sky-600" />}
-                    Đề Xuất Tiêu Chí Cứng
+                    Đề xuất điều kiện
                   </Button>
                 </div>
 
                 <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="wf-jd-title" className="text-xs font-bold text-slate-800">Tên Vị Trí Tuyển Dụng *</Label>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                    <Label htmlFor="wf-jd-title" className="text-xs font-bold text-slate-800">Tên vị trí tuyển dụng *</Label>
                     <span className="text-[11px] text-muted-foreground">Ví dụ: Senior Frontend React/Next.js Engineer</span>
                   </div>
                   <Input
@@ -613,8 +636,8 @@ export function MatchWorkflowSection() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="wf-jd-content" className="text-xs font-bold text-slate-800">Nội Dung Chi Tiết & Yêu Cầu Kỹ Thuật (JD Text)</Label>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                    <Label htmlFor="wf-jd-content" className="text-xs font-bold text-slate-800">Nội dung & yêu cầu công việc</Label>
                     <span className="text-[11px] text-muted-foreground">Định dạng markdown hoặc văn bản thuần</span>
                   </div>
                   <Textarea
@@ -627,16 +650,16 @@ export function MatchWorkflowSection() {
                   />
                 </div>
 
-                <div className="flex items-center justify-between pt-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
                   <span className="text-xs text-muted-foreground flex items-center gap-1.5">
                     <ShieldCheck className="w-3.5 h-3.5 text-sky-600" />
-                    AI sẽ tự động trích xuất các từ khóa & tiêu chí cốt lõi
+                    Bạn có thể điều chỉnh nội dung trước khi tiếp tục.
                   </span>
                   <Button
                     onClick={handleSaveStep1}
-                    className="bg-sky-600 text-white hover:bg-sky-700 font-semibold text-xs shadow-xs"
+                    className="bg-primary text-white hover:bg-primary/90 font-semibold text-xs shadow-xs"
                   >
-                    Tiếp Tục: Thiết Lập Trọng Số Rubric
+                    Tiếp tục: Tiêu chí đánh giá
                     <ArrowRight className="w-4 h-4 ml-1.5" />
                   </Button>
                 </div>
@@ -651,14 +674,14 @@ export function MatchWorkflowSection() {
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm font-bold flex items-center gap-1.5 text-slate-900">
                     <Layers className="w-4 h-4 text-sky-600" />
-                    Thư Viện Mẫu JD Chuẩn
+                    Thư viện mô tả công việc
                   </CardTitle>
                   <Badge variant="outline" className="text-[10px] bg-sky-50 text-sky-700 border-sky-200 font-bold">
                     {jdTemplates.length} Mẫu
                   </Badge>
                 </div>
                 <CardDescription className="text-xs">
-                  Chọn 1 click để nạp nhanh mẫu JD tiêu chuẩn
+                  Chọn một mẫu để điều chỉnh theo vị trí cần tuyển.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-2.5 max-h-[480px] overflow-y-auto pr-1 pt-3">
@@ -715,10 +738,10 @@ export function MatchWorkflowSection() {
                     <div>
                       <CardTitle className="text-base font-bold flex items-center gap-2 text-slate-900">
                         <Sliders className="w-4 h-4 text-sky-600" />
-                        Trọng Số Tiêu Chí Chấm Điểm AI (Rubric)
+                        Trọng số tiêu chí đánh giá
                       </CardTitle>
                       <CardDescription className="text-xs mt-0.5">
-                        Chuẩn hóa 6 tiêu chí chấm điểm của Backend AI Engine (Tổng phải bằng 100%)
+                        Điều chỉnh trọng số của 6 nhóm tiêu chí. Tổng trọng số cần bằng 100%.
                       </CardDescription>
                     </div>
 
@@ -750,7 +773,7 @@ export function MatchWorkflowSection() {
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-semibold text-muted-foreground">
-                        Bộ Trọng Số Mẫu:
+                        Bộ tiêu chí mẫu:
                       </span>
                       {userProfile.defaultWeights && (
                         <button
@@ -763,7 +786,7 @@ export function MatchWorkflowSection() {
                           className="text-[11px] font-bold text-sky-700 hover:text-sky-800 flex items-center gap-1 bg-sky-50 px-2 py-0.5 rounded-md border border-sky-200"
                         >
                           <Zap className="w-3 h-3 text-sky-600" />
-                          <span>Áp Dụng Tiêu Chí Mặc Định Của Tôi</span>
+                          <span>Áp dụng tiêu chí đã lưu</span>
                         </button>
                       )}
                     </div>
@@ -774,11 +797,11 @@ export function MatchWorkflowSection() {
                           w: { job_fit: 20, role_skills: 35, experience: 20, impact: 10, education: 5, soft_skills: 10 },
                         },
                         {
-                          name: "Chuyên Sâu Kỹ Năng (15-45-15-10-5-10)",
+                          name: "Chuyên Sâu Kỹ năng (15-45-15-10-5-10)",
                           w: { job_fit: 15, role_skills: 45, experience: 15, impact: 10, education: 5, soft_skills: 10 },
                         },
                         {
-                          name: "Ưu Tiên Kinh Nghiệm (15-25-35-10-5-10)",
+                          name: "Ưu Tiên Kinh nghiệm (15-25-35-10-5-10)",
                           w: { job_fit: 15, role_skills: 25, experience: 35, impact: 10, education: 5, soft_skills: 10 },
                         },
                         {
@@ -809,7 +832,7 @@ export function MatchWorkflowSection() {
                     <div className="space-y-2 bg-white p-3 rounded-xl border border-sky-100/80 shadow-2xs">
                       <div className="flex items-center justify-between text-xs">
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-slate-900">1. Phù Hợp Trực Tiếp Với JD (Job Fit)</span>
+                          <span className="font-bold text-slate-900">1. Phù hợp trực tiếp với JD (Job Fit)</span>
                           <Button
                             type="button"
                             variant="ghost"
@@ -885,7 +908,7 @@ export function MatchWorkflowSection() {
                     <div className="space-y-2 bg-white p-3 rounded-xl border border-sky-100/80 shadow-2xs">
                       <div className="flex items-center justify-between text-xs">
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-slate-900">2. Kỹ Năng Chuyên Môn Theo Vị Trí (Role Skills)</span>
+                          <span className="font-bold text-slate-900">2. Kỹ năng chuyên môn theo vị trí (Role Skills)</span>
                           <Button
                             type="button"
                             variant="ghost"
@@ -974,7 +997,7 @@ export function MatchWorkflowSection() {
                     <div className="space-y-2 bg-white p-3 rounded-xl border border-sky-100/80 shadow-2xs">
                       <div className="flex items-center justify-between text-xs">
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-slate-900">3. Kinh Nghiệm & Mức Độ Sở Hữu (Experience)</span>
+                          <span className="font-bold text-slate-900">3. Kinh nghiệm & mức độ sở hữu (Experience)</span>
                           <Button
                             type="button"
                             variant="ghost"
@@ -1031,7 +1054,7 @@ export function MatchWorkflowSection() {
                           </div>
                           <div className="space-y-1">
                             <div className="flex items-center justify-between text-[11px]">
-                              <span className="text-slate-700">• Kinh nghiệm chuyên ngành / Domain Fit:</span>
+                              <span className="text-slate-700">• Kinh nghiệm chuyên ngành / domain fit:</span>
                               <strong className="text-sky-700">{subWeights.experience.domain_exp}%</strong>
                             </div>
                             <Slider
@@ -1063,7 +1086,7 @@ export function MatchWorkflowSection() {
                     <div className="space-y-2 bg-white p-3 rounded-xl border border-sky-100/80 shadow-2xs">
                       <div className="flex items-center justify-between text-xs">
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-slate-900">4. Dự Án & Kết Quả Định Lượng (Impact)</span>
+                          <span className="font-bold text-slate-900">4. Dự án & kết quả định lượng (Impact)</span>
                           <Button
                             type="button"
                             variant="ghost"
@@ -1107,7 +1130,7 @@ export function MatchWorkflowSection() {
                           </span>
                           <div className="space-y-1">
                             <div className="flex items-center justify-between text-[11px]">
-                              <span className="text-slate-700">• Bằng chứng định lượng & Chỉ số KPI:</span>
+                              <span className="text-slate-700">• Bằng chứng định lượng & chỉ số KPI:</span>
                               <strong className="text-sky-700">{subWeights.impact.quantified_kpis}%</strong>
                             </div>
                             <Slider
@@ -1139,7 +1162,7 @@ export function MatchWorkflowSection() {
                     <div className="space-y-2 bg-white p-3 rounded-xl border border-sky-100/80 shadow-2xs">
                       <div className="flex items-center justify-between text-xs">
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-slate-900">5. Học Vấn & Chứng Chỉ Liên Quan (Education)</span>
+                          <span className="font-bold text-slate-900">5. Học vấn & chứng chỉ liên quan (Education)</span>
                           <Button
                             type="button"
                             variant="ghost"
@@ -1215,7 +1238,7 @@ export function MatchWorkflowSection() {
                     <div className="space-y-2 bg-white p-3 rounded-xl border border-sky-100/80 shadow-2xs">
                       <div className="flex items-center justify-between text-xs">
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-slate-900">6. Kỹ Năng Phối Hợp & Độ Tin Cậy (Soft Skills)</span>
+                          <span className="font-bold text-slate-900">6. Kỹ năng phối hợp & độ tin cậy (Soft Skills)</span>
                           <Button
                             type="button"
                             variant="ghost"
@@ -1297,7 +1320,7 @@ export function MatchWorkflowSection() {
                 <CardHeader className="pb-3 border-b border-border">
                   <CardTitle className="text-base font-bold flex items-center gap-2 text-slate-900">
                     <Filter className="w-4 h-4 text-sky-600" />
-                    Điều Kiện Bắt Buộc (Hard Filters)
+                    Điều kiện bắt buộc
                   </CardTitle>
                   <CardDescription className="text-xs mt-0.5">
                     Gắn cờ loại tự động (Eligibility Exclusion) nếu ứng viên không đáp ứng tiêu chuẩn cứng
@@ -1307,7 +1330,7 @@ export function MatchWorkflowSection() {
                   {/* Min Experience */}
                   <div className="p-3 rounded-xl bg-white border border-sky-100 shadow-2xs space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label className="text-xs font-bold text-slate-900">1. Kinh Nghiệm Tối Thiểu</Label>
+                      <Label className="text-xs font-bold text-slate-900">1. Kinh nghiệm tối thiểu</Label>
                       <div className="flex items-center gap-1.5">
                         <span className="text-[11px] text-muted-foreground">Bắt buộc loại:</span>
                         <Switch
@@ -1336,7 +1359,7 @@ export function MatchWorkflowSection() {
                   {/* Education */}
                   <div className="p-3 rounded-xl bg-white border border-sky-100 shadow-2xs space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label className="text-xs font-bold text-slate-900">2. Trình Độ Học Vấn</Label>
+                      <Label className="text-xs font-bold text-slate-900">2. Trình độ học vấn</Label>
                       <div className="flex items-center gap-1.5">
                         <span className="text-[11px] text-muted-foreground">Bắt buộc:</span>
                         <Switch
@@ -1367,7 +1390,7 @@ export function MatchWorkflowSection() {
                   {/* Location */}
                   <div className="p-3 rounded-xl bg-white border border-sky-100 shadow-2xs space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label className="text-xs font-bold text-slate-900">3. Địa Điểm Làm Việc</Label>
+                      <Label className="text-xs font-bold text-slate-900">3. Địa điểm làm việc</Label>
                       <div className="flex items-center gap-1.5">
                         <span className="text-[11px] text-muted-foreground">Bắt buộc:</span>
                         <Switch
@@ -1389,7 +1412,7 @@ export function MatchWorkflowSection() {
                   {/* Seniority & Language */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
-                      <Label className="text-[11px] font-bold text-slate-900">4. Cấp Độ Vị Trí</Label>
+                      <Label className="text-[11px] font-bold text-slate-900">4. Cấp độ vị trí</Label>
                       <Select
                         value={workflow.hardFilters.seniority}
                         onValueChange={(val) => setWorkflowHardFilters({ seniority: val })}
@@ -1408,7 +1431,7 @@ export function MatchWorkflowSection() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label className="text-[11px] font-bold text-slate-900">5. Ngoại Ngữ Yêu Cầu</Label>
+                      <Label className="text-[11px] font-bold text-slate-900">5. Ngoại ngữ yêu cầu</Label>
                       <Select
                         value={workflow.hardFilters.languageLevel}
                         onValueChange={(val) => setWorkflowHardFilters({ languageLevel: val })}
@@ -1417,10 +1440,10 @@ export function MatchWorkflowSection() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="B1">Tiếng Anh - B1 (Giao tiếp)</SelectItem>
-                          <SelectItem value="B2">Tiếng Anh - B2 (Độc lập)</SelectItem>
-                          <SelectItem value="C1">Tiếng Anh - C1 (Chuyên sâu)</SelectItem>
-                          <SelectItem value="C2">Tiếng Anh - C2 (Bản ngữ)</SelectItem>
+                          <SelectItem value="B1">Tiếng anh - b1 (giao tiếp)</SelectItem>
+                          <SelectItem value="B2">Tiếng anh - B2 (độc lập)</SelectItem>
+                          <SelectItem value="C1">Tiếng anh - c1 (chuyên sâu)</SelectItem>
+                          <SelectItem value="C2">Tiếng anh - c2 (bản ngữ)</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -1429,7 +1452,7 @@ export function MatchWorkflowSection() {
                   {/* Work Format & Contract */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
-                      <Label className="text-[11px] font-bold text-slate-900">6. Hình Thức Làm Việc</Label>
+                      <Label className="text-[11px] font-bold text-slate-900">6. Hình thức làm việc</Label>
                       <Select
                         value={workflow.hardFilters.workFormat}
                         onValueChange={(val) => setWorkflowHardFilters({ workFormat: val })}
@@ -1446,7 +1469,7 @@ export function MatchWorkflowSection() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label className="text-[11px] font-bold text-slate-900">7. Loại Hợp Đồng</Label>
+                      <Label className="text-[11px] font-bold text-slate-900">7. Loại hợp đồng</Label>
                       <Select
                         value={workflow.hardFilters.contractType}
                         onValueChange={(val) => setWorkflowHardFilters({ contractType: val })}
@@ -1468,7 +1491,7 @@ export function MatchWorkflowSection() {
                   <div className="p-3 rounded-xl bg-sky-50 border border-sky-100 flex items-start gap-2 text-xs text-foreground">
                     <ShieldCheck className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
                     <p className="text-[11px] leading-relaxed text-sky-900">
-                      <strong className="text-slate-900">Nguyên tắc chuẩn Backend:</strong> Điều kiện bắt buộc chỉ quyết định điều kiện hợp lệ (Eligibility). Ứng viên không đạt vẫn được AI chấm điểm để tham khảo nhưng sẽ gắn nhãn bị loại.
+                      <strong className="text-slate-900">Cách áp dụng điều kiện bắt buộc:</strong> Hồ sơ không đáp ứng điều kiện bắt buộc vẫn có điểm tham khảo và được đánh dấu để bạn xem xét.
                     </p>
                   </div>
                 </CardContent>
@@ -1484,13 +1507,13 @@ export function MatchWorkflowSection() {
               </div>
               <div className="text-xs">
                 <p className="font-bold text-slate-900 flex items-center gap-1.5">
-                  <span>Lưu Bộ Tiêu Chí & Bộ Lọc Làm Mặc Định Của Tôi</span>
+                  <span>Lưu làm tiêu chí mặc định</span>
                   <Badge className="bg-sky-100 text-sky-800 border-sky-200 text-[10px] font-bold">
-                    Tự Động Áp Dụng
+                    Tự động áp dụng
                   </Badge>
                 </p>
                 <p className="text-muted-foreground text-[11px]">
-                  Lưu thiết lập 6 trọng số Rubric và các điều kiện cứng hiện tại vào tài khoản để dùng lại tự động cho các JD sau mà không cần chỉnh lại.
+                  Lưu thiết lập 6 trọng số rubric và các điều kiện cứng hiện tại vào tài khoản để dùng lại tự động cho các JD sau mà không cần chỉnh lại.
                 </p>
               </div>
             </div>
@@ -1503,7 +1526,7 @@ export function MatchWorkflowSection() {
               className="text-xs font-bold bg-white text-sky-700 border-sky-300 hover:bg-sky-50 shrink-0 shadow-2xs"
             >
               <CheckCircle2 className="w-3.5 h-3.5 mr-1.5 text-sky-600" />
-              <span>💾 Lưu Làm Tiêu Chí Mặc Định</span>
+              <span>Lưu làm tiêu chí mặc định</span>
             </Button>
           </div>
 
@@ -1515,13 +1538,13 @@ export function MatchWorkflowSection() {
               className="text-xs border-border"
             >
               <ArrowLeft className="w-4 h-4 mr-1.5" />
-              Quay Lại Bước 1 (JD)
+              Quay lại bước 1 (JD)
             </Button>
             <Button
               onClick={() => setWorkflowStep(3)}
               className="bg-sky-600 text-white hover:bg-sky-700 text-xs font-bold shadow-xs px-5"
             >
-              Tiếp Tục: Tải Lên Hồ Sơ (CV)
+              Tiếp tục: tải lên hồ sơ (CV)
               <ArrowRight className="w-4 h-4 ml-1.5" />
             </Button>
           </div>
@@ -1537,7 +1560,7 @@ export function MatchWorkflowSection() {
             ref={fileInputRef}
             onChange={handleRealFileUpload}
             multiple
-            accept=".pdf,.docx,.doc,.png,.jpg,.jpeg,.txt"
+            accept=".pdf,.docx,.png,.jpg,.jpeg,.txt"
             className="hidden"
           />
 
@@ -1547,10 +1570,10 @@ export function MatchWorkflowSection() {
                 <div>
                   <CardTitle className="text-base font-bold flex items-center gap-2 text-slate-900">
                     <Upload className="w-4 h-4 text-sky-600" />
-                    Tải Lên Danh Sách Hồ Sơ Ứng Viên (Batch Upload)
+                    Tải hồ sơ ứng viên
                   </CardTitle>
                   <CardDescription className="text-xs mt-0.5">
-                    Hỗ trợ tệp PDF, Word (.docx) hoặc ảnh quét hồ sơ (PNG, JPG) kèm trích xuất OCR tự động
+                    Hỗ trợ tệp PDF, word (.DOCX) hoặc ảnh quét hồ sơ (PNG, JPG) kèm trích xuất OCR tự động
                   </CardDescription>
                 </div>
                 <div className="flex items-center gap-3">
@@ -1565,6 +1588,12 @@ export function MatchWorkflowSection() {
               </div>
             </CardHeader>
             <CardContent className="space-y-6 pt-4">
+              <div className="flex justify-end">
+                <GoogleDrivePicker forceOcr={workflow.enableOCR} disabled={isExtractingFiles || isLiveRunning || workflow.uploadedFiles.length >= 20} onImport={(file) => {
+                  addWorkflowFile({ name: file.fileName, size: `${(file.fileSize / 1048576).toFixed(1)} MB`, type: file.fileName.split(".").pop()?.toUpperCase() || "DRIVE", rawText: file.extractedText });
+                  toast.success(`Đã nhập hồ sơ ${file.fileName} từ Google Drive.`);
+                }} />
+              </div>
               {/* Drag and Drop Zone with Real File Upload Trigger */}
               <div
                 onClick={() => fileInputRef.current?.click()}
@@ -1574,7 +1603,7 @@ export function MatchWorkflowSection() {
                   <Upload className="w-7 h-7" />
                 </div>
                 <p className="font-bold text-sm text-slate-900">
-                  Kéo và thả tệp hồ sơ CV vào đây hoặc bấm để chọn tệp từ máy tính
+                  Bấm để chọn hồ sơ CV từ máy tính
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Đã tải lên {workflow.uploadedFiles.length} tệp hồ sơ sẵn sàng cho phân tích AI
@@ -1586,14 +1615,14 @@ export function MatchWorkflowSection() {
                     className="bg-sky-600 text-white hover:bg-sky-700 text-xs shadow-xs font-semibold"
                   >
                     <Plus className="w-3.5 h-3.5 mr-1" />
-                    Chọn Tệp CV Từ Máy Tính (PDF, DOCX, PNG)
+                    Chọn tệp từ máy tính
                   </Button>
                 </div>
               </div>
 
               {/* Uploaded Files Table */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <h4 className="font-bold text-xs text-muted-foreground uppercase tracking-wider">
                     Danh Sách Tệp Hồ Sơ Chờ Phân Tích ({workflow.uploadedFiles.length})
                   </h4>
@@ -1642,6 +1671,7 @@ export function MatchWorkflowSection() {
                       <Button
                         variant="ghost"
                         size="sm"
+                        aria-label={`Xóa tệp ${file.name}`}
                         onClick={(e) => {
                           e.stopPropagation();
                           removeWorkflowFile(file.id);
@@ -1656,21 +1686,22 @@ export function MatchWorkflowSection() {
               </div>
 
               {/* Navigation Controls */}
-              <div className="flex items-center justify-between pt-4 border-t border-border">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-4 border-t border-border">
                 <Button
                   variant="outline"
                   onClick={() => setWorkflowStep(2)}
-                  className="text-xs border-border"
+                  className="text-xs border-border w-full sm:w-auto"
                 >
                   <ArrowLeft className="w-4 h-4 mr-1.5" />
-                  Quay Lại Bước 2 (Trọng Số Rubric)
+                  Quay lại bước 2 (trọng số rubric)
                 </Button>
                 <Button
                   onClick={handleStartRealAnalysisJob}
-                  className="bg-sky-600 text-white hover:bg-sky-700 text-xs font-bold shadow-xs px-5"
+                  disabled={isExtractingFiles || isLiveRunning || workflow.uploadedFiles.length === 0}
+                  className="bg-sky-600 text-white hover:bg-sky-700 text-xs font-bold shadow-xs px-5 w-full sm:w-auto"
                 >
                   <Sparkles className="w-4 h-4 mr-1.5" />
-                  Bắt Đầu Phân Tích & Chấm Điểm AI
+                  Bắt đầu phân tích & chấm điểm AI
                 </Button>
               </div>
             </CardContent>
@@ -1687,10 +1718,10 @@ export function MatchWorkflowSection() {
               <Sparkles className="w-7 h-7" />
             </div>
             <CardTitle className="text-lg font-bold text-slate-900">
-              Đang Tiến Hành Phân Tích & Chấm Điểm Bằng AI
+              {liveError ? "Chưa thể hoàn tất phân tích" : "Đang tiến hành phân tích & chấm điểm bằng AI"}
             </CardTitle>
             <CardDescription className="text-xs">
-              Mô hình AI đang đối chiếu ngữ nghĩa, tính toán trọng số và trích xuất điểm mạnh ứng viên
+              {liveError || "Mô hình AI đang đối chiếu hồ sơ theo trọng số và tiêu chí đã chọn."}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6 max-w-xl mx-auto py-4">
@@ -1721,10 +1752,11 @@ export function MatchWorkflowSection() {
             <div className="text-center pt-2">
               <Button
                 size="sm"
-                onClick={() => setWorkflowStep(5)}
+                disabled={isLiveRunning}
+                onClick={() => setWorkflowStep(liveError ? 3 : 5)}
                 className="bg-sky-600 text-white hover:bg-sky-700 text-xs font-semibold shadow-xs"
               >
-                Xem Kết Quả Xếp Hạng &rarr;
+                {liveError ? "Quay lại hồ sơ để thử lại" : "Xem kết quả xếp hạng →"}
               </Button>
             </div>
           </CardContent>
@@ -1739,7 +1771,7 @@ export function MatchWorkflowSection() {
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-bold text-slate-900">
-                  Kết Quả Xếp Hạng & Đánh Giá Chi Tiết AI
+                  Kết quả xếp hạng & đánh giá chi tiết AI
                 </h2>
                 <Badge className="bg-sky-50 text-sky-700 border-sky-200 text-xs font-bold">
                   Hoàn Tất
@@ -1758,7 +1790,7 @@ export function MatchWorkflowSection() {
                 className="border-border text-xs"
               >
                 <RefreshCw className="w-3.5 h-3.5 mr-1 text-sky-600" />
-                Chạy Đợt Mới
+                Chạy đợt mới
               </Button>
               <Button
                 size="sm"
@@ -1766,7 +1798,7 @@ export function MatchWorkflowSection() {
                 className="bg-sky-600 text-white hover:bg-sky-700 text-xs shadow-xs font-bold"
               >
                 <Download className="w-3.5 h-3.5 mr-1" />
-                Xuất Báo Cáo Excel
+                Xuất báo cáo excel
               </Button>
             </div>
           </div>
@@ -1778,7 +1810,7 @@ export function MatchWorkflowSection() {
               <CardHeader className="pb-2 border-b border-border">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base font-bold text-slate-900">
-                    Biểu Đồ Radar So Sánh Top 2 Ứng Viên Dẫn Đầu
+                    Biểu đồ radar so sánh top 2 ứng viên dẫn đầu
                   </CardTitle>
                   <div className="flex items-center gap-3 text-xs">
                     <span className="flex items-center gap-1 font-semibold text-sky-700">
@@ -1843,7 +1875,7 @@ export function MatchWorkflowSection() {
               <Card className="border-border bg-card shadow-xs">
                 <CardContent className="p-5 space-y-3">
                   <h3 className="font-bold text-sm text-slate-900">
-                    Tổng Quan Đợt Tuyển Dụng
+                    Tổng quan phiên đánh giá
                   </h3>
                   <div className="space-y-2 text-xs">
                     <div className="flex items-center justify-between p-2 rounded-lg bg-sky-50/50 border border-sky-100">
@@ -1858,7 +1890,7 @@ export function MatchWorkflowSection() {
                     </div>
                     <div className="flex items-center justify-between p-2 rounded-lg bg-sky-50/50 border border-sky-100">
                       <span className="text-muted-foreground">Điểm Match cao nhất:</span>
-                      <span className="font-bold text-sky-700">95% (Phạm Thảo Linh)</span>
+                      <span className="font-bold text-sky-700">{candidates.length ? `${Math.max(...candidates.map((candidate) => candidate.matchScore))}/100` : "Chưa có kết quả"}</span>
                     </div>
                   </div>
                   <Button
@@ -1870,7 +1902,7 @@ export function MatchWorkflowSection() {
                     className="w-full bg-sky-600 text-white hover:bg-sky-700 text-xs mt-2 font-semibold shadow-xs"
                   >
                     <Calendar className="w-3.5 h-3.5 mr-1" />
-                    Lên Lịch Phỏng Vấn Top 1
+                    Lên lịch phỏng vấn top 1
                   </Button>
                 </CardContent>
               </Card>
@@ -1881,7 +1913,7 @@ export function MatchWorkflowSection() {
           <Card className="border-border bg-card shadow-xs overflow-hidden">
             <CardHeader className="pb-3 border-b border-border bg-sky-50/30">
               <CardTitle className="text-base font-bold text-slate-900">
-                Bảng Xếp Hạng Ứng Viên Theo Điểm Match AI
+                Bảng xếp hạng ứng viên theo điểm phù hợp
               </CardTitle>
             </CardHeader>
             <div className="overflow-x-auto">
@@ -1889,12 +1921,12 @@ export function MatchWorkflowSection() {
                 <thead className="bg-sky-50/60 border-b border-border text-slate-700 uppercase tracking-wider font-semibold">
                   <tr>
                     <th className="py-3 px-4">Hạng</th>
-                    <th className="py-3 px-4">Ứng Viên</th>
-                    <th className="py-3 px-4">Điểm Match AI</th>
-                    <th className="py-3 px-4">Kinh Nghiệm</th>
-                    <th className="py-3 px-4">Lương Kỳ Vọng</th>
-                    <th className="py-3 px-4">Tóm Tắt Đánh Giá AI</th>
-                    <th className="py-3 px-4 text-right">Thao Tác</th>
+                    <th className="py-3 px-4">Ứng viên</th>
+                    <th className="py-3 px-4">Điểm phù hợp</th>
+                    <th className="py-3 px-4">Kinh nghiệm</th>
+                    <th className="py-3 px-4">Lương kỳ vọng</th>
+                    <th className="py-3 px-4">Tóm tắt phân tích AI</th>
+                    <th className="py-3 px-4 text-right">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">

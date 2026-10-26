@@ -17,12 +17,16 @@ from app.integrations import redis_cache
 from app.services.local_classifier_service import get_classifier_status, warm_classifier
 from app.services.security_service import apply_request_rate_limits, log_audit_event, resolve_client_ip
 from app.utils.text_normalization import normalize_payload_text
+from app.api.routes.local_auth import router as local_auth_router
+from app.api.routes.local_ai_control import router as local_ai_control_router
 
 
 settings = get_settings()
 
 
 def _build_allowed_origins() -> list[str]:
+    if settings.auth_provider == "sql":
+        return sorted({value.rstrip("/") for value in [settings.frontend_origin, *settings.google_drive_allowed_origins] if value})
     origins = {
         "http://localhost:3000",
         "http://localhost:8081",
@@ -57,6 +61,9 @@ def verify_runtime_artifacts() -> None:
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     verify_runtime_artifacts()
+    if settings.data_provider == "sqlite":
+        from app.integrations.sqlite_documents import get_sqlite_client
+        get_sqlite_client()
     try:
         yield
     finally:
@@ -73,6 +80,10 @@ async def audit_and_guard_requests(request: Request, call_next):
     request.state.cache_status = getattr(request.state, "cache_status", "bypass")
 
     try:
+        if settings.auth_provider == "sql" and request.method in {"POST", "PUT", "PATCH", "DELETE"}:
+            origin = request.headers.get("origin")
+            if origin and (origin.rstrip("/") not in {value.rstrip("/") for value in _build_allowed_origins()} or request.headers.get("x-requested-with") != "AI-Match-Local"):
+                raise HTTPException(403, "Nguồn yêu cầu local không hợp lệ.")
         if settings.maintenance_mode and request.method.upper() in {"POST", "PUT", "PATCH", "DELETE"}:
             raise HTTPException(status_code=503, detail="SupportHR is temporarily read-only for data migration.")
         # redis-py is synchronous; keep its network I/O off the event loop.
@@ -158,6 +169,8 @@ api_app.include_router(files_router)
 api_app.include_router(account_router)
 api_app.include_router(mobile_jd_router)
 api_app.include_router(salary_router)
+api_app.include_router(local_auth_router)
+api_app.include_router(local_ai_control_router)
 
 
 def _readiness_payload() -> dict[str, object]:
@@ -173,7 +186,7 @@ def _readiness_payload() -> dict[str, object]:
 
     firestore_is_ready = firestore_ready()
     if not firestore_is_ready:
-        raise HTTPException(status_code=503, detail="Firebase Firestore is not ready")
+        raise HTTPException(status_code=503, detail=f"Data provider {settings.data_provider} is not ready")
     return {
         "status": "ok",
         "classifier": {
@@ -186,8 +199,10 @@ def _readiness_payload() -> dict[str, object]:
             "redisReady": redis_ready,
         },
         "data": {
-            "provider": "firebase",
-            "firestoreReady": firestore_is_ready,
+            "provider": settings.data_provider,
+            "ready": firestore_is_ready,
+            "firestoreReady": firestore_is_ready if settings.data_provider == "firebase" else False,
+            "sqlReady": firestore_is_ready if settings.data_provider == "sqlite" else False,
         },
     }
 
@@ -210,12 +225,12 @@ def health() -> dict[str, object]:
 app = CORSMiddleware(
     api_app,
     allow_origins=_build_allowed_origins(),
-    allow_origin_regex=r"^(https?://(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3})(:\d+)?|https://.*\.vercel\.app|https://.*\.netlify\.app|https://.*\.railway\.app|https://.*\.up\.railway\.app|https://.*\.onrender\.com|https://.*\.koyeb\.app|https://(www\.)?aimatching\.com\.vn|https://(www\.)?supporthr-tf\.com\.vn)$",
+    allow_origin_regex=None if settings.auth_provider == "sql" else r"^(https?://(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3})(:\d+)?|https://.*\.vercel\.app|https://.*\.netlify\.app|https://.*\.railway\.app|https://.*\.up\.railway\.app|https://.*\.onrender\.com|https://.*\.koyeb\.app|https://(www\.)?aimatching\.com\.vn|https://(www\.)?supporthr-tf\.com\.vn)$",
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=[
         "Authorization", "Content-Type", "If-None-Match", "If-Match",
-        "X-Firebase-AppCheck", "X-Request-Id",
+        "X-Firebase-AppCheck", "X-Request-Id", "X-Requested-With",
     ],
     expose_headers=[
         "ETag", "X-Data-Revision", "X-Generated-At", "X-Cache-Status",

@@ -1542,7 +1542,7 @@ export const initialEmailTemplates: EmailTemplateItem[] = [
     id: "tpl-1",
     title: "Thư Mời Phỏng Vấn Kỹ Thuật (Interview Invitation)",
     type: "invite",
-    subject: "Thư Mời Tham Gia Phỏng Vấn Tuyển Dụng Vị Trí {{job}} - Support HR",
+    subject: "Thư Mời Tham Gia Phỏng Vấn Tuyển Dụng Vị Trí {{job}} - AI Match",
     body: `Chào {{name}},\n\nCảm ơn bạn đã quan tâm và nộp hồ sơ ứng tuyển vị trí {{job}} tại công ty chúng tôi.\n\nSau khi đối chiếu hồ sơ với các tiêu chuẩn chuyên môn, Ban Tuyển Dụng đánh giá hồ sơ của bạn đạt mức tương thích xuất sắc ({{score}}%). Chúng tôi trân trọng mời bạn tham dự buổi phỏng vấn kỹ thuật trực tuyến:\n\n• Thời gian: {{time}} ngày {{date}}\n• Hình thức: Trực tuyến qua Google Meet\n• Link phòng họp: {{link}}\n• Người phỏng vấn: {{interviewers}}\n\nVui lòng phản hồi lại email này để xác nhận lịch hẹn. Chúc bạn có một buổi phỏng vấn thành công!\n\nTrân trọng,\nBan Tuyển Dụng & Quản Trị Nhân Sự`,
     description: "Mẫu thư gửi ứng viên đạt chuẩn để mời tham gia phỏng vấn kỹ thuật hoặc sơ vấn HR",
     lastUpdated: "2026-08-20",

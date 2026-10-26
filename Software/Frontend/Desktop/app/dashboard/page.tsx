@@ -1,39 +1,52 @@
 "use client";
 
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSalesOps, type Section } from "@/lib/sales-ops-context";
+import { canonicalSection, isSection, navigationItems } from "@/lib/navigation";
 import { OverviewSection } from "@/components/dashboard/features/overview";
-import { WorkspaceSection, HistorySection } from "@/components/dashboard/features/matching";
+import { MatchWorkflowSection, WorkspaceSection, HistorySection } from "@/components/dashboard/features/matching";
 import { CandidatesSection, PipelineSection, ContactCandidatesSection } from "@/components/dashboard/features/candidates";
 import { JobsSection } from "@/components/dashboard/features/jobs";
-import { InterviewHubSection, AIAssistantSection, CareerCompassSection } from "@/components/dashboard/features/ai-tools";
+import { InterviewHubSection, InterviewQuestionsSection, SalaryBenchmarkSection, AIAssistantSection, CareerCompassSection } from "@/components/dashboard/features/ai-tools";
 import { ReportsSection } from "@/components/dashboard/features/reports";
 import { SettingsSection, CriteriaSettingsSection } from "@/components/dashboard/features/settings";
 
-/**
- * match-workflow giờ là route riêng trong khung dashboard (/dashboard/match-workflow).
- * chatbot, salary-benchmark và interview-gen đã tách hẳn khỏi khung dashboard,
- * là route gốc riêng (/chatbot, /salary-benchmark, /interview-questions — xem
- * app/chatbot, app/salary-benchmark, app/interview-questions) — không còn xử
- * lý ở đây. quick-score trỏ chung component với match-workflow nên cũng điều
- * hướng thẳng sang route đó.
- */
 function DashboardContent() {
-  const { activeSection, setActiveSection } = useSalesOps();
+  const { activeSection, setActiveSection, authUser, authChecked, setIsAuthModalOpen } = useSalesOps();
   const searchParams = useSearchParams();
+  const currentSection = canonicalSection(activeSection);
+  const session = authUser?.uid || "preview";
+  const [visited, setVisited] = useState<{ session: string; sections: Section[] }>({ session, sections: [currentSection] });
+
+  useEffect(() => {
+    if (searchParams.get("auth") === "login" && authChecked && !authUser) setIsAuthModalOpen(true);
+  }, [searchParams, authChecked, authUser, setIsAuthModalOpen]);
 
   useEffect(() => {
     const section = searchParams.get("section");
-    if (section) setActiveSection(section as Section);
+    setActiveSection(section && isSection(section) ? canonicalSection(section) : "overview");
   }, [searchParams, setActiveSection]);
 
-  const renderSection = () => {
-    switch (activeSection) {
+  useEffect(() => {
+    setVisited((previous) => {
+      if (previous.session !== session) return { session, sections: [currentSection] };
+      if (previous.sections.includes(currentSection)) return previous;
+      return { session, sections: [...previous.sections, currentSection] };
+    });
+    const label = navigationItems.find((item) => item.id === currentSection)?.label || "Không gian làm việc";
+    document.title = `${label} | AI Match`;
+    window.scrollTo({ top: 0 });
+  }, [currentSection, session]);
+
+  const renderSection = (section: Section) => {
+    switch (section) {
       case "overview":
         return <OverviewSection />;
       case "workspace":
         return <WorkspaceSection />;
+      case "match-workflow":
+        return <MatchWorkflowSection />;
       case "pipeline":
         return <PipelineSection />;
       case "candidates":
@@ -49,6 +62,10 @@ function DashboardContent() {
         return <CareerCompassSection />;
       case "interview-hub":
         return <InterviewHubSection />;
+      case "interview-gen":
+        return <InterviewQuestionsSection />;
+      case "salary-benchmark":
+        return <><div className="service-note">Dải lương được tổng hợp từ bộ dữ liệu có sẵn và hệ số ước tính theo khu vực, hình thức làm việc. Đây là thông tin tham khảo; bạn nên đối chiếu với dữ liệu tuyển dụng thực tế trước khi lập ngân sách.</div><SalaryBenchmarkSection /></>;
       case "history":
         return <HistorySection />;
       case "reports":
@@ -62,16 +79,25 @@ function DashboardContent() {
     }
   };
 
+  const sections = visited.session === session ? Array.from(new Set([...visited.sections, currentSection])) : [currentSection];
+  const immersive = currentSection === "ai-assistant" || currentSection === "career-compass";
+
   return (
-    <div key={activeSection} className="animate-in fade-in slide-in-from-bottom-2 duration-300 w-full">
-      {renderSection()}
+    <div key={session} className={`workspace-pages${immersive ? " workspace-pages-full" : ""}`}>
+      {sections.map((section) => {
+        const item = navigationItems.find((entry) => entry.id === section);
+        const fullHeight = section === "ai-assistant" || section === "career-compass";
+        return <section key={section} hidden={section !== currentSection} aria-label={item?.label || "Tổng quan"} data-workspace-section={section} className={fullHeight ? "workspace-page workspace-page-full" : "workspace-page"}>
+          {renderSection(section)}
+        </section>;
+      })}
     </div>
   );
 }
 
 export default function DashboardPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<div role="status" className="p-8 text-sm text-muted-foreground">Đang tải không gian làm việc…</div>}>
       <DashboardContent />
     </Suspense>
   );

@@ -61,7 +61,7 @@ const pipelineStages: {
   },
   {
     key: "interview",
-    name: "Vòng Phỏng Vấn",
+    name: "Vòng phỏng vấn",
     badgeClass: "bg-amber-50 text-amber-700 border-amber-200",
     color: "#38bdf8",
   },
@@ -163,7 +163,7 @@ export function PipelineSection() {
               <SelectValue placeholder="Chuyên viên HR" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tất cả Recruiter</SelectItem>
+              <SelectItem value="all">Tất cả chuyên viên</SelectItem>
               {recruiters.map((r) => (
                 <SelectItem key={r.id} value={r.name}>
                   {r.name}
@@ -179,7 +179,7 @@ export function PipelineSection() {
           className="bg-sky-600 text-white hover:bg-sky-700 shrink-0 text-xs shadow-xs font-bold"
         >
           <Plus className="w-4 h-4 mr-1.5" />
-          Tiếp Nhận CV Mới
+          Tiếp nhận CV mới
         </Button>
       </div>
 
@@ -230,7 +230,7 @@ export function PipelineSection() {
 
               {/* Sub-header metric */}
               <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-3 px-1">
-                <span>Điểm Match TB:</span>
+                <span>Điểm phù hợp TB:</span>
                 <span className="font-bold text-sky-700">{avgScore}%</span>
               </div>
 
@@ -298,7 +298,7 @@ export function PipelineSection() {
                                       setDetailCandidate(cand);
                                     }}
                                   >
-                                    Xem Chi Tiết & AI Evaluation
+                                    Xem chi tiết & AI evaluation
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
                                     onClick={(e) => {
@@ -308,7 +308,7 @@ export function PipelineSection() {
                                     }}
                                   >
                                     <Calendar className="w-3.5 h-3.5 mr-2" />
-                                    Lên Lịch Phỏng Vấn
+                                    Lên lịch phỏng vấn
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
                                     onClick={(e) => {
@@ -318,7 +318,7 @@ export function PipelineSection() {
                                     }}
                                   >
                                     <Mail className="w-3.5 h-3.5 mr-2" />
-                                    Gửi Email Tuyển Dụng
+                                    Gửi email tuyển dụng
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
                                     onClick={(e) => {
@@ -328,7 +328,7 @@ export function PipelineSection() {
                                     }}
                                   >
                                     <Edit className="w-3.5 h-3.5 mr-2" />
-                                    Chỉnh Sửa Hồ Sơ
+                                    Chỉnh sửa hồ sơ
                                   </DropdownMenuItem>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem
@@ -339,7 +339,7 @@ export function PipelineSection() {
                                     className="text-destructive focus:text-destructive"
                                   >
                                     <Trash2 className="w-3.5 h-3.5 mr-2" />
-                                    Xóa Hồ Sơ
+                                    Xóa hồ sơ
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>

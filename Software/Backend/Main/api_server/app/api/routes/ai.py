@@ -47,6 +47,7 @@ from app.services.candidate_chat_service import reply_to_candidate_chat
 from app.services.candidate_enrichment_service import enrich_candidates
 from app.services.candidate_refinement_service import refine_cv_profile
 from app.services.cv_pipeline_service import run_smart_cv_analysis
+from app.schemas.analysis import StructuredCandidateOutput
 from app.services.file_extraction_service import extract_text_from_upload
 from app.services.gemini_service import embed_text, generate_content
 from app.services.graph_rag_service import get_graph_rag_status
@@ -216,8 +217,12 @@ async def cv_analyze_core(
         )
     except ValueError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
+    candidates = [
+        StructuredCandidateOutput.model_validate(candidate).model_dump(by_alias=True, exclude_none=False)
+        for candidate in (result.get("candidates") or [])
+    ]
     return CoreCvAnalysisResponse(
-        candidates=result.get("candidates") or [],
+        candidates=candidates,
         pipeline=result.get("pipeline") or {},
         saved_history_id=(result.get("pipeline") or {}).get("historyId"),
     )
@@ -240,14 +245,14 @@ def cv_quick_score_text(
         raise HTTPException(status_code=400, detail=str(error)) from error
     response_payload = {
         "items": [item.model_dump() if hasattr(item, "model_dump") else item for item in items],
-        "model": settings.quick_cv_gemini_model,
+        "model": settings.local_cv_model if settings.cv_analysis_provider == "ollama" else settings.quick_cv_gemini_model,
     }
     saved_score_id = save_quick_cv_score(
         current_user,
         request_payload=payload.model_dump(),
         response_payload=response_payload,
     )
-    return QuickCvScoreResponse(items=items, model=settings.quick_cv_gemini_model, saved_score_id=saved_score_id)
+    return QuickCvScoreResponse(items=items, model=settings.local_cv_model if settings.cv_analysis_provider == "ollama" else settings.quick_cv_gemini_model, saved_score_id=saved_score_id)
 
 
 @router.post("/cv/quick-score", response_model=QuickCvScoreResponse)
@@ -304,7 +309,7 @@ async def cv_quick_score(
         raise HTTPException(status_code=400, detail=str(error)) from error
     response_payload = {
         "items": [item.model_dump() if hasattr(item, "model_dump") else item for item in items],
-        "model": settings.quick_cv_gemini_model,
+        "model": settings.local_cv_model if settings.cv_analysis_provider == "ollama" else settings.quick_cv_gemini_model,
     }
     saved_score_id = await asyncio.to_thread(
         save_quick_cv_score,
@@ -318,7 +323,7 @@ async def cv_quick_score(
         },
         response_payload=response_payload,
     )
-    return QuickCvScoreResponse(items=items, model=settings.quick_cv_gemini_model, saved_score_id=saved_score_id)
+    return QuickCvScoreResponse(items=items, model=settings.local_cv_model if settings.cv_analysis_provider == "ollama" else settings.quick_cv_gemini_model, saved_score_id=saved_score_id)
 
 
 @router.post(

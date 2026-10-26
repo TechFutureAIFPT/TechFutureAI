@@ -9,6 +9,7 @@ from app.repositories.firestore import account_repository as repo
 from app.schemas.account import AuthenticatedUser
 from app.services.account import response_cache_service, view_sync_service
 from app.services.account.shared import fast_cleanup, optimized_docs, serialize, sorted_docs, to_millis
+from app.services.history_schema_service import candidate_rank, candidate_score
 from app.utils.text_normalization import normalize_display_text
 
 
@@ -38,7 +39,7 @@ def sync_history_entry(user: AuthenticatedUser, analysis_data: dict[str, Any]) -
     for candidate in candidates:
         grade = "C"
         if candidate.get("status") != "FAILED":
-            grade = str(((candidate.get("analysis") or {}).get("Hạng")) or "C")
+            grade = candidate_rank(candidate)
         if grade not in grades_count:
             grade = "C"
         grades_count[grade] += 1
@@ -54,6 +55,10 @@ def sync_history_entry(user: AuthenticatedUser, analysis_data: dict[str, Any]) -
             "jobPosition": str(job.get("position") or ""),
             "locationRequirement": str(job.get("locationRequirement") or ""),
             "totalCandidates": len(candidates),
+            "cvCount": len(candidates),
+            "jdTitle": str(job.get("position") or ""),
+            "jdText": str(analysis_data.get("jdText") or ""),
+            "createdAt": repo.server_timestamp(),
             "gradesCount": grades_count,
             **screening_index,
         }
@@ -349,7 +354,7 @@ def _compact_raw_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
 def _extract_candidates(entry: dict[str, Any]) -> list[dict[str, Any]]:
     full_payload = entry.get("fullPayload") if isinstance(entry.get("fullPayload"), dict) else {}
     analysis_data = entry.get("analysisData") if isinstance(entry.get("analysisData"), dict) else {}
-    candidates = full_payload.get("candidates") or entry.get("candidates") or analysis_data.get("candidates")
+    candidates = full_payload.get("candidates") or entry.get("candidates") or analysis_data.get("candidates") or entry.get("results")
     if isinstance(candidates, list) and candidates:
         return [candidate for candidate in candidates if isinstance(candidate, dict)]
 
@@ -626,9 +631,8 @@ def save_history_session(user: AuthenticatedUser, payload: dict[str, Any]) -> st
         grade = "C"
         total_score = 0
         if candidate.get("status") != "FAILED":
-            analysis = candidate.get("analysis") or {}
-            grade = str(analysis.get("Hạng") or "C")
-            total_score = int(analysis.get("Tổng điểm") or 0)
+            grade = candidate_rank(candidate)
+            total_score = int(candidate_score(candidate))
         if grade not in grades:
             grade = "C"
         grades[grade] += 1
@@ -652,9 +656,9 @@ def save_history_session(user: AuthenticatedUser, payload: dict[str, Any]) -> st
                 "id": candidate.get("id"),
                 "name": candidate.get("candidateName"),
                 "avatarUrl": _candidate_avatar_url(candidate),
-                "score": int((candidate.get("analysis") or {}).get("Tổng điểm") or 0),
+                "score": int(candidate_score(candidate)),
                 "jdFit": jd_fit,
-                "grade": str((candidate.get("analysis") or {}).get("Hạng") or "C"),
+                "grade": candidate_rank(candidate),
             }
         )
 
@@ -671,7 +675,11 @@ def save_history_session(user: AuthenticatedUser, payload: dict[str, Any]) -> st
         {
             "uid": user.uid,
             "userEmail": user_email,
+            "email": user_email,
             "jobPosition": job_position,
+            "jdTitle": job_position,
+            "jdText": jd_text,
+            "cvCount": total,
             "locationRequirement": location_requirement,
             "jdTextSnippet": jd_text[:300],
             "totalCandidates": total,
@@ -726,7 +734,7 @@ def save_manual_history_snapshot(user: AuthenticatedUser, payload: dict[str, Any
     for candidate in candidates:
         grade = "C"
         if candidate.get("status") != "FAILED":
-            grade = str((candidate.get("analysis") or {}).get("Hạng") or "C")
+            grade = candidate_rank(candidate)
         if grade not in grades:
             grade = "C"
         grades[grade] += 1
@@ -747,7 +755,7 @@ def save_manual_history_snapshot(user: AuthenticatedUser, payload: dict[str, Any
                 "avatarUrl": _candidate_avatar_url(candidate),
                 "fileName": candidate.get("fileName"),
                 "grade": grade,
-                "totalScore": int((candidate.get("analysis") or {}).get("Tổng điểm") or 0),
+                "totalScore": int(candidate_score(candidate)),
                 "jdFit": jd_fit,
             }
         )

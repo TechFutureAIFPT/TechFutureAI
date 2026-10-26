@@ -134,7 +134,7 @@ export function HistorySection() {
                       </span>
                     </div>
                     <div>
-                      <span className="text-muted-foreground block text-[10px]">Điểm Match TB</span>
+                      <span className="text-muted-foreground block text-[10px]">Điểm phù hợp trung bình</span>
                       <span className="font-bold text-sky-700 mt-0.5 block">
                         {batch.avgScore}%
                       </span>
@@ -168,7 +168,7 @@ export function HistorySection() {
                         }}
                         className="h-7 text-xs bg-sky-600 text-white hover:bg-sky-700 shadow-xs font-bold"
                       >
-                        Mở Đợt Này &rarr;
+                        Mở đợt này &rarr;
                       </Button>
                     </div>
                   </div>
@@ -185,7 +185,7 @@ export function HistorySection() {
               <CardHeader className="pb-3 border-b border-border bg-sky-50/40">
                 <CardTitle className="text-sm font-bold flex items-center gap-1.5 text-slate-900">
                   <Sparkles className="w-4 h-4 text-sky-600" />
-                  Chi Tiết Đợt Tuyển Dụng
+                  Chi tiết đợt tuyển dụng
                 </CardTitle>
                 <CardDescription className="text-xs truncate">
                   {selectedBatch.batchName}
@@ -194,31 +194,31 @@ export function HistorySection() {
               <CardContent className="p-4 space-y-4 text-xs pt-4">
                 <div className="space-y-2">
                   <div className="flex justify-between py-1 border-b border-border">
-                    <span className="text-muted-foreground">Mã Đợt:</span>
+                    <span className="text-muted-foreground">Mã phiên:</span>
                     <span className="font-mono font-bold text-slate-900">
                       {selectedBatch.id}
                     </span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-border">
-                    <span className="text-muted-foreground">Vị Trí JD:</span>
+                    <span className="text-muted-foreground">Vị trí tuyển dụng:</span>
                     <span className="font-semibold text-slate-900 text-right truncate max-w-[180px]">
                       {selectedBatch.jobTitle}
                     </span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-border">
-                    <span className="text-muted-foreground">Ngày Phân Tích:</span>
+                    <span className="text-muted-foreground">Ngày đánh giá:</span>
                     <span className="font-semibold text-slate-900">
                       {selectedBatch.createdAt}
                     </span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-border">
-                    <span className="text-muted-foreground">Recruiter Phụ Trách:</span>
+                    <span className="text-muted-foreground">Chuyên viên phụ trách:</span>
                     <span className="font-semibold text-slate-900">
                       {selectedBatch.recruiter}
                     </span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-border">
-                    <span className="text-muted-foreground">Tỉ Lệ Đạt Chuẩn:</span>
+                    <span className="text-muted-foreground">Tỷ lệ đạt tiêu chí:</span>
                     <span className="font-bold text-sky-700">
                       {Math.round((selectedBatch.qualifiedCount / (selectedBatch.totalCVs || 1)) * 100)}%
                     </span>
@@ -230,7 +230,7 @@ export function HistorySection() {
                   className="w-full bg-sky-600 text-white hover:bg-sky-700 text-xs font-bold shadow-xs"
                 >
                   <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
-                  Tải Lại Kết Quả Lên Bảng Điểm
+                  Tải lại kết quả lên bảng điểm
                 </Button>
 
                 <Button
@@ -239,7 +239,7 @@ export function HistorySection() {
                   className="w-full border-border text-xs hover:bg-sky-50 hover:text-sky-700"
                 >
                   <Download className="w-3.5 h-3.5 mr-1.5 text-sky-600" />
-                  Xuất Toàn Bộ Bảng Điểm CSV
+                  Xuất toàn bộ bảng điểm CSV
                 </Button>
               </CardContent>
             </Card>

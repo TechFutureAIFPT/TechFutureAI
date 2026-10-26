@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Dialog,
   DialogContent,
+  DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
@@ -17,6 +20,7 @@ import {
 import { useSalesOps } from "@/lib/sales-ops-context";
 
 export function CommandSearch() {
+  const router = useRouter();
   const {
     isSearchOpen,
     setIsSearchOpen,
@@ -70,22 +74,27 @@ export function CommandSearch() {
 
   const handleSelectCandidate = () => {
     setActiveSection("candidates");
+    router.push("/dashboard?section=candidates");
     setIsSearchOpen(false);
   };
 
   const handleSelectJob = () => {
     setActiveSection("jobs");
+    router.push("/dashboard?section=jobs");
     setIsSearchOpen(false);
   };
 
   const handleSelectRecruiter = () => {
     setActiveSection("candidates");
+    router.push("/dashboard?section=candidates");
     setIsSearchOpen(false);
   };
 
   return (
     <Dialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
       <DialogContent className="max-w-xl p-0 overflow-hidden bg-card border-border">
+        <DialogTitle className="sr-only">Tìm kiếm trong không gian làm việc</DialogTitle>
+        <DialogDescription className="sr-only">Tìm hồ sơ ứng viên, vị trí tuyển dụng hoặc chuyên viên theo tên và kỹ năng.</DialogDescription>
         {/* Search Input Bar */}
         <div className="flex items-center px-4 border-b border-border">
           <Search className="w-5 h-5 text-muted-foreground mr-3" />
@@ -105,7 +114,7 @@ export function CommandSearch() {
         <div className="max-h-[380px] overflow-y-auto p-4 space-y-4">
           {!query.trim() && (
             <div className="text-center py-8 text-muted-foreground text-sm space-y-3">
-              <p>Nhập từ khóa để tra cứu toàn diện hệ thống CV Match...</p>
+              <p>Tìm hồ sơ và vị trí trong không gian AI Match.</p>
               <div className="flex items-center justify-center gap-2 text-xs">
                 <span className="px-2.5 py-1 bg-secondary rounded border border-border">
                   Hồ sơ Ứng viên
@@ -139,6 +148,8 @@ export function CommandSearch() {
                 {filteredCandidates.slice(0, 4).map((c) => (
                   <div
                     key={c.id}
+                    role="button" tabIndex={0}
+                    onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); handleSelectCandidate(); } }}
                     onClick={handleSelectCandidate}
                     className="flex items-center justify-between p-2.5 rounded-lg hover:bg-sky-50/60 cursor-pointer transition-colors"
                   >
@@ -178,6 +189,8 @@ export function CommandSearch() {
                 {filteredJobs.slice(0, 4).map((j) => (
                   <div
                     key={j.id}
+                    role="button" tabIndex={0}
+                    onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); handleSelectJob(); } }}
                     onClick={handleSelectJob}
                     className="flex items-center justify-between p-2.5 rounded-lg hover:bg-sky-50/60 cursor-pointer transition-colors"
                   >
@@ -216,6 +229,8 @@ export function CommandSearch() {
                 {filteredRecruiters.slice(0, 4).map((r) => (
                   <div
                     key={r.id}
+                    role="button" tabIndex={0}
+                    onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); handleSelectRecruiter(); } }}
                     onClick={handleSelectRecruiter}
                     className="flex items-center justify-between p-2.5 rounded-lg hover:bg-sky-50/60 cursor-pointer transition-colors"
                   >
