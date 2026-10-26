@@ -57,34 +57,6 @@ async def search_admission_scores(
         limit=limit
     )
 
-    # If database has few records or table pending migration, fallback to verified static database
-    if not scores:
-        fallback_results = []
-        for uni in UNIVERSITIES_DATABASE:
-            if university_code and uni.get("code") != university_code.upper():
-                continue
-
-            for m in uni.get("majors", []):
-                if subject_group and m.get("block") != subject_group:
-                    continue
-                if keyword:
-                    k = keyword.lower()
-                    if k not in uni.get("name", "").lower() and k not in m.get("name", "").lower() and k not in m.get("code", "").lower():
-                        continue
-
-                fallback_results.append({
-                    "uni_code": uni["code"],
-                    "uni_name": uni["name"],
-                    "major_code": m["code"],
-                    "major_name": m["name"],
-                    "year": 2025,
-                    "subject_groups": [m["block"]],
-                    "cutoff_score": m["score_2025"],
-                    "note": f"Dự báo 2026: {m['score_pred_2026']}đ",
-                    "source": "tuyensinh247"
-                })
-        scores = fallback_results[:limit]
-
     return {
         "success": True,
         "total": len(scores),
@@ -114,25 +86,12 @@ async def list_majors() -> Dict[str, Any]:
         "data": MAJORS_DATABASE
     }
 
-@router.post("/scores/predict", response_model=Dict[str, Any], summary="Dự đoán điểm chuẩn đại học 2026")
+@router.post("/scores/predict", response_model=Dict[str, Any], summary="Dự báo điểm chuẩn chưa khả dụng nếu chưa có mô hình được kiểm chứng")
 async def predict_admission_cutoff(req: ScorePredictionRequest):
-    """
-    Dự báo xu hướng điểm chuẩn 2026 dựa trên hồi quy và phổ điểm các năm trước.
-    """
-    base = req.historical_scores[-1] if req.historical_scores else 27.5
-    pred_score = round(base + 0.15, 2)
-
-    return {
-        "success": True,
-        "data": {
-            "university_code": req.university_code,
-            "major_code": req.major_code,
-            "exam_block": req.exam_block,
-            "predicted_cutoff_2026": pred_score,
-            "confidence_interval": f"{round(pred_score - 0.4, 2)} - {round(pred_score + 0.4, 2)}",
-            "reasoning": f"Dự báo xu hướng điểm chuẩn năm 2026 ngành {req.major_code} ({req.exam_block}) tại trường {req.university_code} dao động mức {pred_score} điểm."
-        }
-    }
+    raise HTTPException(
+        status_code=501,
+        detail="Chưa có mô hình dự báo điểm chuẩn được kiểm chứng. Hãy tra cứu điểm chuẩn các năm đã công bố.",
+    )
 
 @router.post("/crawler/trigger", summary="Kích hoạt Crawler Tuyensinh247 hoặc VietnamNet thủ công")
 async def trigger_crawler(

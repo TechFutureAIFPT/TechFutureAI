@@ -22,8 +22,11 @@ export interface CareerChatRequest {
 }
 
 export interface CitationItem {
-  title: string;
+  title?: string;
   url?: string;
+  source_title?: string;
+  source_url?: string;
+  verified?: boolean;
   snippet?: string;
   source_type?: string;
 }
@@ -33,6 +36,7 @@ export interface CareerAdvisorData {
   reasoning_content?: string;
   citations?: CitationItem[];
   suggested_followups?: string[];
+  recommended_followups?: string[];
   recommended_actions?: string[];
   conversation_id?: string;
 }

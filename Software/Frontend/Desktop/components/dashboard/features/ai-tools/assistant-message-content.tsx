@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 
 const LABELS: Record<string, string> = {
   candidate_name: "Ứng viên",
@@ -57,9 +57,39 @@ function CriteriaCards({ criteria }: { criteria: unknown[] }) {
   })}</div>;
 }
 
+function renderInlineMarkdown(text: string): ReactNode[] {
+  return text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g).map((part, index) => {
+    if (part.startsWith("**") && part.endsWith("**")) return <strong key={index}>{part.slice(2, -2)}</strong>;
+    if (part.startsWith("*") && part.endsWith("*")) return <em key={index}>{part.slice(1, -1)}</em>;
+    if (part.startsWith("`") && part.endsWith("`")) return <code key={index}>{part.slice(1, -1)}</code>;
+    return <Fragment key={index}>{part}</Fragment>;
+  });
+}
+
+function PlainMarkdown({ content }: { content: string }) {
+  return <div className="assistant-plain-message space-y-2">
+    {content.split("\n").map((rawLine, index) => {
+      const line = rawLine.trim();
+      if (!line) return null;
+      const heading = line.match(/^#{1,3}\s+(.+)$/);
+      if (heading) return <h3 key={index} className="font-semibold text-inherit">{renderInlineMarkdown(heading[1])}</h3>;
+      const bullet = line.match(/^(?:[-*•])\s+(.+)$/);
+      if (bullet) return <div key={index} className="flex gap-2"><span aria-hidden="true">•</span><span>{renderInlineMarkdown(bullet[1])}</span></div>;
+      if (/^\d+[.)]\s+/.test(line)) return <p key={index}>{renderInlineMarkdown(line)}</p>;
+      return <p key={index}>{renderInlineMarkdown(line)}</p>;
+    })}
+  </div>;
+}
+
 export function AssistantMessageContent({ content }: { content: string }) {
   const parsed = cleanJson(content);
-  if (!parsed || typeof parsed !== "object") return <span className="assistant-plain-message">{content}</span>;
+  if (!parsed || typeof parsed !== "object") {
+    const trimmed = content.trim();
+    if (/^(?:```json\s*)?[\[{]/i.test(trimmed)) {
+      return <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-900">Phản hồi AI chưa đúng định dạng. Hãy gửi lại câu hỏi.</p>;
+    }
+    return <PlainMarkdown content={content} />;
+  }
   const data = (Array.isArray(parsed) ? { criteria: parsed } : parsed) as Record<string, unknown>;
   const criteria = Array.isArray(data.criteria) ? data.criteria : null;
   const topLevel = Object.entries(data).filter(([key]) => !["criteria", "candidate_name", "candidateName"].includes(key));

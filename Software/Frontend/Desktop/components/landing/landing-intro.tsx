@@ -41,7 +41,7 @@ export function LandingIntro() {
               </span>
             ))}
           </p>
-          <a href="/dashboard/match-workflow" className="lp-btn lp-btn--primary lp-btn--lg">
+          <a href="/cv-match" className="lp-btn lp-btn--primary lp-btn--lg">
             <span>Thử một lượt đối chiếu</span>
             <ArrowRight size={18} />
           </a>

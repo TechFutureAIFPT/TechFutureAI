@@ -25,8 +25,8 @@ export function LandingFooter() {
           <div className="lp-footer__col">
             <h4 className="lp-footer__coltitle">Sàng lọc & Đối chiếu</h4>
             <ul className="lp-footer__links">
-              <li><a href="/dashboard/match-workflow">Quy trình đối chiếu AI</a></li>
-              <li><a href="/dashboard?section=workspace">Không gian làm việc</a></li>
+              <li><a href="/cv-match">Quy trình đối chiếu AI</a></li>
+              <li><a href="/dashboard">Tổng quan tuyển dụng</a></li>
               <li><a href="/dashboard?section=criteria-settings">Cấu hình rubric tiêu chí</a></li>
               <li><a href="/dashboard?section=candidates">Kho hồ sơ ứng viên</a></li>
             </ul>

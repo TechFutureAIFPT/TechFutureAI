@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from typing import Dict, Any
+import math
 from app.schemas.chat import ChatRequest, ChatResponse
 from app.services.deepseek_service import deepseek_service
 from app.services.supabase_service import supabase_service
@@ -16,6 +17,26 @@ async def chat_with_advisor(request: ChatRequest):
     Tự động lưu lịch sử hội thoại nếu có user_id.
     """
     try:
+        profile = request.student_profile_context or {}
+        holland = profile.get("holland") if isinstance(profile, dict) else None
+        scores = holland.get("riasec_scores") if isinstance(holland, dict) else None
+        holland_code = holland.get("holland_code") if isinstance(holland, dict) else None
+        riasec_order = ("R", "I", "A", "S", "E", "C")
+        groups = set(riasec_order)
+        if (
+            not isinstance(scores, dict)
+            or set(scores) != groups
+            or any(not isinstance(value, (int, float)) or not math.isfinite(value) or value <= 0 for value in scores.values())
+            or not isinstance(holland_code, str)
+            or len(holland_code) != 3
+            or any(letter not in groups for letter in holland_code)
+            or holland_code != "".join(sorted(riasec_order, key=lambda group: scores[group], reverse=True)[:3])
+        ):
+            raise HTTPException(status_code=428, detail={
+                "code": "RIASEC_REQUIRED",
+                "message": "Hãy hoàn thành khảo sát RIASEC trước khi bắt đầu tư vấn.",
+            })
+
         conv_id = request.conversation_id
         if request.user_id and not conv_id:
             conv_id = await supabase_service.create_chat_conversation(
@@ -33,7 +54,7 @@ async def chat_with_advisor(request: ChatRequest):
         response: ChatResponse = await deepseek_service.get_advisory_response(
             user_message=request.message,
             history=request.conversation_history,
-            student_profile=request.student_profile_context,
+            student_profile=profile,
             use_deep_research=request.use_deep_research
         )
 
@@ -50,6 +71,8 @@ async def chat_with_advisor(request: ChatRequest):
             "success": True,
             "data": response.model_dump()
         }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi phản hồi cố vấn AI: {str(e)}")
 

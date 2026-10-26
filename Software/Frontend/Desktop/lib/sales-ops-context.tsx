@@ -39,7 +39,6 @@ import { canonicalSection, sectionHref } from "./navigation";
 
 export type Section =
   | "overview"
-  | "workspace"
   | "match-workflow"
   | "pipeline"
   | "candidates"
@@ -321,9 +320,9 @@ interface SalesOpsContextType {
 
 const SalesOpsContext = createContext<SalesOpsContextType | undefined>(undefined);
 
-export function SalesOpsProvider({ children }: { children: React.ReactNode }) {
+export function SalesOpsProvider({ children, initialSection = "overview" }: { children: React.ReactNode; initialSection?: Section }) {
   const router = useRouter();
-  const [activeSection, setActiveSectionState] = useState<Section>("overview");
+  const [activeSection, setActiveSectionState] = useState<Section>(initialSection);
   const setActiveSection = useCallback((section: Section) => {
     const canonical = canonicalSection(section);
     setActiveSectionState(canonical);
@@ -951,11 +950,7 @@ export function SalesOpsProvider({ children }: { children: React.ReactNode }) {
     setChatMessages((prev) => [...prev, userMsg]);
 
     let replyText = "";
-    let suggestedActions = [
-      "Xem chi tiết ứng viên điểm cao nhất",
-      "Tải danh sách ứng viên đạt chuẩn ra CSV",
-      "Tạo lịch phỏng vấn tuần này",
-    ];
+    let suggestedActions: string[] = [];
 
     try {
       const liveChat = await aiApi.candidateChat({
@@ -972,19 +967,11 @@ export function SalesOpsProvider({ children }: { children: React.ReactNode }) {
         if (liveChat.suggested_actions || liveChat.citedCriteria) {
           suggestedActions = liveChat.suggested_actions || liveChat.citedCriteria || [];
         }
+      } else {
+        throw new Error("Backend không trả nội dung phản hồi.");
       }
     } catch {
-      // Local intelligent response
-      const lower = text.toLowerCase();
-      if (lower.includes("so sánh") || lower.includes("hùng") || lower.includes("bảo")) {
-        replyText = `Phân tích so sánh:\n\n1. Nguyễn Văn Hùng (Senior Frontend): Điểm Match 92%, 5 năm kinh nghiệm chuyên sâu React/Next.js. Ưu điểm nổi trội là tối ưu hiệu năng web và quản lý trạng thái phức tạp.\n\n2. Lê Quốc Bảo (Backend Architect): Điểm Match 85%, 4 năm kinh nghiệm FastAPI/PostgreSQL. Rất phù hợp nếu công ty cần người phụ trách kết nối dữ liệu Microservices.\n\n👉 Khuyến nghị: Ưu tiên phỏng vấn Nguyễn Văn Hùng trước cho vị trí Frontend Lead.`;
-      } else if (lower.includes("lương") || lower.includes("salary")) {
-        replyText = `Theo dữ liệu Khảo sát thị trường lương IT 2026 tại Việt Nam:\n- Senior Frontend (4-6 năm KN): 35,000,000 - 50,000,000 ₫/tháng.\n- Senior AI/ML Engineer: 45,000,000 - 70,000,000 ₫/tháng.\n- Mức đề xuất của ứng viên trong đợt này (35 - 42 Tr ₫) hoàn toàn nằm trong khung ngân sách hợp lý.`;
-      } else if (lower.includes("câu hỏi") || lower.includes("phỏng vấn")) {
-        replyText = `Gợi ý 2 câu hỏi phỏng vấn trọng tâm cho vị trí hiện tại:\n\n1. Kỹ thuật: "Bạn đã từng tối ưu hóa ứng dụng React/Next.js bị nghẽn hiệu năng render như thế nào? Nêu các công cụ profiling bạn đã dùng."\n2. Xử lý tình huống: "Nếu sản phẩm cần ra mắt gấp nhưng backend chưa hoàn thiện API, bạn sẽ phối hợp giải quyết như thế nào?"`;
-      } else {
-        replyText = `Dựa trên dữ liệu ${candidates.length} ứng viên đã đối chiếu, tôi nhận thấy có ${metrics.qualifiedCount} hồ sơ đạt chuẩn (Match >= 75%). Bạn có thể mở mục "Phễu Kanban" để lên lịch phỏng vấn hoặc xem chi tiết radar kỹ năng trong mục "Kho Hồ Sơ".`;
-      }
+      replyText = "Chưa kết nối được trợ lý tuyển dụng nên chưa thể phân tích dữ liệu hồ sơ. Vui lòng thử lại sau khi API hoạt động.";
     }
 
     const aiMsg: ChatMessage = {

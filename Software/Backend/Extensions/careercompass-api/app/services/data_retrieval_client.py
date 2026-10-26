@@ -2,10 +2,11 @@ import os
 import re
 import json
 import logging
+import httpx
+from urllib.parse import urlencode
 from typing import Dict, Any, List, Optional, Tuple
 from app.core.config import settings
 from app.schemas.chat import CitationItem
-from app.db.supabase_client import db_client
 
 logger = logging.getLogger("services.data_retrieval_client")
 
@@ -78,9 +79,9 @@ BLOCKS = ["A00", "A01", "B00", "C00", "D01", "D07", "A02", "D08"]
 class DataRetrievalClient:
     """
     Direct In-Process Data Retrieval Service (Hợp nhất 2 API thành 1).
-    - Tự động phát hiện ý định hỏi về trường đại học, ngành, điểm chuẩn, dự báo 2026.
-    - Truy xuất dữ liệu thời gian thực nội bộ trực tiếp (< 1ms, zero latency).
-    - Cung cấp context chính xác, tránh ảo giác (Anti-hallucination) cho DeepSeek Reasoner.
+        - Nhận diện truy vấn trường/ngành/điểm chuẩn.
+        - Gọi dịch vụ tra cứu tuyển sinh được cấu hình.
+        - Không tự thay dữ liệu thiếu bằng số liệu mẫu hoặc dự báo giả.
     """
     def __init__(self):
         self.base_url = settings.RETRIEVAL_SERVICE_URL.rstrip("/") if hasattr(settings, "RETRIEVAL_SERVICE_URL") else ""
@@ -136,40 +137,29 @@ class DataRetrievalClient:
         subject_group: Optional[str] = None,
         limit: int = 15
     ) -> List[Dict[str, Any]]:
-        """Truy xuất điểm chuẩn in-process từ Supabase / database nội bộ."""
-        scores = await db_client.query_admission_scores(
-            keyword=keyword,
-            university_code=university_code,
-            year=year,
-            subject_group=subject_group,
-            limit=limit
-        )
+        """Truy xuất điểm chuẩn từ dịch vụ tuyển sinh được cấu hình."""
+        if self.base_url:
+            params = {key: value for key, value in {
+                "keyword": keyword,
+                "university_code": university_code,
+                "year": year,
+                "subject_group": subject_group,
+                "limit": min(limit, 50),
+            }.items() if value is not None}
+            try:
+                async with httpx.AsyncClient(timeout=8.0) as client:
+                    response = await client.get(
+                        f"{self.base_url}/api/v1/retrieval/scores/search",
+                        params=params,
+                    )
+                response.raise_for_status()
+                payload = response.json()
+                if payload.get("success") and isinstance(payload.get("data"), list):
+                    return payload["data"][:limit]
+            except (httpx.HTTPError, ValueError):
+                logger.warning("Configured admission score API is unavailable.")
 
-        if not scores:
-            fallback = []
-            for uni in UNIVERSITIES_DATABASE:
-                if university_code and uni.get("code") != university_code.upper():
-                    continue
-                if keyword and keyword.lower() not in uni.get("name", "").lower():
-                    continue
-
-                for m in uni.get("majors", []):
-                    if subject_group and m.get("block") != subject_group:
-                        continue
-                    fallback.append({
-                        "uni_code": uni.get("code"),
-                        "uni_name": uni.get("name"),
-                        "major_code": m.get("code"),
-                        "major_name": m.get("name"),
-                        "year": 2025,
-                        "subject_groups": [m.get("block", "A00")],
-                        "cutoff_score": m.get("score_2025"),
-                        "note": f"Dự báo 2026: {m.get('score_pred_2026')}đ",
-                        "source": "tuyensinh247"
-                    })
-            scores = fallback[:limit]
-
-        return scores
+        return []
 
     async def list_universities(self, region: Optional[str] = None) -> List[Dict[str, Any]]:
         """Lấy danh sách các trường đại học."""
@@ -185,17 +175,8 @@ class DataRetrievalClient:
         exam_block: str = "A00",
         historical_scores: Optional[List[float]] = None
     ) -> Optional[Dict[str, Any]]:
-        """Dự báo điểm chuẩn 2026 từ mô hình tính toán nội bộ."""
-        base = historical_scores[-1] if historical_scores else 27.5
-        pred_score = round(base + 0.15, 2)
-        return {
-            "university_code": university_code,
-            "major_code": major_code,
-            "exam_block": exam_block,
-            "predicted_cutoff_2026": pred_score,
-            "confidence_interval": f"{round(pred_score - 0.4, 2)} - {round(pred_score + 0.4, 2)}",
-            "reasoning": f"Dự báo xu hướng điểm chuẩn năm 2026 ngành {major_code} ({exam_block}) tại trường {university_code} dao động mức {pred_score} điểm."
-        }
+        """No unsupported forecast is returned without a validated prediction model."""
+        return None
 
     async def get_admission_knowledge_for_query(self, user_message: str) -> Tuple[str, List[CitationItem]]:
         """
@@ -222,59 +203,46 @@ class DataRetrievalClient:
         citations: List[CitationItem] = []
         lines: List[str] = []
 
-        # 1. Truy xuất thông tin trường cụ thể nếu phát hiện mã trường
-        if uni_code:
-            uni_detail = await self.get_university(uni_code)
-            if uni_detail:
-                lines.append(f"### DỮ LIỆU CƠ SỞ ĐÀO TẠO: {uni_detail.get('name')} (Mã: {uni_detail.get('code')})")
-                lines.append(f"- Khu vực: {uni_detail.get('region')} | Website: {uni_detail.get('website', 'Chính thức')}")
-                lines.append(f"- Học phí ước tính: {uni_detail.get('tuition_fee', uni_detail.get('tuition_range', 'Theo đề án của trường'))}")
-                lines.append(f"- Mô tả: {uni_detail.get('description', '')}")
+        requested_year_match = re.search(r"\b(20\d{2})\b", user_message)
+        requested_year = int(requested_year_match.group(1)) if requested_year_match else 2025
 
+        # Query the configured admissions API; do not pad its response with local demo facts.
+        if uni_code:
             # Truy xuất điểm chuẩn của trường
-            scores = await self.search_scores(university_code=uni_code, keyword=keyword, subject_group=block, limit=8)
+            scores = await self.search_scores(university_code=uni_code, keyword=keyword, year=requested_year, subject_group=block, limit=8)
             if scores:
-                lines.append(f"\n#### BẢNG ĐIỂM CHUẨN ĐÃ THU THẬP & XÁC THỰC CỦA TRƯỜNG ({uni_code}):")
+                lines.append(f"\n#### DỮ LIỆU ĐIỂM CHUẨN THAM KHẢO ({uni_code}, năm {requested_year}):")
                 for s in scores:
                     groups = ", ".join(s.get("subject_groups", []))
-                    note = f" ({s.get('note')})" if s.get("note") else ""
-                    lines.append(f"- Ngành: {s.get('major_name')} (Mã: {s.get('major_code')}) | Tổ hợp: [{groups}] | Điểm chuẩn gần nhất: **{s.get('cutoff_score')} điểm**{note}")
+                    lines.append(f"- Ngành: {s.get('major_name')} (Mã: {s.get('major_code')}) | Năm: {s.get('year')} | Tổ hợp: [{groups}] | Điểm được API trả về: {s.get('cutoff_score')} điểm | Nguồn ghi trong API: {s.get('source', 'không rõ')}")
 
-            citations.append(CitationItem(
-                source_title=f"Đề án & Điểm chuẩn Đại học {uni_code} 2026",
-                source_url=f"/api/v1/retrieval/scores/search?university_code={uni_code}",
-                tier="Cấp 3 (Đề án tuyển sinh các trường)",
-                verified=True
-            ))
+                citations.append(CitationItem(
+                    source_title=f"API tra cứu điểm chuẩn tham khảo - {uni_code} (chưa xác minh với trường)",
+                    source_url=f"{self.base_url}/api/v1/retrieval/scores/search?{urlencode({'university_code': uni_code, 'year': requested_year})}",
+                    tier="Nguồn dữ liệu bên thứ ba",
+                    verified=False,
+                ))
 
         # 2. Nếu không có trường cụ thể nhưng có từ khóa ngành
         elif keyword:
-            scores = await self.search_scores(keyword=keyword, subject_group=block, limit=8)
+            scores = await self.search_scores(keyword=keyword, year=requested_year, subject_group=block, limit=8)
             if scores:
-                lines.append(f"### DỮ LIỆU ĐIỂM CHUẨN NGÀNH LIÊN QUAN ĐẾN '{keyword.upper()}':")
+                lines.append(f"### DỮ LIỆU ĐIỂM CHUẨN THAM KHẢO NGÀNH '{keyword.upper()}' ({requested_year}):")
                 for s in scores:
                     groups = ", ".join(s.get("subject_groups", []))
-                    lines.append(f"- Trường: {s.get('uni_name', s.get('uni_code'))} | Ngành: {s.get('major_name')} | Tổ hợp: [{groups}] | Điểm chuẩn: **{s.get('cutoff_score')} điểm**")
+                    lines.append(f"- Trường: {s.get('uni_name', s.get('uni_code'))} | Ngành: {s.get('major_name')} | Năm: {s.get('year')} | Tổ hợp: [{groups}] | Điểm API trả về: {s.get('cutoff_score')} điểm | Nguồn ghi trong API: {s.get('source', 'không rõ')}")
 
-            citations.append(CitationItem(
-                source_title=f"Tra cứu Điểm chuẩn Ngành {keyword.title()} tại các trường Đại học",
-                source_url=f"/api/v1/retrieval/scores/search?keyword={keyword}",
-                tier="Cấp 3 (Tuyển sinh & Đào tạo)",
-                verified=True
-            ))
-
-        # 3. Nếu là câu hỏi chung về danh sách các trường
-        else:
-            unis = await self.list_universities()
-            if unis:
-                lines.append("### DANH MỤC CÁC TRƯỜNG ĐẠI HỌC HÀNG ĐẦU VIỆT NAM (DỮ LIỆU THỜI GIAN THỰC):")
-                for u in unis[:8]:
-                    lines.append(f"- [{u.get('code')}] {u.get('name')} ({u.get('region')}) - Học phí: {u.get('tuition_fee', u.get('tuition_range', 'Theo đề án'))}")
+                citations.append(CitationItem(
+                    source_title=f"API tra cứu điểm chuẩn tham khảo - ngành {keyword.title()} (chưa xác minh với trường)",
+                    source_url=f"{self.base_url}/api/v1/retrieval/scores/search?{urlencode({'keyword': keyword, 'year': requested_year})}",
+                    tier="Nguồn dữ liệu bên thứ ba",
+                    verified=False,
+                ))
 
         if lines:
             context_header = (
-                "\n[DỮ LIỆU ĐIỂM CHUẨN & TUYỂN SINH TRỰC TIẾP CỦA HỆ THỐNG]\n"
-                "(Dữ liệu dưới đây được truy xuất trực tiếp từ Cơ sở dữ liệu Tuyển sinh Quốc gia 2026 - Hãy sử dụng các số liệu chính xác này để tư vấn cho học sinh, không tự bịa đặt điểm chuẩn):\n"
+                "\n[DỮ LIỆU THAM KHẢO TỪ API TRA CỨU BÊN THỨ BA]\n"
+                "(Đây là dữ liệu lịch sử do API trả về, chưa được xác nhận trực tiếp với trường. Không gọi là dữ liệu chính thức, không dự báo năm chưa công bố và phải nêu rõ năm/nguồn):\n"
             )
             return context_header + "\n".join(lines), citations
 

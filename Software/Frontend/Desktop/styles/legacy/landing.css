@@ -26,6 +26,51 @@ html.has-landing {
   scroll-margin-top: 64px;
 }
 
+.lp-faq {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.8fr) minmax(0, 1.2fr);
+  gap: clamp(28px, 6vw, 88px);
+  align-items: start;
+}
+.lp-faq__intro h2 {
+  margin: var(--s-3) 0 var(--s-4);
+  color: var(--c-brand-navy);
+  font: var(--lp-h2);
+  letter-spacing: var(--lp-h2-ls);
+}
+.lp-faq__intro > p {
+  max-width: 34ch;
+  color: var(--c-text-2);
+  font: var(--t-body);
+}
+.lp-faq__eyebrow {
+  color: var(--c-brand-blue);
+  font: var(--t-micro);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+}
+.lp-faq__list { border-top: 1px solid var(--c-border); }
+.lp-faq__item { border-bottom: 1px solid var(--c-border); }
+.lp-faq__item summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  min-height: 64px;
+  color: var(--c-text);
+  font: var(--t-body-strong);
+  cursor: pointer;
+  list-style: none;
+}
+.lp-faq__item summary::-webkit-details-marker { display: none; }
+.lp-faq__item summary svg { flex: 0 0 auto; color: var(--c-brand-blue); transition: transform var(--d-fast) var(--ease-standard); }
+.lp-faq__item[open] summary svg { transform: rotate(180deg); }
+.lp-faq__item summary:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.lp-faq__item > p { max-width: 68ch; margin: 0; padding: 0 var(--s-8) var(--s-5) 0; color: var(--c-text-2); font: var(--t-body); }
+@media (max-width: 760px) {
+  .lp-faq { grid-template-columns: minmax(0, 1fr); gap: var(--s-6); }
+}
+
 /* Desktop chỉ cân nhẹ section khi người dùng đã cuộn gần tới mốc. Không bắt
    bánh xe và không dùng snap trên mobile hoặc khi giảm chuyển động. */
 @media (min-width: 901px) and (prefers-reduced-motion: no-preference) {

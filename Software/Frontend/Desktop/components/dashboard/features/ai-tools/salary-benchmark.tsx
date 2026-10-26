@@ -2,12 +2,11 @@
 
 import { useState, useMemo, useRef } from "react";
 import {
-  getMarketSalaryReport,
   type MarketSalaryReport,
   VIETNAM_LOCATIONS,
-  WORK_MODES,
   INDUSTRY_SECTORS,
 } from "@/lib/salary-crawler-engine";
+import { salary } from "@/lib/api-endpoints";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +21,6 @@ import {
   MapPin,
   Briefcase,
   Layers,
-  Calculator,
   CheckCircle2,
   Download,
   Zap,
@@ -32,9 +30,7 @@ import {
   Flame,
   Building2,
   ChevronRight,
-  Clock,
   ListFilter,
-  AlertCircle,
 } from "lucide-react";
 import {
   LineChart,
@@ -196,7 +192,6 @@ export function SalaryBenchmarkSection() {
 
   // Page View State: "search" (Page 1) | "loading" (Transition) | "result" (Page 2)
   const [currentView, setCurrentView] = useState<"search" | "loading" | "result">("search");
-  const [loadingProgress, setLoadingProgress] = useState(0);
   const [loadingStepText, setLoadingStepText] = useState("Đang kết nối cơ sở dữ liệu thị trường...");
 
   // Search Inputs (Unselected by default to require full user confirmation)
@@ -204,7 +199,6 @@ export function SalaryBenchmarkSection() {
   const [selectedLocation, setSelectedLocation] = useState("");
   const [selectedExp, setSelectedExp] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
-  const [selectedWorkMode, setSelectedWorkMode] = useState("all");
 
   // Field Error Highlights
   const [fieldErrors, setFieldErrors] = useState<{
@@ -222,22 +216,13 @@ export function SalaryBenchmarkSection() {
   const [activeLocation, setActiveLocation] = useState("");
   const [activeExp, setActiveExp] = useState("");
   const [activeCategory, setActiveCategory] = useState("");
-  const [activeWorkMode, setActiveWorkMode] = useState("all");
 
-  // Offer Simulator State
-  const [simLevel, setSimLevel] = useState<"fresher" | "junior" | "mid" | "senior">("senior");
-  const [simYears, setSimYears] = useState("5");
-  const [simOffer, setSimOffer] = useState("28 – 38 Triệu VNĐ/tháng");
-
-  // Fetch Report Data from Universal Calculation Engine
-  const report: MarketSalaryReport = useMemo(() => {
-    return getMarketSalaryReport(
-      activeQuery || "Kế toán trưởng",
-      activeLocation || "all",
-      activeCategory || "Tất cả ngành nghề",
-      activeWorkMode || "all"
-    );
-  }, [activeQuery, activeLocation, activeCategory, activeWorkMode]);
+  const [reportState, setReportState] = useState<MarketSalaryReport | null>(null);
+  const [reportSource, setReportSource] = useState("");
+  const report: MarketSalaryReport = reportState ?? {
+    jobTitle: "", category: "", avgSalary: 0, popularMin: 0, popularMax: 0, overallMin: 0, overallMax: 0,
+    workModeLabel: "", locationLabel: "", expData: [], cityData: [], skills: [], description: "",
+  };
 
   // Grouped Locations by Region for Dropdown
   const locationGroups = useMemo(() => {
@@ -303,18 +288,16 @@ export function SalaryBenchmarkSection() {
   };
 
   // Handle Search Submission with High-End Loading Transition
-  const executeSearch = (
+  const executeSearch = async (
     titleVal?: string,
     locVal?: string,
     catVal?: string,
-    expVal?: string,
-    modeVal?: string
+    expVal?: string
   ) => {
     const targetTitle = (titleVal !== undefined ? titleVal : searchTitle).trim();
     const targetCategory = (catVal !== undefined ? catVal : selectedCategory).trim();
     const targetLoc = (locVal !== undefined ? locVal : selectedLocation).trim();
     const targetExp = (expVal !== undefined ? expVal : selectedExp).trim();
-    const targetMode = modeVal !== undefined ? modeVal : selectedWorkMode;
 
     const isValid = validateSearchCriteria(targetTitle, targetCategory, targetLoc, targetExp);
     if (!isValid) return;
@@ -323,29 +306,46 @@ export function SalaryBenchmarkSection() {
     setActiveLocation(targetLoc);
     setActiveCategory(targetCategory);
     setActiveExp(targetExp);
-    setActiveWorkMode(targetMode);
 
-    // Switch to Loading View
+    const locationName = VIETNAM_LOCATIONS.find((item) => item.key === targetLoc)?.name || targetLoc;
+    const yearsOfExperience = ({ fresher: 0, junior: 2, mid: 4, senior: 6 } as Record<string, number>)[targetExp];
+
     setCurrentView("loading");
-    setLoadingProgress(10);
-    setLoadingStepText(`Khởi tạo phân tích thị trường cho vị trí "${targetTitle}"...`);
-
-    // Multi-step Loading Animation (1.2s total)
-    setTimeout(() => {
-      setLoadingProgress(45);
-      setLoadingStepText(`Đang đối chiếu dữ liệu tại khu vực và dải phân vị chuẩn...`);
-    }, 380);
-
-    setTimeout(() => {
-      setLoadingProgress(85);
-      setLoadingStepText("Chuẩn bị biểu đồ dải lương và định giá tuyển dụng...");
-    }, 800);
-
-    setTimeout(() => {
-      setLoadingProgress(100);
+    setLoadingStepText(`Đang tra cứu dữ liệu lương cho ${targetTitle} qua API...`);
+    setReportState(null);
+    try {
+      const response = await salary.analyze({
+        job_title: targetTitle,
+        location: locationName,
+        years_of_experience: yearsOfExperience,
+      });
+      const market = response.marketSalary || response.market_salary;
+      if (!market || !Number.isFinite(market.p25) || !Number.isFinite(market.median) || !Number.isFinite(market.p75) || market.median <= 0) {
+        throw new Error("API chưa trả về dữ liệu lương hợp lệ cho tiêu chí này.");
+      }
+      const toMillions = (amount: number) => Math.round((amount / 1_000_000) * 10) / 10;
+      setReportState({
+        jobTitle: targetTitle,
+        category: targetCategory,
+        avgSalary: toMillions(market.median),
+        popularMin: toMillions(market.p25),
+        popularMax: toMillions(market.p75),
+        overallMin: toMillions(market.p25),
+        overallMax: toMillions(market.p75),
+        workModeLabel: "API không phân loại hình thức làm việc",
+        locationLabel: locationName,
+        expData: [],
+        cityData: [],
+        skills: [],
+        description: [response.summary, response.confidenceNote || response.confidence_note, response.source].filter(Boolean).join(" "),
+      });
+      setReportSource(response.source || response.confidenceNote || response.confidence_note || "Nguồn API chưa cung cấp mô tả.");
       setCurrentView("result");
-      toast.success(`Đã phân tích thành công mức lương cho vị trí "${targetTitle}"!`);
-    }, 1200);
+      toast.success(`Đã nhận kết quả tra cứu cho "${targetTitle}".`);
+    } catch (error) {
+      setCurrentView("search");
+      toast.error(error instanceof Error ? error.message : "Không tra cứu được dữ liệu lương từ API.");
+    }
   };
 
   const handleSearchSubmit = (e?: React.FormEvent) => {
@@ -364,106 +364,72 @@ export function SalaryBenchmarkSection() {
     {
       name: "Tài chính / Kế toán",
       roles: ["Kế toán trưởng", "Kế toán tổng hợp", "Chuyên viên tài chính"],
-      salaryRange: "14 - 30 Tr",
+      salaryRange: "Tra cứu qua API",
       icon: DollarSign,
       color: "text-blue-600 bg-blue-50 border-blue-100",
     },
     {
       name: "Công nghệ thông tin",
       roles: ["DevOps Engineer", "Frontend Developer", "Backend Developer", "AI Engineer"],
-      salaryRange: "20 - 40 Tr",
+      salaryRange: "Tra cứu qua API",
       icon: Layers,
       color: "text-sky-600 bg-sky-50 border-sky-100",
     },
     {
       name: "Kinh doanh / Bán hàng",
       roles: ["Nhân viên kinh doanh", "Trưởng phòng kinh doanh", "Sales B2B"],
-      salaryRange: "15 - 38 Tr",
+      salaryRange: "Tra cứu qua API",
       icon: TrendingUp,
       color: "text-cyan-600 bg-cyan-50 border-cyan-100",
     },
     {
       name: "Marketing & Truyền thông",
       roles: ["Digital Marketing", "Content Specialist", "Marketing Manager"],
-      salaryRange: "13.5 - 25 Tr",
+      salaryRange: "Tra cứu qua API",
       icon: Sparkles,
       color: "text-indigo-600 bg-indigo-50 border-indigo-100",
     },
     {
       name: "Hành chính / Nhân sự",
       roles: ["Chuyên viên tuyển dụng", "HR Executive", "HR Manager"],
-      salaryRange: "12.5 - 25 Tr",
+      salaryRange: "Tra cứu qua API",
       icon: Briefcase,
       color: "text-purple-600 bg-purple-50 border-purple-100",
     },
     {
       name: "Thiết kế / Sáng tạo",
       roles: ["UI/UX Designer", "Graphic Designer", "Product Designer"],
-      salaryRange: "14 - 28 Tr",
+      salaryRange: "Tra cứu qua API",
       icon: Zap,
       color: "text-pink-600 bg-pink-50 border-pink-100",
     },
     {
       name: "Logistics / Xuất nhập khẩu",
       roles: ["Chuyên viên xuất nhập khẩu", "Quản lý kho vận", "Supply Chain"],
-      salaryRange: "13.5 - 26 Tr",
+      salaryRange: "Tra cứu qua API",
       icon: Building2,
       color: "text-teal-600 bg-teal-50 border-teal-100",
     },
     {
       name: "Dịch vụ khách hàng",
       roles: ["Chăm sóc khách hàng", "Customer Care", "Telesales"],
-      salaryRange: "10 - 18 Tr",
+      salaryRange: "Tra cứu qua API",
       icon: CheckCircle2,
       color: "text-amber-600 bg-amber-50 border-amber-100",
     },
   ];
 
-  // Calculate percentages for Spectrum Bar (Page 2)
-  const { lowPct, midPct, highPct, avgPct } = useMemo(() => {
-    const totalSpan = Math.max(report.overallMax - report.overallMin, 1);
-    const lowWidth = Math.max(((report.popularMin - report.overallMin) / totalSpan) * 100, 18);
-    const midWidth = Math.max(((report.popularMax - report.popularMin) / totalSpan) * 100, 30);
-    const highWidth = Math.max(100 - lowWidth - midWidth, 18);
-    const avgPos = Math.min(Math.max(((report.avgSalary - report.overallMin) / totalSpan) * 100, 5), 95);
-
-    return { lowPct: lowWidth, midPct: midWidth, highPct: highWidth, avgPct: avgPos };
-  }, [report]);
-
-  // Handle Offer Simulator
-  const handleCalculateOffer = () => {
-    let result = `${report.popularMin} – ${report.popularMax} Triệu VNĐ/tháng`;
-    if (simLevel === "fresher") {
-      result = `${Math.round(report.popularMin * 0.6 * 10) / 10} – ${Math.round(report.popularMin * 0.85 * 10) / 10} Triệu VNĐ/tháng`;
-    } else if (simLevel === "junior") {
-      result = `${Math.round(report.popularMin * 0.85 * 10) / 10} – ${report.popularMin} Triệu VNĐ/tháng`;
-    } else if (simLevel === "mid") {
-      result = `${report.popularMin} – ${report.avgSalary} Triệu VNĐ/tháng`;
-    } else if (simLevel === "senior") {
-      result = `${report.avgSalary} – ${report.popularMax} Triệu VNĐ/tháng`;
-    }
-    setSimOffer(result);
-    toast.success("Đã tính toán dải lương tuyển dụng đề xuất!");
-  };
-
   // Export CSV
   const handleExportCSV = () => {
     const csvRows = [
-      `"BÁO CÁO MỨC LƯƠNG THỊ TRƯỜNG LAO ĐỘNG 2026: ${report.jobTitle.toUpperCase()}"`,
+      `"KẾT QUẢ TRA CỨU LƯƠNG: ${report.jobTitle.toUpperCase()}"`,
       `"Nhóm ngành:","${report.category}"`,
       `"Địa điểm:","${report.locationLabel}"`,
-      `"Hình thức làm việc:","${report.workModeLabel}"`,
-      `"Mức lương trung bình:","${report.avgSalary} Triệu VNĐ/tháng"`,
-      `"Khoảng lương phổ biến:","${report.popularMin} - ${report.popularMax} Triệu VNĐ/tháng"`,
-      `"Dải lương thị trường:","${report.overallMin} - ${report.overallMax} Triệu VNĐ/tháng"`,
-      "",
-      `"PHÂN BỐ THEO SỐ NĂM KINH NGHIỆM"`,
-      ...report.expData.map((d) => `"${d.expLabel}","${d.salary} Triệu VNĐ/tháng"`),
-      "",
-      `"PHÂN BỐ THEO KHU VỰC ĐỊA LÝ"`,
-      ...report.cityData.map((c) => `"${c.cityName}","${c.salary} Triệu VNĐ/tháng"`),
-      "",
-      `"KỸ NĂNG TRỌNG TÂM:","${report.skills.join(", ")}"`,
+      `"Hình thức làm việc:","Không được API phân loại"`,
+      `"Trung vị P50:","${report.avgSalary} Triệu VNĐ/tháng"`,
+      `"Phân vị P25-P75:","${report.popularMin} - ${report.popularMax} Triệu VNĐ/tháng"`,
+      `"Nguồn:","${reportSource}"`,
+      `"Ghi chú:","API không cung cấp phân bố theo tỉnh/thành, cấp bậc hoặc kỹ năng."`,
     ];
 
     const blob = new Blob(["\uFEFF" + csvRows.join("\n")], { type: "text/csv;charset=utf-8;" });
@@ -481,39 +447,39 @@ export function SalaryBenchmarkSection() {
   // Summary KPIs for Page 2
   const summaryKpis = [
     {
-      title: "Mức Lương Trung Bình",
+      title: "Trung vị P50",
       value: `${report.avgSalary} Tr`,
       unit: "VNĐ/tháng",
-      subtext: `Mức phổ biến nhất thị trường`,
+      subtext: `Theo kết quả API`,
       icon: DollarSign,
       trend: "Chuẩn P50",
       accent: "text-sky-600 bg-sky-50 border border-sky-100",
     },
     {
-      title: "Dải lương tham khảo",
+      title: "Phân vị tham khảo P25-P75",
       value: `${report.popularMin} - ${report.popularMax} Tr`,
       unit: "VNĐ/tháng",
-      subtext: `Khoảng giá trị trong bộ dữ liệu tham khảo`,
+      subtext: `Theo kết quả API`,
       icon: TrendingUp,
       trend: "P25 – P75",
       accent: "text-blue-600 bg-blue-50 border border-blue-100",
     },
     {
-      title: "Dải lương tổng hợp",
-      value: `${report.overallMin} - ${report.overallMax} Tr`,
-      unit: "VNĐ/tháng",
-      subtext: `Khởi điểm đến cấp quản lý`,
+      title: "Nguồn dữ liệu",
+      value: reportSource || "API",
+      unit: "",
+      subtext: `Xem ghi chú nguồn bên dưới`,
       icon: Layers,
-      trend: "Min – Max",
+      trend: "Nguồn",
       accent: "text-cyan-600 bg-cyan-50 border border-cyan-100",
     },
     {
       title: "Khu vực & hình thức",
       value: report.locationLabel.split("(")[0].trim(),
-      unit: report.workModeLabel.split("(")[0].trim(),
+      unit: "Không lọc theo hình thức",
       subtext: `${report.category}`,
       icon: Sparkles,
-      trend: "34 Tỉnh Thành",
+      trend: "Theo API",
       accent: "text-indigo-600 bg-indigo-50 border border-indigo-100",
     },
   ];
@@ -749,7 +715,7 @@ export function SalaryBenchmarkSection() {
                           }
 
                           // If all fields are already present, execute search directly
-                          executeSearch(role, selectedLocation, category, selectedExp, selectedWorkMode);
+                          executeSearch(role, selectedLocation, category, selectedExp);
                         }}
                         className="px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 hover:bg-sky-50 hover:text-sky-700 text-slate-700 border border-slate-200/80 transition-colors"
                       >
@@ -758,22 +724,7 @@ export function SalaryBenchmarkSection() {
                     ))}
                   </div>
 
-                  {/* Right: Work Mode Filter Pill */}
-                  <div className="flex items-center gap-1.5 shrink-0 text-[11px] text-slate-600">
-                    <Clock className="w-3 h-3 text-sky-600" />
-                    <span>Hình thức:</span>
-                    <select
-                      value={selectedWorkMode}
-                      onChange={(e) => setSelectedWorkMode(e.target.value)}
-                      className="bg-slate-50 border border-slate-200 text-[11px] rounded px-1.5 py-0.5 font-medium text-slate-800 focus:outline-none"
-                    >
-                      {WORK_MODES.map((m) => (
-                        <option key={m.key} value={m.key}>
-                          {m.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <span className="text-[11px] text-slate-500">API hiện chưa lọc theo hình thức làm việc.</span>
                 </div>
               </div>
             </form>
@@ -852,7 +803,7 @@ export function SalaryBenchmarkSection() {
                               return;
                             }
 
-                            executeSearch(role, selectedLocation, cat.name, selectedExp, selectedWorkMode);
+                            executeSearch(role, selectedLocation, cat.name, selectedExp);
                           }}
                           className="inline-block mr-1.5 mb-1 px-2 py-0.5 rounded text-[10px] bg-slate-50 text-slate-600 hover:bg-sky-100 hover:text-sky-800 border border-slate-200/60 transition-colors"
                         >
@@ -910,13 +861,11 @@ export function SalaryBenchmarkSection() {
           <div className="space-y-1.5">
             <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden p-0.5">
               <div
-                style={{ width: `${loadingProgress}%` }}
-                className="h-full bg-gradient-to-r from-sky-500 to-blue-600 rounded-full transition-all duration-300 ease-out"
+                className="h-full w-1/3 bg-gradient-to-r from-sky-500 to-blue-600 rounded-full animate-pulse"
               />
             </div>
             <div className="flex items-center justify-between text-[11px] text-muted-foreground font-mono">
-              <span>Đang xử lý</span>
-              <span>{loadingProgress}%</span>
+              <span>Đang chờ API phản hồi</span>
             </div>
           </div>
         </Card>
@@ -956,7 +905,7 @@ export function SalaryBenchmarkSection() {
               🎓 {activeExp === "fresher" ? "Dưới 1 năm" : activeExp === "junior" ? "1-3 năm" : activeExp === "mid" ? "3-5 năm" : "Trên 5 năm"}
             </Badge>
             <Badge variant="outline" className="text-slate-700 text-xs">
-              💼 {report.workModeLabel}
+              💼 Không lọc theo hình thức làm việc
             </Badge>
             <Badge variant="outline" className="text-slate-700 text-xs">
               🏢 {report.category}
@@ -1019,7 +968,7 @@ export function SalaryBenchmarkSection() {
                 </Badge>
               </div>
               <CardDescription className="text-xs text-muted-foreground mt-0.5">
-                Áp dụng tại <strong>{report.locationLabel}</strong> • Hình thức: <strong>{report.workModeLabel}</strong>
+                Khu vực tra cứu: <strong>{report.locationLabel}</strong> • API hiện không lọc theo hình thức làm việc
               </CardDescription>
             </div>
           </div>
@@ -1028,15 +977,15 @@ export function SalaryBenchmarkSection() {
         <CardContent className="p-5 sm:p-6 space-y-5">
           {/* 2 Primary Metric Summary Boxes */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="p-4 rounded-xl bg-gradient-to-br from-sky-50 to-blue-50/40 border border-sky-200/80">
+              <div className="p-4 rounded-xl bg-gradient-to-br from-sky-50 to-blue-50/40 border border-sky-200/80">
               <span className="text-xs font-bold text-sky-800 uppercase tracking-wide block">
-                Mức lương tham chiếu
+                Trung vị P50
               </span>
               <p className="text-2xl sm:text-3xl font-extrabold text-sky-950 mt-1 tracking-tight">
                 {report.avgSalary} Triệu VNĐ/tháng
               </p>
               <span className="text-[11px] text-sky-700 font-medium mt-1 block">
-                Mức thu nhập bình quân phản ánh theo cung cầu thị trường
+                Kết quả trung vị do API trả về
               </span>
             </div>
 
@@ -1048,57 +997,17 @@ export function SalaryBenchmarkSection() {
                 {report.popularMin} – {report.popularMax} Triệu VNĐ/tháng
               </p>
               <span className="text-[11px] text-cyan-700 font-medium mt-1 block">
-                Dải chi trả phổ biến nhất tại hơn 75% doanh nghiệp
+                Phân vị của nguồn dữ liệu; không phải dải áp dụng cho mọi doanh nghiệp
               </span>
             </div>
           </div>
 
-          {/* Visual 3-Segment Spectrum Meter Bar */}
-          <div className="space-y-2 pt-1">
-            <div className="flex items-center justify-between text-xs font-bold text-slate-700">
-              <span className="text-[11px] font-mono font-bold text-slate-500">Mức Thấp ({report.overallMin} - {report.popularMin} Tr)</span>
-              <span className="text-xs font-bold text-sky-800 bg-sky-50 px-2.5 py-0.5 rounded border border-sky-200 shadow-2xs">
-                Dải Phổ Biến Nhất ({report.popularMin} – {report.popularMax} Tr)
-              </span>
-              <span className="text-[11px] font-mono font-bold text-slate-500">Mức Cao ({report.popularMax} - {report.overallMax} Tr)</span>
-            </div>
-
-            <div className="h-5.5 w-full rounded-md flex overflow-hidden shadow-inner relative p-0.5 bg-slate-100">
-              {/* Segment 1: Low */}
-              <div
-                style={{ width: `${lowPct}%` }}
-                className="bg-[#D69E2E] h-full rounded-l-sm transition-all duration-300"
-              />
-              {/* Segment 2: Popular */}
-              <div
-                style={{ width: `${midPct}%` }}
-                className="bg-gradient-to-r from-sky-500 to-sky-600 h-full transition-all duration-300 relative"
-              />
-              {/* Segment 3: High */}
-              <div
-                style={{ width: `${highPct}%` }}
-                className="bg-[#1E40AF] h-full rounded-r-sm transition-all duration-300"
-              />
-
-              {/* Pin Indicator */}
-              <div
-                style={{ left: `${avgPct}%` }}
-                className="absolute top-0 bottom-0 w-1 bg-white shadow-md z-10 -translate-x-1/2 flex flex-col items-center justify-center"
-              >
-                <div className="w-3 h-3 bg-slate-900 rounded-full border-2 border-white shadow-xs" />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between text-xs text-slate-500 pt-0.5 font-medium">
-              <span className="font-mono text-[11px]">{report.overallMin} Tr (Min)</span>
-              <span className="font-mono text-[11px] text-slate-700 font-bold">{report.popularMin} Tr</span>
-              <Badge className="bg-sky-100 text-sky-800 border-sky-200 text-[10px] font-extrabold px-2 py-0.5 shadow-2xs">
-                Trung Bình: {report.avgSalary} Tr/tháng
-              </Badge>
-              <span className="font-mono text-[11px] text-slate-700 font-bold">{report.popularMax} Tr</span>
-              <span className="font-mono text-[11px]">{report.overallMax} Tr (Max)</span>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 border-t border-border pt-4 text-sm">
+            <div><span className="block text-xs text-muted-foreground">P25</span><strong>{report.popularMin} triệu/tháng</strong></div>
+            <div><span className="block text-xs text-muted-foreground">P50 (trung vị)</span><strong>{report.avgSalary} triệu/tháng</strong></div>
+            <div><span className="block text-xs text-muted-foreground">P75</span><strong>{report.popularMax} triệu/tháng</strong></div>
           </div>
+          <p className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">{reportSource}</p>
         </CardContent>
       </Card>
 
@@ -1112,11 +1021,12 @@ export function SalaryBenchmarkSection() {
               <span>Theo kinh nghiệm làm việc</span>
             </CardTitle>
             <CardDescription className="text-xs text-muted-foreground">
-              Lương trung bình/tháng vị trí {report.jobTitle} phân tích theo số năm kinh nghiệm
+              Phân bố theo kinh nghiệm chỉ hiển thị khi API có dữ liệu tương ứng
             </CardDescription>
           </CardHeader>
 
           <CardContent className="p-5">
+            {report.expData.length > 0 ? <div>
             <div className="h-[210px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={report.expData} margin={{ top: 15, right: 15, left: -20, bottom: 0 }}>
@@ -1146,6 +1056,7 @@ export function SalaryBenchmarkSection() {
                 </LineChart>
               </ResponsiveContainer>
             </div>
+            </div> : <p className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-600">API hiện không cung cấp dữ liệu lương phân tách theo số năm kinh nghiệm.</p>}
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-3 border-t border-slate-100 mt-2">
               {report.expData.map((d) => (
@@ -1166,11 +1077,12 @@ export function SalaryBenchmarkSection() {
               <span>Theo khu vực địa lý</span>
             </CardTitle>
             <CardDescription className="text-xs text-muted-foreground">
-              So sánh mức lương bình quân tại các tỉnh thành
+              So sánh khu vực chỉ hiển thị khi API có dữ liệu tương ứng
             </CardDescription>
           </CardHeader>
 
           <CardContent className="p-5">
+            {report.cityData.length > 0 ? <div>
             <div className="h-[210px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
@@ -1198,14 +1110,15 @@ export function SalaryBenchmarkSection() {
             </div>
 
             <div className="flex items-center justify-between text-xs text-slate-600 pt-3 border-t border-slate-100 mt-2 px-1">
-              <span>Khu vực cao nhất: <strong className="text-sky-700">TP.HCM (~{report.cityData.find(c => c.cityName.includes("Hồ Chí Minh"))?.salary || report.avgSalary} Tr)</strong></span>
-              <span>Hà Nội: <strong className="text-slate-800">~{report.cityData.find(c => c.cityName.includes("Hà Nội"))?.salary || report.avgSalary} Tr</strong></span>
+              <span>Khu vực cao nhất: <strong className="text-sky-700">{report.cityData[0]?.cityName}</strong></span>
+              <span>Hà Nội: <strong className="text-slate-800">{report.cityData.find(c => c.cityName.includes("Hà Nội"))?.salary ?? "Chưa có dữ liệu"}</strong></span>
             </div>
+            </div> : <p className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-600">API hiện không cung cấp dữ liệu lương phân tách theo tỉnh/thành.</p>}
           </CardContent>
         </Card>
       </div>
 
-      {/* 4. SKILLS & RECRUITER OFFER SUITE */}
+      {/* 4. API DATA LIMITS */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Skills & Description */}
         <div className="lg:col-span-2 space-y-4">
@@ -1218,14 +1131,14 @@ export function SalaryBenchmarkSection() {
             </CardHeader>
             <CardContent className="p-5 space-y-4">
               <div className="flex flex-wrap gap-2">
-                {report.skills.map((skill) => (
+                {report.skills.length > 0 ? report.skills.map((skill) => (
                   <span
                     key={skill}
                     className="px-3 py-1 bg-sky-50 text-sky-900 rounded-lg text-xs font-semibold border border-sky-200/80 hover:bg-sky-100 transition-colors"
                   >
                     ⚡ {skill}
                   </span>
-                ))}
+                )) : <p className="text-xs text-slate-600">API không trả về dữ liệu kỹ năng cho vị trí này.</p>}
               </div>
 
               <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 leading-relaxed">
@@ -1235,60 +1148,15 @@ export function SalaryBenchmarkSection() {
           </Card>
         </div>
 
-        {/* AI Offer Estimator */}
-        <div>
-          <Card className="border-border bg-card shadow-xs">
-            <CardHeader className="pb-3 border-b border-border/70">
-              <CardTitle className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <Calculator className="w-4 h-4 text-sky-600" />
-                <span>Ước tính mức lương đề xuất</span>
-              </CardTitle>
-              <CardDescription className="text-xs">
-                Ước lượng dải lương phù hợp cho ứng viên
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-4 space-y-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-800">Cấp bậc ứng viên</Label>
-                <select
-                  value={simLevel}
-                  onChange={(e: any) => setSimLevel(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 text-xs rounded-md px-2.5 py-2 text-slate-900 font-medium focus:outline-none focus:ring-1 focus:ring-sky-500"
-                >
-                  <option value="fresher">Mới tốt nghiệp / Fresher (&lt; 1 năm)</option>
-                  <option value="junior">Nhân viên / Junior (1 – 3 năm)</option>
-                  <option value="mid">Chuyên viên / Mid-Level (3 – 5 năm)</option>
-                  <option value="senior">Chuyên viên cao cấp / Senior (&gt; 5 năm)</option>
-                </select>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-800">Số năm kinh nghiệm</Label>
-                <Input
-                  type="number"
-                  value={simYears}
-                  onChange={(e) => setSimYears(e.target.value)}
-                  className="bg-slate-50 border-slate-200 text-xs h-9"
-                  min="0"
-                  max="25"
-                />
-              </div>
-
-              <Button
-                onClick={handleCalculateOffer}
-                className="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs h-9 shadow-xs"
-              >
-                <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-                Ước tính mức lương
-              </Button>
-
-              <div className="p-3 rounded-xl bg-sky-50/80 border border-sky-200 space-y-1.5 mt-2">
-                <span className="text-[11px] font-bold text-sky-900 block">Dải lương khuyến nghị:</span>
-                <p className="text-base font-extrabold text-sky-950 tracking-tight">{simOffer}</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <Card className="border-border bg-card shadow-xs lg:col-span-1">
+          <CardHeader className="pb-3 border-b border-border/70">
+            <CardTitle className="text-sm font-bold text-slate-900">Phạm vi dữ liệu hiện có</CardTitle>
+            <CardDescription className="text-xs">Thông tin ngoài phân vị chỉ hiển thị khi API cung cấp dữ liệu.</CardDescription>
+          </CardHeader>
+          <CardContent className="p-5 text-xs leading-relaxed text-slate-600">
+            Kết quả này không tạo mức lương đề xuất riêng cho từng ứng viên. Hãy dùng P25–P75 làm dữ liệu tham khảo và cân nhắc thêm năng lực, phạm vi công việc cùng chính sách của doanh nghiệp.
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

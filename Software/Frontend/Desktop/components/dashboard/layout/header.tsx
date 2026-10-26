@@ -37,10 +37,6 @@ const sectionTitles: Record<Section, { title: string; subtitle: string }> = {
     title: "Tổng Quan Tuyển Dụng & Chấm Điểm CV",
     subtitle: "Theo dõi thời gian thực tỉ lệ đối chiếu AI, số lượng hồ sơ và tiến độ lấp đầy vị trí",
   },
-  workspace: {
-    title: "Không Gian Làm Việc Recruiter",
-    subtitle: "Trung tâm quản trị các chiến dịch tuyển dụng, phím tắt công cụ AI và hồ sơ gần đây",
-  },
   "match-workflow": {
     title: "Quy Trình Đối Chiếu AI 5 Bước (AI Matching Wizard)",
     subtitle: "Luồng xử lý liền mạch: Chọn JD → Thiết Lập Rubric → Nạp CV → Chấm Điểm AI → Bảng Radar So Sánh",
@@ -145,7 +141,7 @@ export function Header() {
   // setActiveSection — phải suy tiêu đề từ pathname trước. chatbot và
   // salary-benchmark đã tách hẳn khỏi khung này (có top bar riêng ở
   // app/chatbot, app/salary-benchmark) nên Header không cần biết tới nữa.
-  const routeSection: Section | null = pathname === "/dashboard/match-workflow" ? "match-workflow" : null;
+  const routeSection: Section | null = pathname === "/cv-match" ? "match-workflow" : null;
   const currentSectionInfo = sectionTitles[routeSection ?? activeSection] || {
     title: "CV Match",
     subtitle: "Nền tảng Tuyển dụng & Chấm điểm CV Thông minh",

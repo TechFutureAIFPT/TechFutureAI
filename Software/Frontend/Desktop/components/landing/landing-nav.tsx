@@ -42,8 +42,8 @@ const MENUS: Menu[] = [
       {
         caption: "Dựng phiên sàng lọc",
         items: [
-          ["Không gian làm việc", "Điểm khởi đầu cho một đợt sàng lọc", "/dashboard?section=workspace"],
-          ["Quy trình đối chiếu AI", "5 bước từ JD đến bảng xếp hạng", "/dashboard/match-workflow"],
+          ["Tổng quan tuyển dụng", "Bắt đầu từ hoạt động và dữ liệu tuyển dụng", "/dashboard"],
+          ["Quy trình đối chiếu AI", "5 bước từ JD đến bảng xếp hạng", "/cv-match"],
           ["Cấu hình rubric tiêu chí", "Chọn tiêu chí nào nặng hơn trước khi chấm", "/dashboard?section=criteria-settings"],
         ],
       },
@@ -60,7 +60,7 @@ const MENUS: Menu[] = [
       caption: "Trọng số do bạn đặt",
       title: "Rubric không phải hộp đen",
       text: "Bạn quyết định tiêu chí nào nặng hơn trước khi hệ thống chấm, và xem được căn cứ sau mỗi điểm số.",
-      cta: ["Bắt đầu đối chiếu", "/dashboard/match-workflow"],
+      cta: ["Bắt đầu đối chiếu", "/cv-match"],
     },
     foot: [["Tổng quan tuyển dụng", "/dashboard?section=overview"], ["So sánh cách làm", "/#so-sanh"]],
   },
@@ -71,8 +71,8 @@ const MENUS: Menu[] = [
       {
         caption: "Trợ lý & Cố vấn thông minh",
         items: [
-          ["Trợ lý AI Tuyển dụng", "Đàm thoại phân tích JD, lọc CV & Deep Research (Port 8080)", "/ai-assistant"],
-          ["Chatbot Định hướng Nghề nghiệp", "Cố vấn DeepSeek Reasoner & Khảo sát Holland RIASEC (Port 8001)", "/career-compass"],
+          ["Trợ lý AI Tuyển dụng", "Trao đổi về JD, tiêu chí và quy trình tuyển dụng", "/ai-assistant"],
+          ["Cố vấn định hướng nghề nghiệp", "Khám phá sở thích Holland RIASEC và nhóm nghề phù hợp", "/career-compass"],
           ["Bộ câu hỏi phỏng vấn", "Sinh câu hỏi chung, chuyên sâu hoặc so sánh", "/interview-questions"],
         ],
       },
@@ -87,8 +87,8 @@ const MENUS: Menu[] = [
     ],
     feature: {
       caption: "Hệ thống AI chuyên biệt",
-      title: "Trợ Lý AI & Cố Vấn Nghề Nghiệp",
-      text: "Hai phân hệ AI độc lập: Hỗ trợ Recruiter tối ưu hóa tuyển dụng và Cố vấn ứng viên chọn đúng ngành nghề theo chuẩn RIASEC.",
+      title: "AI hỗ trợ theo đúng nhu cầu",
+      text: "Trợ lý tuyển dụng giúp làm rõ yêu cầu công việc; cố vấn nghề nghiệp giúp khám phá sở thích và hướng phát triển.",
       cta: ["Khám phá Cố vấn Nghề nghiệp", "/career-compass"],
     },
     foot: [
@@ -124,9 +124,8 @@ const MENUS: Menu[] = [
 ];
 
 const DIRECT_LINKS: [string, string][] = [
-  ["Năng lực cốt lõi", "/#nang-luc"],
+  ["Chức năng", "/#nang-luc"],
   ["Quy trình", "/#lo-trinh"],
-  ["Tính hiệu quả", "/#tinh-hieu-qua"],
   ["So sánh", "/#so-sanh"],
   ["FAQ", "/#faq"],
 ];

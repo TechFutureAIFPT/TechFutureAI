@@ -10,7 +10,6 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Zap,
   Sparkles,
-  CheckCircle2,
   AlertTriangle,
   ArrowRight,
 } from "lucide-react";
@@ -19,37 +18,18 @@ import { toast } from "sonner";
 export function QuickScoreSection() {
   const { setActiveSection } = useSalesOps();
 
-  const [jdText, setJdText] = useState(
-    `Vị trí: Senior Frontend React/Vue Developer\nYêu cầu:\n- 4+ năm kinh nghiệm với React, TypeScript, Next.js\n- Thành thạo Tailwind CSS, State Management (Redux/Zustand)\n- Kinh nghiệm tối ưu hóa hiệu năng render và Web Vitals`
-  );
-  const [cvText, setCvText] = useState(
-    `Họ tên: Nguyễn Văn Hùng\nKinh nghiệm: 5 năm làm Senior Frontend Engineer tại Công ty Công nghệ.\nKỹ năng chuyên môn: ReactJS, TypeScript, Next.js, Redux Toolkit, Tailwind CSS, RESTful API, Docker.\nHọc vấn: Kỹ sư Phần mềm - ĐH Bách Khoa TP.HCM.`
-  );
+  const [jdText, setJdText] = useState("");
+  const [cvText, setCvText] = useState("");
 
   const [isScoring, setIsScoring] = useState(false);
   const [scoreResult, setScoreResult] = useState<{
     overallScore: number;
-    skillsScore: number;
-    expScore: number;
-    eduScore: number;
     strengths: string[];
     weaknesses: string[];
     recommendation: string;
-  } | null>({
-    overallScore: 92,
-    skillsScore: 95,
-    expScore: 90,
-    eduScore: 88,
-    strengths: [
-      "Kinh nghiệm 5 năm hoàn toàn vượt yêu cầu tối thiểu 4 năm của JD.",
-      "Thành thạo đầy đủ bộ công nghệ cốt lõi: React, TypeScript, Next.js, Tailwind CSS.",
-      "Nền tảng học vấn kỹ sư phần mềm chính quy từ trường top đầu.",
-    ],
-    weaknesses: [
-      "Chưa thấy thể hiện rõ các chứng chỉ kiểm thử tự động (Jest/Playwright).",
-    ],
-    recommendation: "ỨNG VIÊN XUẤT SẮC: Khuyến nghị chuyển ngay sang vòng phỏng vấn kỹ thuật.",
-  });
+    rank: string;
+    model: string;
+  } | null>(null);
 
   const handleRunQuickScore = async () => {
     if (!jdText.trim() || !cvText.trim()) {
@@ -70,50 +50,27 @@ export function QuickScoreSection() {
         ],
       });
 
-      if (res && Array.isArray(res.items) && res.items.length > 0) {
-        const item = res.items[0];
-        const match = Math.round(item.score || 88);
-
-        setScoreResult({
-          overallScore: match,
-          skillsScore: Math.min(100, match + 3),
-          expScore: Math.max(70, match - 4),
-          eduScore: 88,
-          strengths: item.strengths && item.strengths.length > 0 ? item.strengths : [
-            "Đáp ứng tốt các yêu cầu công nghệ và số năm kinh nghiệm theo JD.",
-            "Cấu trúc kinh nghiệm làm việc logic, có thế mạnh về kiến trúc ứng dụng.",
-          ],
-          weaknesses: item.weaknesses && item.weaknesses.length > 0 ? item.weaknesses : [
-            "Cần làm rõ thêm về kinh nghiệm quản lý nhóm hoặc điều phối dự án.",
-          ],
-          recommendation: item.summary || (match >= 75 ? "ĐẠT CHUẨN: Hồ sơ đạt ngưỡng điểm khuyến nghị tuyển dụng." : "TIỀM NĂNG: Cần phỏng vấn thêm để làm rõ khoảng trống kỹ năng."),
-        });
-
-        toast.success("Đã nhận kết quả chấm điểm trực tiếp từ Backend AI API!", { id: toastId });
-        return;
+      if (!Array.isArray(res.items) || res.items.length === 0) {
+        throw new Error("API không trả về kết quả chấm điểm cho CV này.");
       }
-    } catch {
-      // Fallback
+      const item = res.items[0];
+      if (!Number.isFinite(item.score)) throw new Error("API trả về điểm không hợp lệ.");
+      setScoreResult({
+        overallScore: Math.round(item.score),
+        strengths: item.strengths || [],
+        weaknesses: item.weaknesses || [],
+        recommendation: item.summary || "API chưa cung cấp phần tóm tắt.",
+        rank: item.rank,
+        model: res.model,
+      });
+      toast.success("Đã nhận kết quả chấm điểm từ Backend AI API.", { id: toastId });
+    } catch (error) {
+      setScoreResult(null);
+      toast.error(error instanceof Error ? error.message : "Không kết nối được Backend AI API.", { id: toastId });
     } finally {
       setIsScoring(false);
     }
 
-    // Fallback if network issue
-    setScoreResult({
-      overallScore: 92,
-      skillsScore: 94,
-      expScore: 90,
-      eduScore: 88,
-      strengths: [
-        "Đáp ứng tốt các yêu cầu công nghệ và số năm kinh nghiệm theo JD.",
-        "Cấu trúc kinh nghiệm làm việc logic, có thế mạnh về kiến trúc ứng dụng.",
-      ],
-      weaknesses: [
-        "Cần làm rõ thêm về kinh nghiệm quản lý nhóm hoặc điều phối dự án.",
-      ],
-      recommendation: "ĐẠT CHUẨN: Hồ sơ đạt ngưỡng điểm khuyến nghị tuyển dụng.",
-    });
-    toast.success("Chấm điểm hoàn tất!");
   };
 
   return (
@@ -124,7 +81,7 @@ export function QuickScoreSection() {
           <h2 className="text-xl font-bold text-slate-900">Công cụ chấm điểm nhanh 1-1 (quick score)</h2>
           <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-xs font-bold">
             <Zap className="w-3 h-3 mr-1 text-emerald-600" />
-            AI Engine Active
+            Chấm điểm từ Backend
           </Badge>
         </div>
         <p className="text-xs text-muted-foreground mt-0.5">
@@ -200,64 +157,23 @@ export function QuickScoreSection() {
 
               <div className="flex items-center gap-2">
                 <div className="text-right">
-                  <span className="text-xs text-muted-foreground block">Điểm tổng hợp:</span>
+                  <span className="text-xs text-muted-foreground block">Điểm do API trả về:</span>
                   <span className="text-2xl font-bold text-sky-600">
                     {scoreResult.overallScore}%
                   </span>
+                  <span className="text-xs text-muted-foreground block">Hạng {scoreResult.rank} · {scoreResult.model}</span>
                 </div>
               </div>
             </div>
           </CardHeader>
 
           <CardContent className="p-6 space-y-6">
-            {/* 3 Criteria Progress Bars */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="p-3.5 rounded-xl bg-white border border-sky-100 shadow-2xs space-y-1.5">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Kỹ năng (Skills)</span>
-                  <span className="font-bold text-slate-900">{scoreResult.skillsScore}%</span>
-                </div>
-                <div className="w-full h-2 bg-sky-50 rounded-full overflow-hidden border border-sky-100">
-                  <div
-                    className="h-full bg-sky-600 rounded-full"
-                    style={{ width: `${scoreResult.skillsScore}%` }}
-                  />
-                </div>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-white border border-sky-100 shadow-2xs space-y-1.5">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Kinh nghiệm (Exp)</span>
-                  <span className="font-bold text-slate-900">{scoreResult.expScore}%</span>
-                </div>
-                <div className="w-full h-2 bg-sky-50 rounded-full overflow-hidden border border-sky-100">
-                  <div
-                    className="h-full bg-blue-500 rounded-full"
-                    style={{ width: `${scoreResult.expScore}%` }}
-                  />
-                </div>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-white border border-sky-100 shadow-2xs space-y-1.5">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Học vấn & bằng cấp</span>
-                  <span className="font-bold text-slate-900">{scoreResult.eduScore}%</span>
-                </div>
-                <div className="w-full h-2 bg-sky-50 rounded-full overflow-hidden border border-sky-100">
-                  <div
-                    className="h-full bg-cyan-500 rounded-full"
-                    style={{ width: `${scoreResult.eduScore}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-
             {/* Strengths and Weaknesses */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Strengths */}
               <div className="p-4 rounded-xl bg-sky-50/60 border border-sky-200 space-y-2">
                 <h4 className="font-bold text-xs text-sky-800 uppercase tracking-wider flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-sky-600" />
+                  <Sparkles className="w-4 h-4 text-sky-600" />
                   Điểm mạnh nổi bật (strengths)
                 </h4>
                 <ul className="space-y-1.5 text-xs text-slate-800">

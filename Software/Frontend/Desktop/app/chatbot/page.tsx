@@ -1,1 +1,5 @@
-export { default, metadata } from "@/app/ai-assistant/page";
+import { redirect } from "next/navigation";
+
+export default function ChatbotCompatibilityPage() {
+  redirect("/ai-assistant");
+}

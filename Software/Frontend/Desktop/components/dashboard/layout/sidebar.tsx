@@ -20,7 +20,6 @@ import {
   TrendingUp,
   BarChart3,
   X,
-  Layers,
   CalendarDays,
 } from "lucide-react";
 
@@ -44,8 +43,7 @@ const navGroups: NavGroup[] = [
   {
     label: "LỌC HỒ SƠ & ĐỐI CHIẾU (CORE)",
     items: [
-      { id: "workspace", label: "Không Gian Làm Việc", icon: Layers, badge: "Hub" },
-      { id: "match-workflow", label: "Quy Trình Đối Chiếu AI", icon: Sparkles, badge: "5 Bước", href: "/dashboard/match-workflow" },
+      { id: "match-workflow", label: "Quy Trình Đối Chiếu AI", icon: Sparkles, badge: "5 Bước", href: "/cv-match" },
       { id: "candidates", label: "Kho Hồ Sơ Ứng Viên", icon: Users },
       { id: "jobs", label: "Vị Trí Tuyển Dụng (JD)", icon: Briefcase },
       { id: "history", label: "Lịch Sử Đợt Lọc CV", icon: Clock },
@@ -54,7 +52,7 @@ const navGroups: NavGroup[] = [
   {
     label: "CÔNG CỤ & TIỆN ÍCH AI",
     items: [
-      { id: "chatbot", label: "Trợ Lý AI", icon: MessageSquare, badge: "Chat", href: "/chatbot" },
+      { id: "chatbot", label: "Trợ Lý AI", icon: MessageSquare, badge: "Chat", href: "/ai-assistant" },
       { id: "interview-gen", label: "Bộ Câu Hỏi Phỏng Vấn", icon: HelpCircle, href: "/interview-questions" },
       { id: "interview-hub", label: "Lịch PV & Hộp Thư Email", icon: CalendarDays, badge: "Mới" },
       { id: "salary-benchmark", label: "Tra Cứu Thị Trường Lương", icon: DollarSign, href: "/salary-benchmark" },

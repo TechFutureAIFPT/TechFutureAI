@@ -9,7 +9,7 @@ class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1, description="Nội dung câu hỏi của học sinh")
     conversation_history: List[ChatMessage] = Field(default_factory=list, description="Lịch sử đối thoại trước đó")
     student_profile_context: Optional[Dict[str, Any]] = Field(None, description="Hồ sơ cá nhân của học sinh nếu đã làm khảo sát")
-    use_deep_research: bool = Field(True, description="Kích hoạt tra cứu thời gian thực dữ liệu Bộ GD&ĐT")
+    use_deep_research: bool = Field(True, description="Tra cứu nguồn tuyển sinh trực tuyến khi cần")
     user_id: Optional[str] = Field(None, description="ID học sinh để lưu lịch sử cuộc trò chuyện")
     conversation_id: Optional[str] = Field(None, description="ID phiên hội thoại")
 

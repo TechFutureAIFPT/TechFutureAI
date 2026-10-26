@@ -1,6 +1,10 @@
 from typing import Dict, List, Optional
 from pydantic import BaseModel, Field
 
+class RiasecSurveySubmission(BaseModel):
+    student_name: str = Field("Ứng viên", min_length=2)
+    riasec_answers: Dict[str, int] = Field(..., description="Map question ID -> rating 1 to 5")
+
 class AcademicRecord(BaseModel):
     target_block: str = Field(..., description="Tổ hợp xét tuyển mục tiêu: A00, A01, B00, C00, D01, D07, etc.")
     

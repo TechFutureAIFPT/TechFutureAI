@@ -173,12 +173,12 @@ All information is fictional test data.
 
         def landing():
             navigate("/")
-            assert page.get_by_role("heading", name=re.compile("Kết nối tuyển dụng")).is_visible()
+            assert page.get_by_role("heading", name=re.compile("Một nền tảng\. Hai lối đi\.")).is_visible()
             for position in (650, 700, 1100, 1500):
                 page.mouse.wheel(0, position)
                 page.wait_for_timeout(1000)
             page.keyboard.press("Home")
-            return "Trang chủ, danh mục dịch vụ và nội dung giới thiệu hiển thị."
+            return "Landing SaaS và nội dung giới thiệu theo thiết kế cũ hiển thị."
 
         def login():
             navigate("/dashboard")
@@ -206,9 +206,9 @@ All information is fictional test data.
             return "Tổng quan và tìm kiếm nhanh Ctrl+K hoạt động; có dữ liệu mẫu tích hợp."
 
         def workspace():
-            navigate("/dashboard?section=workspace")
-            assert page.get_by_role("heading", name="Hệ sinh thái AI Match").is_visible()
-            assert page.get_by_role("link", name=re.compile("CV Match")).count() > 0
+            navigate("/")
+            page.get_by_role("link", name="Vào workspace", exact=True).first.click()
+            page.locator('[data-workspace-section="overview"]').wait_for(state="visible", timeout=30000)
 
         def jobs():
             navigate("/dashboard?section=jobs")
@@ -482,7 +482,7 @@ All information is fictional test data.
 
         cases = [
             ("Trang chủ & giới thiệu dịch vụ",landing), ("Đăng nhập Firebase",login),
-            ("Tổng quan & tìm kiếm nhanh",overview), ("Trung tâm công cụ",workspace),
+            ("Tổng quan & tìm kiếm nhanh",overview), ("Landing → workspace",workspace),
             ("Vị trí tuyển dụng",jobs), ("Hồ sơ ứng viên",candidates),
             ("Tiến trình tuyển dụng",pipeline), ("Lịch phỏng vấn & mẫu thư",scheduling),
             ("Soạn thư ứng viên",contact), ("CV Match · JD & tiêu chí",cv_setup),

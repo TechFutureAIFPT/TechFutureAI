@@ -4,8 +4,8 @@ import React from "react";
 import { ArrowRight } from "lucide-react";
 
 const STANDALONE_ROUTES: Record<string, string> = {
-  "match-workflow": "/dashboard/match-workflow",
-  chatbot: "/chatbot",
+  "match-workflow": "/cv-match",
+  chatbot: "/ai-assistant",
   "salary-benchmark": "/salary-benchmark",
   "interview-gen": "/interview-questions",
 };
@@ -16,9 +16,9 @@ function hrefFor(section: string) {
 
 const CAPABILITIES: { section: string; title: string; text: string }[] = [
   {
-    section: "workspace",
-    title: "Không Gian Làm Việc",
-    text: "Điểm khởi đầu cho một đợt sàng lọc: chuẩn hóa JD và bắt đầu quy trình đối chiếu.",
+    section: "reports",
+    title: "Báo Cáo Tuyển Dụng",
+    text: "Tổng hợp kết quả theo từng phiên, theo dõi chỉ số và xuất báo cáo để chia sẻ.",
   },
   {
     section: "match-workflow",
@@ -69,7 +69,7 @@ export function LandingCapabilities() {
         <div className="lp-caps__head lp-reveal">
           <h2>Chức năng chính</h2>
           <p className="lp-caps__note">
-            Chín chức năng cốt lõi, từ chuẩn hóa JD đến phỏng vấn và liên hệ ứng viên.
+            Chín chức năng cốt lõi, từ đối chiếu hồ sơ đến phỏng vấn, báo cáo và liên hệ ứng viên.
           </p>
         </div>
 

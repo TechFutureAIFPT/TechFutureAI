@@ -2,9 +2,9 @@
 
 import { Suspense, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useSalesOps, type Section } from "@/lib/sales-ops-context";
-import { canonicalSection, isSection, navigationItems } from "@/lib/navigation";
+import { canonicalSection, isSection, navigationItems, standaloneSectionRoutes } from "@/lib/navigation";
 
 function SectionLoading() {
   return <div role="status" className="p-8 text-sm text-muted-foreground">Đang mở khu vực làm việc…</div>;
@@ -12,7 +12,6 @@ function SectionLoading() {
 
 const OverviewSection = dynamic(() => import("@/components/dashboard/features/overview").then((module) => module.OverviewSection), { loading: SectionLoading });
 const MatchWorkflowSection = dynamic(() => import("@/components/dashboard/features/matching").then((module) => module.MatchWorkflowSection), { loading: SectionLoading });
-const WorkspaceSection = dynamic(() => import("@/components/dashboard/features/matching").then((module) => module.WorkspaceSection), { loading: SectionLoading });
 const HistorySection = dynamic(() => import("@/components/dashboard/features/matching").then((module) => module.HistorySection), { loading: SectionLoading });
 const CandidatesSection = dynamic(() => import("@/components/dashboard/features/candidates").then((module) => module.CandidatesSection), { loading: SectionLoading });
 const PipelineSection = dynamic(() => import("@/components/dashboard/features/candidates").then((module) => module.PipelineSection), { loading: SectionLoading });
@@ -29,6 +28,7 @@ const CriteriaSettingsSection = dynamic(() => import("@/components/dashboard/fea
 
 function DashboardContent() {
   const { activeSection, syncActiveSection, authUser, authChecked, setIsAuthModalOpen } = useSalesOps();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const currentSection = canonicalSection(activeSection);
 
@@ -38,11 +38,17 @@ function DashboardContent() {
 
   useEffect(() => {
     const section = searchParams.get("section");
-    syncActiveSection(section && isSection(section) ? canonicalSection(section) : "overview");
-  }, [searchParams, syncActiveSection]);
+    const canonical = section && isSection(section) ? canonicalSection(section) : "overview";
+    const standalonePath = section ? standaloneSectionRoutes[canonical] : undefined;
+    if (standalonePath) {
+      router.replace(standalonePath);
+      return;
+    }
+    syncActiveSection(canonical);
+  }, [searchParams, syncActiveSection, router]);
 
   useEffect(() => {
-    const label = navigationItems.find((item) => item.id === currentSection)?.label || "Không gian làm việc";
+    const label = navigationItems.find((item) => item.id === currentSection)?.label || "Tổng quan";
     document.title = `${label} | AI Match`;
     window.scrollTo({ top: 0 });
   }, [currentSection]);
@@ -51,8 +57,6 @@ function DashboardContent() {
     switch (section) {
       case "overview":
         return <OverviewSection />;
-      case "workspace":
-        return <WorkspaceSection />;
       case "match-workflow":
         return <MatchWorkflowSection />;
       case "pipeline":

@@ -12,6 +12,7 @@ import {
   type RoadmapMilestone,
 } from "@/lib/career-compass-endpoints";
 import { APP_CONFIG } from "@/lib/config";
+import { AssistantMessageContent } from "./assistant-message-content";
 import {
   Compass,
   Sparkles,
@@ -88,7 +89,7 @@ const DEFAULT_ROADMAP: RoadmapMilestone[] = [
 export function CareerCompassSection() {
   const { authUser, setIsAuthModalOpen } = useSalesOps();
 
-  const [activeTab, setActiveTab] = useState<"advisor" | "riasec" | "roadmap">("advisor");
+  const [activeTab, setActiveTab] = useState<"advisor" | "riasec" | "roadmap">("riasec");
 
   // State Cố vấn AI
   const [messages, setMessages] = useState<CareerChatMessage[]>([
@@ -100,7 +101,7 @@ export function CareerCompassSection() {
   ]);
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
-  const [useDeepResearch, setUseDeepResearch] = useState(false);
+  const [useDeepResearch, setUseDeepResearch] = useState(true);
   const [latestAdvisorData, setLatestAdvisorData] = useState<CareerAdvisorData | null>(null);
   const [expandedReasoning, setExpandedReasoning] = useState(false);
 
@@ -126,7 +127,11 @@ export function CareerCompassSection() {
       try {
         const res = await careerCompassApi.getSurveyQuestions();
         if (res?.data?.holland_riasec && res.data.holland_riasec.length > 0) {
-          setQuestions(res.data.holland_riasec);
+          setQuestions(res.data.holland_riasec.map((question) => ({
+            ...question,
+            category: question.category || question.code?.[0] || "",
+            code: question.code || question.id,
+          })));
         }
       } catch {
         // Sử dụng danh sách mặc định nếu server bận
@@ -136,6 +141,11 @@ export function CareerCompassSection() {
   }, []);
 
   const handleSendMessage = async (textToSend?: string) => {
+    if (!profileResult?.holland_code || !profileResult.riasec_scores) {
+      setActiveTab("riasec");
+      toast.warning("Hãy hoàn thành khảo sát RIASEC để mở phần tư vấn.");
+      return;
+    }
     const text = (textToSend || chatInput).trim();
     if (!text || chatLoading) return;
 
@@ -150,6 +160,12 @@ export function CareerCompassSection() {
         message: text,
         user_id: authUser?.uid,
         conversation_history: history,
+        student_profile_context: {
+          holland: {
+            holland_code: profileResult.holland_code,
+            riasec_scores: profileResult.riasec_scores,
+          },
+        },
         use_deep_research: useDeepResearch,
       });
 
@@ -179,6 +195,7 @@ export function CareerCompassSection() {
     setAnswers((prev) => ({ ...prev, [qId]: val }));
     setProfileResult(null);
     setLocalResult(false);
+    setActiveTab("riasec");
   };
 
   const handleSubmitSurvey = async () => {
@@ -200,6 +217,7 @@ export function CareerCompassSection() {
 
       if (res?.data) {
         setProfileResult(res.data);
+        setActiveTab("advisor");
         toast.success("Đã hoàn thành đánh giá hồ sơ nghề nghiệp RIASEC!");
       }
     } catch (err: any) {
@@ -228,6 +246,7 @@ export function CareerCompassSection() {
         guidance_summary: `Mã sở thích tham khảo của bạn là ${hollandCode}, được tổng hợp từ câu trả lời trên thiết bị. Kết quả này chưa bao gồm tư vấn cá nhân từ dịch vụ. Hãy đối chiếu với kinh nghiệm, năng lực và mục tiêu thực tế của bạn.`,
       });
       setLocalResult(true);
+      setActiveTab("advisor");
       toast.info("Đã tổng hợp điểm sở thích trên thiết bị. Dịch vụ tư vấn hiện chưa khả dụng.");
     } finally {
       setSurveySubmitting(false);
@@ -249,7 +268,10 @@ export function CareerCompassSection() {
       <header className="chat-toolbar">
         <div className="chat-toolbar-title"><Compass size={19} className="text-primary" /><span>Cố vấn nghề nghiệp</span></div>
         <div className="chat-mode-tabs" role="group" aria-label="Công cụ định hướng nghề nghiệp">
-          {([{ id: "advisor", label: "Cố vấn AI" }, { id: "riasec", label: "Khảo sát RIASEC" }, { id: "roadmap", label: "Lộ trình tham khảo" }] as const).map((tab) => <button key={tab.id} aria-pressed={activeTab === tab.id} onClick={() => setActiveTab(tab.id)}>{tab.label}</button>)}
+          {([{ id: "advisor", label: "Cố vấn AI" }, { id: "riasec", label: "Khảo sát RIASEC" }, { id: "roadmap", label: "Lộ trình tham khảo" }] as const).map((tab) => {
+            const locked = tab.id === "advisor" && !profileResult;
+            return <button key={tab.id} aria-pressed={activeTab === tab.id} aria-disabled={locked} disabled={locked} title={locked ? "Hoàn thành khảo sát RIASEC để mở cố vấn" : undefined} onClick={() => setActiveTab(tab.id)}>{tab.label}{locked ? " · Cần khảo sát" : ""}</button>;
+          })}
         </div>
       </header>
 
@@ -294,7 +316,7 @@ export function CareerCompassSection() {
                           : "bg-slate-100 text-slate-800 rounded-tl-xs whitespace-pre-wrap"
                       }`}
                     >
-                      {m.content}
+                      {m.sender === "assistant" ? <AssistantMessageContent content={m.content} /> : m.content}
                     </div>
 
                     {/* Hiển thị Reasoning CoT & Citations cho tin nhắn cuối của bot */}
@@ -330,21 +352,24 @@ export function CareerCompassSection() {
                             </span>
                             <div className="flex flex-wrap gap-2 pt-1">
                               {latestAdvisorData.citations.map((c, cIdx) => (
-                                <span
+                                <a
                                   key={cIdx}
+                                  href={c.url || c.source_url || undefined}
+                                  target={c.url || c.source_url ? "_blank" : undefined}
+                                  rel={c.url || c.source_url ? "noreferrer" : undefined}
                                   className="px-2 py-0.5 bg-white border border-slate-200 rounded text-[11px] text-slate-600"
                                 >
-                                  {c.title}
-                                </span>
+                                  {c.title || c.source_title || "Nguồn tham khảo"}{c.verified === false ? " · chưa xác minh" : ""}
+                                </a>
                               ))}
                             </div>
                           </div>
                         )}
 
                         {/* Gợi ý câu hỏi tiếp theo */}
-                        {latestAdvisorData.suggested_followups && latestAdvisorData.suggested_followups.length > 0 && (
+                        {(latestAdvisorData.suggested_followups || latestAdvisorData.recommended_followups || []).length > 0 && (
                           <div className="flex flex-wrap gap-1.5 pt-1">
-                            {latestAdvisorData.suggested_followups.map((q, qIdx) => (
+                            {(latestAdvisorData.suggested_followups || latestAdvisorData.recommended_followups || []).map((q, qIdx) => (
                               <button
                                 key={qIdx}
                                 onClick={() => handleSendMessage(q)}

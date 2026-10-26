@@ -1,6 +1,6 @@
 "use client";
 
-import { SalesOpsProvider, useSalesOps } from "@/lib/sales-ops-context";
+import { SalesOpsProvider, useSalesOps, type Section } from "@/lib/sales-ops-context";
 import { Header } from "@/components/dashboard/header";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { CommandSearch } from "@/components/dashboard/command-search";
@@ -18,7 +18,7 @@ function PreviewNotice() {
 function ApplicationFrame({ children, fullBleed = false }: { children: React.ReactNode; fullBleed?: boolean }) {
   const { activeSection } = useSalesOps();
   const pathname = usePathname();
-  const immersive = fullBleed || (pathname === "/dashboard" && ["ai-assistant", "chatbot", "career-compass"].includes(activeSection));
+  const immersive = fullBleed || ["ai-assistant", "chatbot", "career-compass"].includes(activeSection);
   return <div className="enterprise-app">
     <a href="#workspace-content" className="skip-link">Chuyển đến nội dung</a>
     <Sidebar />
@@ -28,6 +28,6 @@ function ApplicationFrame({ children, fullBleed = false }: { children: React.Rea
   </div>;
 }
 
-export function ApplicationShell({ children, fullBleed = false }: { children: React.ReactNode; fullBleed?: boolean }) {
-  return <SalesOpsProvider><ApplicationFrame fullBleed={fullBleed}>{children}</ApplicationFrame></SalesOpsProvider>;
+export function ApplicationShell({ children, fullBleed = false, initialSection = "overview" }: { children: React.ReactNode; fullBleed?: boolean; initialSection?: Section }) {
+  return <SalesOpsProvider initialSection={initialSection}><ApplicationFrame fullBleed={fullBleed}>{children}</ApplicationFrame></SalesOpsProvider>;
 }

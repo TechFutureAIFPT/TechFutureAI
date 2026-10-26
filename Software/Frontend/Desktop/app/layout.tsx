@@ -4,7 +4,9 @@ import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
+import "@/styles/legacy/tokens.css";
 import "@/styles/platform.css";
+import "@/styles/legacy/landing.css";
 import "@/styles/platform-home.css";
 
 const inter = Inter({
