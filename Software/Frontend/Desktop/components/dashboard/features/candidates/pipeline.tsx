@@ -40,6 +40,7 @@ import { CandidateModal } from "@/components/dashboard/modals/candidate-modal";
 import { CandidateDetailModal } from "@/components/dashboard/modals/candidate-detail-modal";
 import { InterviewModal } from "@/components/dashboard/modals/interview-modal";
 import { EmailModal } from "@/components/dashboard/modals/email-modal";
+import { MobileFilters } from "@/components/dashboard/mobile-filters";
 
 const pipelineStages: {
   key: Candidate["stage"];
@@ -133,8 +134,8 @@ export function PipelineSection() {
     <div className="space-y-6">
       {/* Filter and Control Bar */}
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-        <div className="flex flex-wrap items-center gap-2.5 flex-1 w-full sm:w-auto">
-          <div className="relative w-full sm:w-64">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 w-full md:flex md:flex-wrap md:items-center md:gap-2.5 md:flex-1 md:w-auto">
+          <div className="relative w-full md:w-64">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Tìm theo tên ứng viên, kỹ năng..."
@@ -144,8 +145,9 @@ export function PipelineSection() {
             />
           </div>
 
+          <MobileFilters activeCount={(selectedJob !== "all" ? 1 : 0) + (selectedRecruiter !== "all" ? 1 : 0)}>
           <Select value={selectedJob} onValueChange={setSelectedJob}>
-            <SelectTrigger className="w-full sm:w-[180px] bg-slate-50 border-slate-200 text-xs h-9">
+            <SelectTrigger className="max-md:col-span-2 w-full md:w-[180px] bg-slate-50 border-slate-200 text-xs h-9">
               <SelectValue placeholder="Vị trí tuyển dụng" />
             </SelectTrigger>
             <SelectContent>
@@ -159,7 +161,7 @@ export function PipelineSection() {
           </Select>
 
           <Select value={selectedRecruiter} onValueChange={setSelectedRecruiter}>
-            <SelectTrigger className="w-full sm:w-[170px] bg-slate-50 border-slate-200 text-xs h-9">
+            <SelectTrigger className="max-md:col-span-2 w-full md:w-[170px] bg-slate-50 border-slate-200 text-xs h-9">
               <SelectValue placeholder="Chuyên viên HR" />
             </SelectTrigger>
             <SelectContent>
@@ -171,12 +173,13 @@ export function PipelineSection() {
               ))}
             </SelectContent>
           </Select>
+          </MobileFilters>
         </div>
 
         <Button
           size="sm"
           onClick={() => handleAddNewCandidate("screening")}
-          className="bg-sky-600 text-white hover:bg-sky-700 shrink-0 text-xs shadow-xs font-bold"
+          className="max-md:w-full max-md:h-10 bg-sky-600 text-white hover:bg-sky-700 shrink-0 text-xs shadow-xs font-bold"
         >
           <Plus className="w-4 h-4 mr-1.5" />
           Tiếp nhận CV mới
@@ -184,7 +187,8 @@ export function PipelineSection() {
       </div>
 
       {/* Kanban Board Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 items-start">
+      {/* Mobile: vuốt ngang giữa các cột như board của app; tablet trở lên giữ lưới. */}
+      <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory -mx-4 px-4 pb-2 md:mx-0 md:px-0 md:pb-0 md:grid md:grid-cols-2 xl:grid-cols-4 md:gap-4 md:overflow-visible items-start">
         {pipelineStages.map((stage) => {
           const stageCandidates = filteredCandidates.filter(
             (c) => c.stage === stage.key
@@ -200,7 +204,7 @@ export function PipelineSection() {
           return (
             <div
               key={stage.key}
-              className="bg-card border border-border rounded-xl p-3 flex flex-col min-h-[550px] shadow-xs"
+              className="w-[86%] shrink-0 snap-center md:w-auto bg-card border border-border rounded-xl p-3 flex flex-col min-h-[320px] md:min-h-[550px] shadow-xs"
             >
               {/* Column Header */}
               <div className="flex items-center justify-between pb-3 border-b border-border mb-3">

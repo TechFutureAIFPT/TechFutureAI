@@ -265,8 +265,8 @@ export function InterviewHubSection() {
       {/* 1. EXECUTIVE KPI SUMMARY STRIP */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
         {/* KPI 1 */}
-        <Card className="border-border/80 bg-card shadow-2xs">
-          <CardContent className="p-4 flex items-center justify-between">
+        <Card className="border-border/80 bg-card shadow-2xs max-md:py-0">
+          <CardContent className="p-3 md:p-4 flex items-center justify-between">
             <div className="space-y-0.5">
               <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                 Phỏng vấn sắp tới
@@ -275,7 +275,7 @@ export function InterviewHubSection() {
                 <span className="text-2xl font-black text-slate-900">{upcomingCount}</span>
                 <span className="text-xs text-sky-600 font-bold">Buổi hẹn</span>
               </div>
-              <p className="text-[11px] text-muted-foreground">{completedCount} buổi đã hoàn thành</p>
+              <p className="max-md:hidden text-[11px] text-muted-foreground">{completedCount} buổi đã hoàn thành</p>
             </div>
             <div className="hidden sm:flex shrink-0 w-11 h-11 rounded-xl bg-sky-100 text-sky-700 items-center justify-center shadow-xs">
               <CalendarDays className="w-5 h-5" />
@@ -284,8 +284,8 @@ export function InterviewHubSection() {
         </Card>
 
         {/* KPI 2 */}
-        <Card className="border-border/80 bg-card shadow-2xs">
-          <CardContent className="p-4 flex items-center justify-between">
+        <Card className="border-border/80 bg-card shadow-2xs max-md:py-0">
+          <CardContent className="p-3 md:p-4 flex items-center justify-between">
             <div className="space-y-0.5">
               <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                 Lịch hẹn hôm nay
@@ -294,7 +294,7 @@ export function InterviewHubSection() {
                 <span className="text-2xl font-black text-blue-600">{todayCount}</span>
                 <span className="text-xs text-blue-600 font-bold">Ứng viên</span>
               </div>
-              <p className="text-[11px] text-emerald-600 font-medium">Theo lịch hẹn đã tạo</p>
+              <p className="max-md:hidden text-[11px] text-emerald-600 font-medium">Theo lịch hẹn đã tạo</p>
             </div>
             <div className="hidden sm:flex shrink-0 w-11 h-11 rounded-xl bg-blue-100 text-blue-700 items-center justify-center shadow-xs">
               <Clock className="w-5 h-5" />
@@ -303,8 +303,8 @@ export function InterviewHubSection() {
         </Card>
 
         {/* KPI 3 */}
-        <Card className="border-border/80 bg-card shadow-2xs">
-          <CardContent className="p-4 flex items-center justify-between">
+        <Card className="border-border/80 bg-card shadow-2xs max-md:py-0">
+          <CardContent className="p-3 md:p-4 flex items-center justify-between">
             <div className="space-y-0.5">
               <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                 Email đã ghi nhận
@@ -313,7 +313,7 @@ export function InterviewHubSection() {
                 <span className="text-2xl font-black text-slate-900">{totalEmailsSent}</span>
                 <span className="text-xs text-slate-500 font-bold">Thư</span>
               </div>
-              <p className="text-[11px] text-sky-600 font-medium">Thư mời và đề nghị nhận việc</p>
+              <p className="max-md:hidden text-[11px] text-sky-600 font-medium">Thư mời và đề nghị nhận việc</p>
             </div>
             <div className="hidden sm:flex shrink-0 w-11 h-11 rounded-xl bg-indigo-100 text-indigo-700 items-center justify-center shadow-xs">
               <Mail className="w-5 h-5" />
@@ -322,8 +322,8 @@ export function InterviewHubSection() {
         </Card>
 
         {/* KPI 4 */}
-        <Card className="border-border/80 bg-card shadow-2xs">
-          <CardContent className="p-4 flex items-center justify-between">
+        <Card className="border-border/80 bg-card shadow-2xs max-md:py-0">
+          <CardContent className="p-3 md:p-4 flex items-center justify-between">
             <div className="space-y-0.5">
               <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                 Nhật ký liên hệ
@@ -332,7 +332,7 @@ export function InterviewHubSection() {
                 <span className="text-2xl font-black text-emerald-600">{emailLogs.length}</span>
                 <span className="text-xs text-emerald-700 font-bold">bản ghi</span>
               </div>
-              <p className="text-[11px] text-muted-foreground">Theo dõi trao đổi với ứng viên</p>
+              <p className="max-md:hidden text-[11px] text-muted-foreground">Theo dõi trao đổi với ứng viên</p>
             </div>
             <div className="hidden sm:flex shrink-0 w-11 h-11 rounded-xl bg-emerald-100 text-emerald-700 items-center justify-center shadow-xs">
               <TrendingUp className="w-5 h-5" />
@@ -344,56 +344,56 @@ export function InterviewHubSection() {
       {/* 2. NAVIGATION TABS & ACTION BUTTONS */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-border pb-3">
         {/* Switch Tabs */}
-        <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200/80">
+        <div className="grid w-full grid-cols-3 gap-1 sm:flex sm:w-auto sm:items-center sm:gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200/80">
           <button
             type="button"
             onClick={() => setActiveTab("interviews")}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            className={`flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-3.5 py-2 sm:py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
               activeTab === "interviews"
                 ? "bg-white text-sky-700 shadow-xs"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
             <CalendarDays className="w-3.5 h-3.5" />
-            <span>Lịch Phỏng Vấn ({interviews.length})</span>
+            <span><span className="max-sm:hidden">Lịch Phỏng Vấn</span><span className="sm:hidden">Lịch</span> ({interviews.length})</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab("emails")}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            className={`flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-3.5 py-2 sm:py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
               activeTab === "emails"
                 ? "bg-white text-sky-700 shadow-xs"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
             <Inbox className="w-3.5 h-3.5" />
-            <span>Email tuyển dụng ({emailLogs.length})</span>
+            <span><span className="max-sm:hidden">Email tuyển dụng</span><span className="sm:hidden">Email</span> ({emailLogs.length})</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab("templates")}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            className={`flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-3.5 py-2 sm:py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
               activeTab === "templates"
                 ? "bg-white text-sky-700 shadow-xs"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
             <FileText className="w-3.5 h-3.5" />
-            <span>Mẫu Thư Chuẩn ({emailTemplates.length})</span>
+            <span><span className="max-sm:hidden">Mẫu Thư Chuẩn</span><span className="sm:hidden">Mẫu thư</span> ({emailTemplates.length})</span>
           </button>
         </div>
 
         {/* Action Button Group */}
-        <div className="flex items-center gap-2 w-full sm:w-auto">
+        <div className="grid grid-cols-2 gap-2 w-full sm:flex sm:items-center sm:w-auto">
           <Button
             size="sm"
             onClick={() => setIsScheduleModalOpen(true)}
             className="bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs h-9 px-3.5 shadow-xs flex items-center gap-1.5"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>Tạo lịch phỏng vấn</span>
+            <span><span className="max-sm:hidden">Tạo lịch phỏng vấn</span><span className="sm:hidden">Tạo lịch</span></span>
           </Button>
 
           <Button
@@ -523,9 +523,9 @@ export function InterviewHubSection() {
                         </div>
 
                         {/* Schedule Date Time & Format */}
-                        <div className="flex flex-wrap items-center gap-4 text-xs">
-                          <div className="p-2.5 rounded-lg bg-slate-100/90 border border-slate-200/80 space-y-0.5 min-w-[140px]">
-                            <span className="text-[10px] font-semibold text-muted-foreground block flex items-center gap-1">
+                        <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap md:items-center md:gap-4 text-xs">
+                          <div className="p-2.5 rounded-lg bg-slate-100/90 border border-slate-200/80 space-y-0.5 min-w-0 md:min-w-[140px]">
+                            <span className="max-md:hidden text-[10px] font-semibold text-muted-foreground block flex items-center gap-1">
                               <CalendarIcon className="w-3 h-3 text-sky-600" />
                               Thời gian hẹn:
                             </span>
@@ -533,12 +533,12 @@ export function InterviewHubSection() {
                               {item.time} • {item.date}
                             </p>
                             <span className="text-[10px] text-muted-foreground">
-                              Thời lượng: {item.durationMinutes} phút
+                              <span className="max-md:hidden">Thời lượng: </span>{item.durationMinutes} phút
                             </span>
                           </div>
 
-                          <div className="p-2.5 rounded-lg bg-slate-100/90 border border-slate-200/80 space-y-0.5 min-w-[170px]">
-                            <span className="text-[10px] font-semibold text-muted-foreground block flex items-center gap-1">
+                          <div className="p-2.5 rounded-lg bg-slate-100/90 border border-slate-200/80 space-y-0.5 min-w-0 md:min-w-[170px]">
+                            <span className="max-md:hidden text-[10px] font-semibold text-muted-foreground block flex items-center gap-1">
                               {item.format === "onsite" ? (
                                 <MapPin className="w-3 h-3 text-amber-600" />
                               ) : (
@@ -546,7 +546,7 @@ export function InterviewHubSection() {
                               )}
                               Hình thức phỏng vấn:
                             </span>
-                            <p className="font-extrabold text-slate-900 truncate max-w-[180px]">
+                            <p className="font-extrabold text-slate-900 truncate md:max-w-[180px]">
                               {item.format === "onsite"
                                 ? "Trực tiếp tại văn phòng"
                                 : item.format === "zoom"
@@ -582,7 +582,7 @@ export function InterviewHubSection() {
                                 className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs h-8 px-3"
                               >
                                 <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
-                                <span>Đánh giá phỏng vấn</span>
+                                <span>Đánh giá<span className="max-md:hidden"> phỏng vấn</span></span>
                               </Button>
 
                               <Button
@@ -630,7 +630,7 @@ export function InterviewHubSection() {
                       </div>
 
                       {/* Interviewer list & Notes */}
-                      <div className="mt-3.5 pt-3 border-t border-slate-200/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                      <div className="max-md:hidden mt-3.5 pt-3 border-t border-slate-200/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <Users className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                           <span className="text-muted-foreground font-medium">Hội đồng phỏng vấn:</span>

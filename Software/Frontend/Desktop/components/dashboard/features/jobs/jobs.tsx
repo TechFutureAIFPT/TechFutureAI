@@ -30,6 +30,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { JobModal } from "@/components/dashboard/modals/job-modal";
+import { MobileFilters } from "@/components/dashboard/mobile-filters";
 import { JobDetailModal } from "@/components/dashboard/modals/job-detail-modal";
 
 export function JobsSection() {
@@ -68,11 +69,11 @@ export function JobsSection() {
     <div className="space-y-6">
       {/* Top Action Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <Badge className="bg-sky-50 text-sky-700 border border-sky-200 text-xs font-bold">
+        <Badge className="max-md:hidden bg-sky-50 text-sky-700 border border-sky-200 text-xs font-bold">
           Tổng cộng: {jobs.length} Vị trí tuyển dụng
         </Badge>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap md:items-center md:gap-2.5">
           <Button
             variant="outline"
             size="sm"
@@ -98,11 +99,11 @@ export function JobsSection() {
       </div>
 
       {/* Filter and View Controls */}
-      <Card className="border-border bg-card shadow-xs">
-        <CardContent className="p-4">
+      <Card className="border-border bg-card shadow-xs max-md:py-0">
+        <CardContent className="p-3 md:p-4">
           <div className="flex flex-col md:flex-row gap-3 items-center justify-between">
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 w-full md:w-auto flex-1">
-              <div className="relative sm:col-span-2">
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] md:grid-cols-4 gap-2 md:gap-3 w-full md:w-auto flex-1">
+              <div className="relative md:col-span-2">
                 <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder="Tìm kiếm vị trí JD, kỹ năng yêu cầu..."
@@ -112,8 +113,9 @@ export function JobsSection() {
                 />
               </div>
 
+              <MobileFilters activeCount={(deptFilter !== "all" ? 1 : 0) + (levelFilter !== "all" ? 1 : 0)}>
               <Select value={deptFilter} onValueChange={setDeptFilter}>
-                <SelectTrigger className="bg-slate-50 border-slate-200 text-xs h-9">
+                <SelectTrigger className="max-md:col-span-2 bg-slate-50 border-slate-200 text-xs h-9">
                   <SelectValue placeholder="Phòng ban" />
                 </SelectTrigger>
                 <SelectContent>
@@ -127,7 +129,7 @@ export function JobsSection() {
               </Select>
 
               <Select value={levelFilter} onValueChange={setLevelFilter}>
-                <SelectTrigger className="bg-slate-50 border-slate-200 text-xs h-9">
+                <SelectTrigger className="max-md:col-span-2 bg-slate-50 border-slate-200 text-xs h-9">
                   <SelectValue placeholder="Cấp bậc" />
                 </SelectTrigger>
                 <SelectContent>
@@ -139,10 +141,11 @@ export function JobsSection() {
                   <SelectItem value="Manager">Manager</SelectItem>
                 </SelectContent>
               </Select>
+              </MobileFilters>
             </div>
 
             {/* View Mode Toggle */}
-            <div className="flex items-center p-1 rounded-lg bg-slate-50 border border-slate-200 shrink-0">
+            <div className="hidden md:flex items-center p-1 rounded-lg bg-slate-50 border border-slate-200 shrink-0">
               <button
                 onClick={() => setViewMode("grid")}
                 className={`p-1.5 rounded-md transition-colors ${
@@ -183,12 +186,12 @@ export function JobsSection() {
               <Card
                 key={job.id}
                 onClick={() => setDetailJob(job)}
-                className="border-border hover:border-sky-300 bg-card hover:bg-sky-50/20 cursor-pointer transition-all duration-200 shadow-xs flex flex-col justify-between group"
+                className="relative border-border hover:border-sky-300 bg-card hover:bg-sky-50/20 cursor-pointer transition-all duration-200 shadow-xs flex flex-col justify-between group"
               >
-                <CardContent className="p-5 space-y-4">
+                <CardContent className="p-4 md:p-5 space-y-3 md:space-y-4">
                   <div>
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <div className="w-10 h-10 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 shrink-0 group-hover:scale-105 transition-transform">
+                    <div className="flex items-start justify-between gap-2 md:mb-2 max-md:absolute max-md:right-4 max-md:top-4">
+                      <div className="max-md:hidden w-10 h-10 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 shrink-0 group-hover:scale-105 transition-transform">
                         <Briefcase className="w-5 h-5" />
                       </div>
                       <Badge
@@ -203,7 +206,7 @@ export function JobsSection() {
                       </Badge>
                     </div>
 
-                    <h3 className="font-bold text-base text-slate-900 group-hover:text-sky-600 transition-colors line-clamp-1">
+                    <h3 className="font-bold text-base text-slate-900 group-hover:text-sky-600 transition-colors line-clamp-1 max-md:pr-20">
                       {job.title}
                     </h3>
                     <p className="text-xs text-muted-foreground mt-0.5">
@@ -228,7 +231,7 @@ export function JobsSection() {
                   </div>
 
                   {/* Rubric Weights Preview */}
-                  <div>
+                  <div className="max-md:hidden">
                     <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-1.5">
                       <span className="flex items-center gap-1 font-medium text-slate-800">
                         <Sparkles className="w-3 h-3 text-sky-600" />

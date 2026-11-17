@@ -120,7 +120,7 @@ export function SettingsSection() {
     <div className="space-y-4 w-full">
       {/* 1. TOP DUAL-PAGE NAVIGATION SWITCHER */}
       <div className="flex items-center justify-between p-1.5 rounded-2xl bg-slate-100 border border-slate-200 shadow-2xs">
-        <div className="grid grid-cols-1 min-[400px]:grid-cols-2 gap-1.5 w-full sm:w-auto">
+        <div className="grid grid-cols-2 gap-1.5 w-full sm:w-auto">
           <Button
             type="button"
             className="text-xs font-bold h-9 px-4 bg-white text-sky-700 shadow-xs border border-sky-200/80 rounded-xl hover:bg-white"
@@ -448,7 +448,7 @@ export function SettingsSection() {
                   <h4 className="text-xs font-bold text-slate-900">
                     Cấu hình tiêu chí chấm điểm & bộ lọc JD
                   </h4>
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="max-md:hidden text-[11px] text-muted-foreground">
                     Chuyển sang trang riêng biệt để quản lý 6 trọng số Rubric và điều kiện lọc cứng tự động
                   </p>
                 </div>

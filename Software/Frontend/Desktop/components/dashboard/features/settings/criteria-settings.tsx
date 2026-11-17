@@ -241,7 +241,7 @@ export function CriteriaSettingsSection() {
     <div className="space-y-4 w-full">
       {/* 1. TOP DUAL-PAGE NAVIGATION SWITCHER */}
       <div className="flex items-center justify-between p-1.5 rounded-2xl bg-slate-100 border border-slate-200 shadow-2xs">
-        <div className="grid grid-cols-1 min-[400px]:grid-cols-2 gap-1.5 w-full sm:w-auto">
+        <div className="grid grid-cols-2 gap-1.5 w-full sm:w-auto">
           <Button
             type="button"
             variant="ghost"
@@ -277,13 +277,13 @@ export function CriteriaSettingsSection() {
 
       <form onSubmit={handleSaveCriteria} className="space-y-4 w-full">
         {/* 2. AUTO APPLY CRITERIA TOGGLE */}
-        <div className="p-3.5 sm:p-4 rounded-xl bg-sky-50/80 border border-sky-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+        <div className="p-3.5 sm:p-4 rounded-xl bg-sky-50/80 border border-sky-200 flex flex-row items-center justify-between gap-3 shadow-2xs">
           <div className="space-y-0.5">
             <p className="font-bold text-xs text-sky-950 flex items-center gap-2">
               <Zap className="w-4 h-4 text-sky-600 shrink-0" />
               <span>Tự động áp dụng cho các vị trí mới</span>
             </p>
-            <p className="text-[11px] text-sky-800 leading-relaxed">
+            <p className="max-md:hidden text-[11px] text-sky-800 leading-relaxed">
               Hệ thống sẽ tự động nạp 6 trọng số rubric và điều kiện lọc cứng này vào bước 3 đối chiếu khi bạn chọn bất kỳ JD mới nào.
             </p>
           </div>
@@ -331,13 +331,13 @@ export function CriteriaSettingsSection() {
                 </div>
               </CardHeader>
 
-              <CardContent className="p-5 space-y-5">
+              <CardContent className="p-4 md:p-5 space-y-4 md:space-y-5">
                 {/* Presets List */}
                 <div className="space-y-1.5">
                   <span className="text-[11px] font-semibold text-muted-foreground block">
                     Gợi ý bộ trọng số chuẩn hóa theo nhóm vai trò:
                   </span>
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="flex gap-1.5 max-md:-mx-4 max-md:px-4 max-md:overflow-x-auto max-md:pb-1 md:flex-wrap">
                     {[
                       {
                         name: "Mặc định (20-35-20-10-5-10)",
@@ -366,7 +366,7 @@ export function CriteriaSettingsSection() {
                         variant="outline"
                         size="sm"
                         onClick={() => handleApplyPreset(preset.w, preset.name)}
-                        className="text-[11px] h-6.5 px-2 border-slate-200 bg-slate-50 hover:bg-sky-50 hover:text-sky-700 hover:border-sky-300 font-medium"
+                        className="shrink-0 text-[11px] h-8 md:h-6.5 px-2 border-slate-200 bg-slate-50 hover:bg-sky-50 hover:text-sky-700 hover:border-sky-300 font-medium"
                       >
                         {preset.name}
                       </Button>
@@ -375,7 +375,7 @@ export function CriteriaSettingsSection() {
                 </div>
 
                 {/* 6 Sliders Detailed with Sub-Weights */}
-                <div className="space-y-4 p-4 rounded-xl bg-slate-50 border border-slate-200/80">
+                <div className="space-y-3 md:space-y-4 p-0 md:p-4 rounded-xl md:bg-slate-50 md:border md:border-slate-200/80">
                   {/* 1. Role Skills */}
                   <div className="space-y-2 bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
                     <div className="flex items-center justify-between text-xs">
@@ -410,7 +410,7 @@ export function CriteriaSettingsSection() {
                       step={1}
                       onValueChange={(val) => handleWeightChange("role_skills", val[0])}
                     />
-                    <p className="text-[11px] text-muted-foreground">
+                    <p className="max-md:hidden text-[11px] text-muted-foreground">
                       Công nghệ lõi, framework, ngôn ngữ chuyên ngành và công cụ bắt buộc của vị trí
                     </p>
 
@@ -500,7 +500,7 @@ export function CriteriaSettingsSection() {
                       step={1}
                       onValueChange={(val) => handleWeightChange("experience", val[0])}
                     />
-                    <p className="text-[11px] text-muted-foreground">
+                    <p className="max-md:hidden text-[11px] text-muted-foreground">
                       Thâm niên thực chiến, độ phức tạp của dự án đã làm và mức độ đảm nhận trách nhiệm
                     </p>
 
@@ -590,7 +590,7 @@ export function CriteriaSettingsSection() {
                       step={1}
                       onValueChange={(val) => handleWeightChange("job_fit", val[0])}
                     />
-                    <p className="text-[11px] text-muted-foreground">
+                    <p className="max-md:hidden text-[11px] text-muted-foreground">
                       Độ tương thích tổng quan giữa mục tiêu nghề nghiệp, phạm vi công việc và kỳ vọng JD
                     </p>
 
@@ -666,7 +666,7 @@ export function CriteriaSettingsSection() {
                       step={1}
                       onValueChange={(val) => handleWeightChange("impact", val[0])}
                     />
-                    <p className="text-[11px] text-muted-foreground">
+                    <p className="max-md:hidden text-[11px] text-muted-foreground">
                       Các chỉ số định lượng, thành tích đóng góp, sản phẩm đã hoàn thành thực tế
                     </p>
 
@@ -742,7 +742,7 @@ export function CriteriaSettingsSection() {
                       step={1}
                       onValueChange={(val) => handleWeightChange("soft_skills", val[0])}
                     />
-                    <p className="text-[11px] text-muted-foreground">
+                    <p className="max-md:hidden text-[11px] text-muted-foreground">
                       Giao tiếp, làm việc nhóm, tinh thần trách nhiệm và tính nhất quán của hồ sơ
                     </p>
 
@@ -818,7 +818,7 @@ export function CriteriaSettingsSection() {
                       step={1}
                       onValueChange={(val) => handleWeightChange("education", val[0])}
                     />
-                    <p className="text-[11px] text-muted-foreground">
+                    <p className="max-md:hidden text-[11px] text-muted-foreground">
                       Bằng cấp đại học, chứng chỉ chuyên môn quốc tế và đào tạo chính quy
                     </p>
 

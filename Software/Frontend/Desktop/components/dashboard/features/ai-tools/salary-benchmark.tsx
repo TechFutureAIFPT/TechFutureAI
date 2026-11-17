@@ -688,8 +688,8 @@ export function SalaryBenchmarkSection() {
                 {/* Inline Work Mode & Popular Keywords Row */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-slate-100 text-xs">
                   {/* Left: Quick Trending Career Pills with Auto-Category Mapping */}
-                  <div className="flex items-center gap-1.5 flex-wrap text-muted-foreground">
-                    <span className="font-semibold text-slate-700 text-[11px] mr-0.5">Vị trí phổ biến:</span>
+                  <div className="flex items-center gap-1.5 max-md:flex-nowrap max-md:overflow-x-auto max-md:pb-1 md:flex-wrap text-muted-foreground">
+                    <span className="shrink-0 font-semibold text-slate-700 text-[11px] mr-0.5">Vị trí phổ biến:</span>
                     {POPULAR_ROLES_WITH_INDUSTRY.map(({ role, category }) => (
                       <button
                         key={role}
@@ -717,14 +717,14 @@ export function SalaryBenchmarkSection() {
                           // If all fields are already present, execute search directly
                           executeSearch(role, selectedLocation, category, selectedExp);
                         }}
-                        className="px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 hover:bg-sky-50 hover:text-sky-700 text-slate-700 border border-slate-200/80 transition-colors"
+                        className="shrink-0 whitespace-nowrap px-2 py-1 md:py-0.5 rounded text-[11px] font-medium bg-slate-100 hover:bg-sky-50 hover:text-sky-700 text-slate-700 border border-slate-200/80 transition-colors"
                       >
                         {role}
                       </button>
                     ))}
                   </div>
 
-                  <span className="text-[11px] text-slate-500">API hiện chưa lọc theo hình thức làm việc.</span>
+                  <span className="max-md:hidden text-[11px] text-slate-500">API hiện chưa lọc theo hình thức làm việc.</span>
                 </div>
               </div>
             </form>
@@ -736,18 +736,18 @@ export function SalaryBenchmarkSection() {
           <div className="flex items-center justify-between">
             <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
               <Building2 className="w-4.5 h-4.5 text-sky-600" />
-              <span>Khám phá mức lương theo nhóm ngành nghề</span>
+              <span><span className="max-md:hidden">Khám phá mức lương theo </span><span className="md:hidden">Theo </span>nhóm ngành nghề</span>
             </h3>
-            <span className="text-xs text-muted-foreground">Nhấp vào ngành để nạp danh sách vị trí và chọn tiêu chí tra cứu</span>
+            <span className="max-md:hidden text-xs text-muted-foreground">Nhấp vào ngành để nạp danh sách vị trí và chọn tiêu chí tra cứu</span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
             {discoveryCategories.map((cat) => {
               const Icon = cat.icon;
               return (
                 <div
                   key={cat.name}
-                  className="p-4.5 rounded-xl bg-card border border-border hover:border-sky-300 transition-all duration-200 shadow-xs group cursor-pointer flex flex-col justify-between"
+                  className="p-3 md:p-4.5 rounded-xl bg-card border border-border hover:border-sky-300 transition-all duration-200 shadow-xs group cursor-pointer flex flex-col justify-between"
                   onClick={() => {
                     setSelectedCategory(cat.name);
                     setSearchTitle(""); // Keep unselected so user chooses exact role from dropdown
@@ -768,20 +768,20 @@ export function SalaryBenchmarkSection() {
                   }}
                 >
                   <div>
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center justify-between mb-2 md:mb-3">
                       <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${cat.color}`}>
                         <Icon className="w-4.5 h-4.5" />
                       </div>
-                      <Badge variant="outline" className="bg-sky-50/50 text-sky-700 border-sky-100 text-[10px] font-bold">
+                      <Badge variant="outline" className="max-md:hidden bg-sky-50/50 text-sky-700 border-sky-100 text-[10px] font-bold">
                         {cat.salaryRange}
                       </Badge>
                     </div>
 
-                    <h4 className="font-bold text-sm text-slate-900 group-hover:text-sky-600 transition-colors">
+                    <h4 className="font-bold text-[13px] leading-snug md:text-sm text-slate-900 group-hover:text-sky-600 transition-colors">
                       {cat.name}
                     </h4>
 
-                    <div className="mt-2 space-y-1">
+                    <div className="max-md:hidden mt-2 space-y-1">
                       {cat.roles.map((role) => (
                         <span
                           key={role}
@@ -813,7 +813,7 @@ export function SalaryBenchmarkSection() {
                     </div>
                   </div>
 
-                  <div className="mt-3 pt-2.5 border-t border-border/50 flex items-center justify-between text-[11px] text-sky-600 font-semibold">
+                  <div className="max-md:hidden mt-3 pt-2.5 border-t border-border/50 flex items-center justify-between text-[11px] text-sky-600 font-semibold">
                     <span>Chọn ngành này</span>
                     <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                   </div>

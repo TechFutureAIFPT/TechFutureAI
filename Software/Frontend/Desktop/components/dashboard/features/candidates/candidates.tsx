@@ -38,6 +38,7 @@ import {
   User,
 } from "lucide-react";
 import { CandidateModal } from "@/components/dashboard/modals/candidate-modal";
+import { MobileFilters } from "@/components/dashboard/mobile-filters";
 import { CandidateDetailModal } from "@/components/dashboard/modals/candidate-detail-modal";
 import { InterviewModal } from "@/components/dashboard/modals/interview-modal";
 import { EmailModal } from "@/components/dashboard/modals/email-modal";
@@ -135,11 +136,11 @@ export function CandidatesSection() {
     <div className="space-y-6">
       {/* Top Action Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <Badge className="bg-sky-50 text-sky-700 border border-sky-200 text-xs font-bold">
+        <Badge className="max-md:hidden bg-sky-50 text-sky-700 border border-sky-200 text-xs font-bold">
           Tổng cộng: {filtered.length} Hồ sơ ứng viên
         </Badge>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap md:items-center md:gap-2.5">
           <Button
             variant="outline"
             size="sm"
@@ -165,10 +166,10 @@ export function CandidatesSection() {
       </div>
 
       {/* Multi-criteria Filter Bar */}
-      <Card className="border-border bg-card shadow-xs">
-        <CardContent className="p-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-            <div className="relative lg:col-span-2">
+      <Card className="border-border bg-card shadow-xs max-md:py-0">
+        <CardContent className="p-3 md:p-4">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] md:grid-cols-2 lg:grid-cols-5 gap-2 md:gap-3">
+            <div className="relative md:col-span-2">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Tìm kiếm ứng viên, kỹ năng, email..."
@@ -181,6 +182,7 @@ export function CandidatesSection() {
               />
             </div>
 
+            <MobileFilters activeCount={[stageFilter, statusFilter, jobFilter].filter((value) => value !== "all").length}>
             <Select
               value={stageFilter}
               onValueChange={(v) => {
@@ -188,7 +190,7 @@ export function CandidatesSection() {
                 setCurrentPage(1);
               }}
             >
-              <SelectTrigger className="bg-slate-50 border-slate-200 text-xs h-9">
+              <SelectTrigger className="max-md:col-span-2 bg-slate-50 border-slate-200 text-xs h-9">
                 <SelectValue placeholder="Giai đoạn" />
               </SelectTrigger>
               <SelectContent>
@@ -207,7 +209,7 @@ export function CandidatesSection() {
                 setCurrentPage(1);
               }}
             >
-              <SelectTrigger className="bg-slate-50 border-slate-200 text-xs h-9">
+              <SelectTrigger className="max-md:col-span-2 bg-slate-50 border-slate-200 text-xs h-9">
                 <SelectValue placeholder="Trạng thái" />
               </SelectTrigger>
               <SelectContent>
@@ -225,7 +227,7 @@ export function CandidatesSection() {
                 setCurrentPage(1);
               }}
             >
-              <SelectTrigger className="bg-slate-50 border-slate-200 text-xs h-9">
+              <SelectTrigger className="max-md:col-span-2 bg-slate-50 border-slate-200 text-xs h-9">
                 <SelectValue placeholder="Vị trí JD" />
               </SelectTrigger>
               <SelectContent>
@@ -237,6 +239,7 @@ export function CandidatesSection() {
                 ))}
               </SelectContent>
             </Select>
+            </MobileFilters>
           </div>
         </CardContent>
       </Card>

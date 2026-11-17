@@ -591,7 +591,7 @@ export function MatchWorkflowSection() {
               </CardHeader>
               <CardContent className="space-y-4 pt-4">
                 {/* AI Assistant Quick Actions Bar */}
-                <div className="p-3 rounded-xl bg-sky-50/60 border border-sky-100 flex flex-wrap items-center gap-2">
+                <div className="p-2.5 md:p-3 rounded-xl bg-sky-50/60 border border-sky-100 flex items-center gap-2 max-md:overflow-x-auto md:flex-wrap">
                   <span className="text-xs font-bold text-sky-900 flex items-center gap-1 shrink-0">
                     <Sparkles className="w-3.5 h-3.5 text-sky-600" />
                     Hỗ trợ AI:
@@ -602,7 +602,7 @@ export function MatchWorkflowSection() {
                     size="sm"
                     onClick={handleStructureJd}
                     disabled={isStructuringJd}
-                    className="text-xs h-7 px-2.5 bg-white border-sky-200 text-sky-700 hover:bg-sky-50 font-medium"
+                    className="shrink-0 text-xs h-8 md:h-7 px-2.5 bg-white border-sky-200 text-sky-700 hover:bg-sky-50 font-medium"
                   >
                     {isStructuringJd ? <RefreshCw className="w-3 h-3 animate-spin mr-1 text-sky-600" /> : <Wand2 className="w-3 h-3 mr-1 text-sky-600" />}
                     Chuẩn hóa nội dung
@@ -613,7 +613,7 @@ export function MatchWorkflowSection() {
                     size="sm"
                     onClick={handleDetectPosition}
                     disabled={isDetectingPosition}
-                    className="text-xs h-7 px-2.5 bg-white border-sky-200 text-sky-700 hover:bg-sky-50 font-medium"
+                    className="shrink-0 text-xs h-8 md:h-7 px-2.5 bg-white border-sky-200 text-sky-700 hover:bg-sky-50 font-medium"
                   >
                     {isDetectingPosition ? <RefreshCw className="w-3 h-3 animate-spin mr-1 text-sky-600" /> : <Briefcase className="w-3 h-3 mr-1 text-sky-600" />}
                     Nhận diện chức danh
@@ -624,7 +624,7 @@ export function MatchWorkflowSection() {
                     size="sm"
                     onClick={handleSuggestHardFilters}
                     disabled={isSuggestingFilters}
-                    className="text-xs h-7 px-2.5 bg-white border-sky-200 text-sky-700 hover:bg-sky-50 font-medium"
+                    className="shrink-0 text-xs h-8 md:h-7 px-2.5 bg-white border-sky-200 text-sky-700 hover:bg-sky-50 font-medium"
                   >
                     {isSuggestingFilters ? <RefreshCw className="w-3 h-3 animate-spin mr-1 text-sky-600" /> : <Filter className="w-3 h-3 mr-1 text-sky-600" />}
                     Đề xuất điều kiện
@@ -634,7 +634,7 @@ export function MatchWorkflowSection() {
                 <div className="space-y-1.5">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                     <Label htmlFor="wf-jd-title" className="text-xs font-bold text-slate-800">Tên vị trí tuyển dụng *</Label>
-                    <span className="text-[11px] text-muted-foreground">Ví dụ: Senior Frontend React/Next.js Engineer</span>
+                    <span className="max-md:hidden text-[11px] text-muted-foreground">Ví dụ: Senior Frontend React/Next.js Engineer</span>
                   </div>
                   <Input
                     id="wf-jd-title"
@@ -648,7 +648,7 @@ export function MatchWorkflowSection() {
                 <div className="space-y-1.5">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                     <Label htmlFor="wf-jd-content" className="text-xs font-bold text-slate-800">Nội dung & yêu cầu công việc</Label>
-                    <span className="text-[11px] text-muted-foreground">Định dạng markdown hoặc văn bản thuần</span>
+                    <span className="max-md:hidden text-[11px] text-muted-foreground">Định dạng markdown hoặc văn bản thuần</span>
                   </div>
                   <Textarea
                     id="wf-jd-content"
@@ -656,18 +656,18 @@ export function MatchWorkflowSection() {
                     value={jdContentInput}
                     onChange={(e) => setJdContentInput(e.target.value)}
                     placeholder="Dán toàn bộ nội dung mô tả công việc, trách nhiệm và yêu cầu kỹ năng vào đây..."
-                    className="bg-slate-50/50 border-sky-100 text-xs leading-relaxed font-mono focus:border-sky-500 focus:ring-sky-500 text-slate-800"
+                    className="max-md:max-h-[38vh] overflow-y-auto bg-slate-50/50 border-sky-100 text-xs leading-relaxed font-mono focus:border-sky-500 focus:ring-sky-500 text-slate-800"
                   />
                 </div>
 
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
-                  <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                  <span className="max-md:hidden text-xs text-muted-foreground flex items-center gap-1.5">
                     <ShieldCheck className="w-3.5 h-3.5 text-sky-600" />
                     Bạn có thể điều chỉnh nội dung trước khi tiếp tục.
                   </span>
                   <Button
                     onClick={handleSaveStep1}
-                    className="bg-primary text-white hover:bg-primary/90 font-semibold text-xs shadow-xs"
+                    className="max-md:w-full max-md:h-11 bg-primary text-white hover:bg-primary/90 font-semibold text-xs shadow-xs"
                   >
                     Tiếp tục: Tiêu chí đánh giá
                     <ArrowRight className="w-4 h-4 ml-1.5" />
@@ -721,7 +721,7 @@ export function MatchWorkflowSection() {
                         {tmpl.level}
                       </Badge>
                     </div>
-                    <p className="text-[11px] text-muted-foreground line-clamp-2 mb-2">
+                    <p className="max-md:hidden text-[11px] text-muted-foreground line-clamp-2 mb-2">
                       {tmpl.description}
                     </p>
                     <div className="flex items-center justify-between text-[10px] text-sky-600 font-semibold pt-1 border-t border-slate-100">

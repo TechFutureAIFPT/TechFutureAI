@@ -639,3 +639,79 @@ html {
     padding-bottom: calc(var(--s-6) + env(safe-area-inset-bottom));
   }
 }
+
+/* ======================================================================
+ * Mobile gọn: mỗi màn hình chỉ giữ thông tin chính + hành động chính.
+ * Mô tả phụ, chú thích, khối quảng bá ẩn trên điện thoại; desktop không đổi.
+ * ====================================================================== */
+@media (max-width: 767px) {
+  /* Thanh "Dữ liệu minh họa" thành một dòng mảnh. */
+  .service-note {
+    flex-wrap: nowrap;
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    font-size: 12px;
+    line-height: 1.4;
+    border-radius: 10px;
+  }
+  .service-note > button {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  /* Phụ đề & mô tả của tiêu đề trang, panel và Card. */
+  .page-intro {
+    margin-bottom: 16px;
+  }
+  .page-intro h2 {
+    font-size: 20px;
+  }
+  .page-intro p,
+  .panel-heading p,
+  .panel-note,
+  [data-slot="card-description"] {
+    display: none;
+  }
+  .panel-heading {
+    padding: 14px 16px;
+  }
+
+  /* Tổng quan: 4 chỉ số thành lưới 2×2 gọn, bỏ dòng diễn giải. */
+  .overview-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-bottom: 16px;
+  }
+  .overview-stat {
+    padding: 14px;
+  }
+  .overview-stat:nth-child(3) {
+    border-left: 0;
+  }
+  .overview-stat:nth-child(n + 3) {
+    border-top: 1px solid var(--platform-line);
+  }
+  .overview-stat strong {
+    margin: 10px 0 0;
+    font-size: 24px;
+  }
+  .overview-stat small {
+    display: none;
+  }
+  .overview-grid {
+    gap: 16px;
+  }
+  /* Khối quảng bá trợ lý AI đã có trong thanh tab "Trợ lý AI". */
+  .overview-assistant {
+    display: none;
+  }
+  .overview-bottom {
+    margin-top: 16px;
+  }
+  /* Danh sách rút gọn: chỉ 3 dòng đầu, xem thêm qua liên kết "Xem hồ sơ". */
+  .enterprise-table tbody tr:nth-child(n + 4) {
+    display: none;
+  }
+  .stage-list {
+    gap: 14px;
+  }
+}

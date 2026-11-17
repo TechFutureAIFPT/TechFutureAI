@@ -198,12 +198,12 @@ export function ReportsSection() {
             <BarChart3 className="w-5 h-5 text-sky-600" />
             <span>Báo cáo kết quả đánh giá</span>
           </h2>
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <p className="max-md:hidden text-xs text-muted-foreground mt-0.5">
             Tổng hợp kết quả các phiên đánh giá và tải bảng điểm dưới dạng CSV.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap md:items-center">
           <Button
             size="sm"
             variant="outline"
@@ -226,11 +226,11 @@ export function ReportsSection() {
       </div>
 
       {/* 4 Summary Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-card border border-border rounded-xl p-4 shadow-xs">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        <div className="bg-card border border-border rounded-xl p-3 md:p-4 shadow-xs">
           <div className="flex items-center justify-between">
             <p className="text-xs text-muted-foreground font-medium">Phiên đánh giá</p>
-            <div className="w-8 h-8 rounded-lg bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600">
+            <div className="max-md:hidden w-8 h-8 rounded-lg bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600">
               <Layers className="w-4 h-4" />
             </div>
           </div>
@@ -238,13 +238,13 @@ export function ReportsSection() {
             {historyBatches.length}{" "}
             <span className="text-xs font-normal text-muted-foreground">đợt tuyển</span>
           </p>
-          <p className="text-[11px] text-sky-700 mt-1 font-medium">Lưu trữ đầy đủ dữ liệu chấm</p>
+          <p className="max-md:hidden text-[11px] text-sky-700 mt-1 font-medium">Lưu trữ đầy đủ dữ liệu chấm</p>
         </div>
 
-        <div className="bg-card border border-border rounded-xl p-4 shadow-xs">
+        <div className="bg-card border border-border rounded-xl p-3 md:p-4 shadow-xs">
           <div className="flex items-center justify-between">
             <p className="text-xs text-muted-foreground font-medium">Hồ sơ đã xử lý</p>
-            <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
+            <div className="max-md:hidden w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
               <Users className="w-4 h-4" />
             </div>
           </div>
@@ -252,13 +252,13 @@ export function ReportsSection() {
             {totalCVsAllBatches}{" "}
             <span className="text-xs font-normal text-muted-foreground">hồ sơ</span>
           </p>
-          <p className="text-[11px] text-blue-700 mt-1 font-medium">Hồ sơ trong các phiên đánh giá</p>
+          <p className="max-md:hidden text-[11px] text-blue-700 mt-1 font-medium">Hồ sơ trong các phiên đánh giá</p>
         </div>
 
-        <div className="bg-card border border-border rounded-xl p-4 shadow-xs">
+        <div className="bg-card border border-border rounded-xl p-3 md:p-4 shadow-xs">
           <div className="flex items-center justify-between">
-            <p className="text-xs text-muted-foreground font-medium">Hồ sơ đạt ngưỡng 75 điểm</p>
-            <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600">
+            <p className="text-xs text-muted-foreground font-medium"><span className="max-md:hidden">Hồ sơ đạt ngưỡng 75 điểm</span><span className="md:hidden">Đạt ngưỡng 75</span></p>
+            <div className="max-md:hidden w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600">
               <CheckCircle2 className="w-4 h-4" />
             </div>
           </div>
@@ -268,20 +268,20 @@ export function ReportsSection() {
               ({Math.round((totalQualifiedAllBatches / (totalCVsAllBatches || 1)) * 100)}%)
             </span>
           </p>
-          <p className="text-[11px] text-emerald-600 mt-1 font-medium">Đáp ứng ngưỡng điểm tham khảo</p>
+          <p className="max-md:hidden text-[11px] text-emerald-600 mt-1 font-medium">Đáp ứng ngưỡng điểm tham khảo</p>
         </div>
 
-        <div className="bg-card border border-border rounded-xl p-4 shadow-xs">
+        <div className="bg-card border border-border rounded-xl p-3 md:p-4 shadow-xs">
           <div className="flex items-center justify-between">
-            <p className="text-xs text-muted-foreground font-medium">Điểm phù hợp trung bình</p>
-            <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
+            <p className="text-xs text-muted-foreground font-medium"><span className="max-md:hidden">Điểm phù hợp trung bình</span><span className="md:hidden">Điểm TB</span></p>
+            <div className="max-md:hidden w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
               <Sparkles className="w-4 h-4" />
             </div>
           </div>
           <p className="text-2xl font-bold text-indigo-700 mt-2">
             {avgScoreAllBatches}%
           </p>
-          <p className="text-[11px] text-indigo-600 mt-1 font-medium">Theo tiêu chí của từng phiên</p>
+          <p className="max-md:hidden text-[11px] text-indigo-600 mt-1 font-medium">Theo tiêu chí của từng phiên</p>
         </div>
       </div>
 
@@ -289,9 +289,10 @@ export function ReportsSection() {
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-            Chọn phiên lọc hồ sơ để xem dữ liệu & xuất file:
+            <span className="max-md:hidden">Chọn phiên lọc hồ sơ để xem dữ liệu & xuất file:</span>
+            <span className="md:hidden">Phiên đánh giá</span>
           </h3>
-          <span className="text-xs text-muted-foreground">
+          <span className="max-md:hidden text-xs text-muted-foreground">
             Đang hiển thị:{" "}
             <strong className="text-sky-700">
               {selectedBatch ? selectedBatch.batchName : "Tất cả các phiên lọc (Tổng hợp)"}
@@ -299,12 +300,12 @@ export function ReportsSection() {
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <div className="flex gap-2.5 overflow-x-auto snap-x -mx-4 px-4 pb-1 md:mx-0 md:px-0 md:pb-0 md:grid md:grid-cols-2 lg:grid-cols-5 md:gap-3 md:overflow-visible">
           {/* Option All */}
           <div
             onClick={() => setSelectedBatchId("all")}
             className={cn(
-              "p-3 rounded-xl border cursor-pointer transition-all text-left",
+              "w-[68%] shrink-0 snap-start md:w-auto p-3 rounded-xl border cursor-pointer transition-all text-left",
               selectedBatchId === "all"
                 ? "border-sky-500 bg-sky-50/70 shadow-xs ring-1 ring-sky-400"
                 : "border-border bg-card hover:border-sky-300"
@@ -333,7 +334,7 @@ export function ReportsSection() {
                 key={batch.id}
                 onClick={() => setSelectedBatchId(batch.id)}
                 className={cn(
-                  "p-3 rounded-xl border cursor-pointer transition-all text-left",
+                  "w-[68%] shrink-0 snap-start md:w-auto p-3 rounded-xl border cursor-pointer transition-all text-left",
                   isSel
                     ? "border-sky-500 bg-sky-50/70 shadow-xs ring-1 ring-sky-400"
                     : "border-border bg-card hover:border-sky-300"
@@ -490,21 +491,21 @@ export function ReportsSection() {
           </div>
         </CardHeader>
 
-        <CardContent className="p-0">
+        <CardContent className="p-0 max-md:px-0">
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left">
               <thead className="bg-slate-100/70 border-b border-border text-slate-700 font-semibold uppercase tracking-wider text-[10px]">
                 <tr>
-                  <th className="py-3 px-4">Ứng viên</th>
-                  <th className="py-3 px-4">Vị trí ứng tuyển</th>
-                  <th className="py-3 px-4 text-center">Điểm phù hợp</th>
-                  <th className="py-3 px-4 text-center">Kỹ năng</th>
-                  <th className="py-3 px-4 text-center">Kinh nghiệm</th>
-                  <th className="py-3 px-4 text-center">Học vấn</th>
-                  <th className="py-3 px-4 text-center">Kỹ năng mềm</th>
-                  <th className="py-3 px-4">Mức lương kỳ vọng</th>
-                  <th className="py-3 px-4">Phân tích AI</th>
-                  <th className="py-3 px-4 text-right">Trạng thái</th>
+                  <th className="py-3 px-3 md:px-4">Ứng viên</th>
+                  <th className="max-md:hidden py-3 px-4">Vị trí ứng tuyển</th>
+                  <th className="py-3 px-2 md:px-4 text-center"><span className="max-md:hidden">Điểm phù hợp</span><span className="md:hidden">Điểm</span></th>
+                  <th className="max-md:hidden py-3 px-4 text-center">Kỹ năng</th>
+                  <th className="max-md:hidden py-3 px-4 text-center">Kinh nghiệm</th>
+                  <th className="max-md:hidden py-3 px-4 text-center">Học vấn</th>
+                  <th className="max-md:hidden py-3 px-4 text-center">Kỹ năng mềm</th>
+                  <th className="max-md:hidden py-3 px-4">Mức lương kỳ vọng</th>
+                  <th className="max-md:hidden py-3 px-4">Phân tích AI</th>
+                  <th className="py-3 px-3 md:px-4 text-right">Trạng thái</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60 bg-white">
@@ -521,20 +522,21 @@ export function ReportsSection() {
 
                     return (
                       <tr key={cand.id} className="hover:bg-sky-50/40 transition-colors">
-                        <td className="py-3 px-4">
+                        <td className="py-3 px-3 md:px-4">
                           <p className="font-bold text-slate-900">{cand.name}</p>
-                          <p className="text-[11px] text-muted-foreground">{cand.email}</p>
-                          <p className="text-[10px] text-slate-500">{cand.phone}</p>
+                          <p className="md:hidden text-[11px] text-muted-foreground line-clamp-1">{cand.jobTarget}</p>
+                          <p className="max-md:hidden text-[11px] text-muted-foreground">{cand.email}</p>
+                          <p className="max-md:hidden text-[10px] text-slate-500">{cand.phone}</p>
                         </td>
 
-                        <td className="py-3 px-4">
+                        <td className="max-md:hidden py-3 px-4">
                           <p className="font-medium text-slate-800">{cand.jobTarget}</p>
                           <p className="text-[10px] text-muted-foreground">
                             {cand.experienceYears} năm KN • {cand.location}
                           </p>
                         </td>
 
-                        <td className="py-3 px-4 text-center">
+                        <td className="py-3 px-2 md:px-4 text-center">
                           <div className="inline-flex flex-col items-center">
                             <span
                               className={cn(
@@ -554,30 +556,30 @@ export function ReportsSection() {
                           </div>
                         </td>
 
-                        <td className="py-3 px-4 text-center font-semibold text-slate-700">
+                        <td className="max-md:hidden py-3 px-4 text-center font-semibold text-slate-700">
                           {cand.criteriaScores?.skills ?? 0}/100
                         </td>
-                        <td className="py-3 px-4 text-center font-semibold text-slate-700">
+                        <td className="max-md:hidden py-3 px-4 text-center font-semibold text-slate-700">
                           {cand.criteriaScores?.experience || 80}/100
                         </td>
-                        <td className="py-3 px-4 text-center font-semibold text-slate-700">
+                        <td className="max-md:hidden py-3 px-4 text-center font-semibold text-slate-700">
                           {cand.criteriaScores?.education ?? 0}/100
                         </td>
-                        <td className="py-3 px-4 text-center font-semibold text-slate-700">
+                        <td className="max-md:hidden py-3 px-4 text-center font-semibold text-slate-700">
                           {cand.criteriaScores?.softSkills || 90}/100
                         </td>
 
-                        <td className="py-3 px-4 font-mono text-[11px] text-slate-700">
+                        <td className="max-md:hidden py-3 px-4 font-mono text-[11px] text-slate-700">
                           {cand.expectedSalary.toLocaleString()} ₫
                         </td>
 
-                        <td className="py-3 px-4 max-w-xs">
+                        <td className="max-md:hidden py-3 px-4 max-w-xs">
                           <p className="text-[11px] text-slate-600 line-clamp-2" title={cand.aiSummary}>
                             {cand.aiSummary || "Hồ sơ đáp ứng tốt các yêu cầu chính của vị trí."}
                           </p>
                         </td>
 
-                        <td className="py-3 px-4 text-right">
+                        <td className="py-3 px-3 md:px-4 text-right">
                           <Badge
                             className={cn(
                               "text-[10px] font-semibold px-2 py-0.5",

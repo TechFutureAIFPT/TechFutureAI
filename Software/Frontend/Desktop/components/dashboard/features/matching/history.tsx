@@ -60,11 +60,11 @@ export function HistorySection() {
     <div className="space-y-6">
       {/* Top Search Bar */}
       <div className="flex items-center justify-between gap-3">
-        <Badge className="bg-secondary text-foreground text-xs font-semibold">
+        <Badge className="max-md:hidden bg-secondary text-foreground text-xs font-semibold">
           {historyBatches.length} Đợt Tuyển Dụng Lưu Trữ
         </Badge>
 
-        <div className="relative w-full sm:w-72">
+        <div className="relative w-full md:w-72">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Tìm kiếm đợt tuyển, vị trí..."
@@ -91,22 +91,22 @@ export function HistorySection() {
                     : "border-border bg-card hover:border-sky-300"
                 }`}
               >
-                <CardContent className="p-4 space-y-3">
+                <CardContent className="p-3.5 md:p-4 space-y-3">
                   <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 shrink-0 mt-0.5">
+                    <div className="flex min-w-0 items-start gap-3">
+                      <div className="max-md:hidden w-10 h-10 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 shrink-0 mt-0.5">
                         <Layers className="w-5 h-5" />
                       </div>
                       <div>
-                        <h4 className="font-bold text-sm text-slate-900 hover:text-sky-600 transition-colors">
+                        <h4 className="font-bold text-sm text-slate-900 hover:text-sky-600 transition-colors max-md:line-clamp-2">
                           {batch.batchName}
                         </h4>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          Vị trí: <span className="text-slate-900 font-medium">{batch.jobTitle}</span>
+                        <p className="text-xs text-muted-foreground mt-0.5 max-md:truncate">
+                          <span className="max-md:hidden">Vị trí: </span> <span className="text-slate-900 font-medium">{batch.jobTitle}</span>
                         </p>
                         <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-1">
-                          <span>Phụ trách: {batch.recruiter}</span>
-                          <span>•</span>
+                          <span className="max-md:hidden">Phụ trách: {batch.recruiter}</span>
+                          <span className="max-md:hidden">•</span>
                           <span>{batch.createdAt}</span>
                         </div>
                       </div>
@@ -122,19 +122,19 @@ export function HistorySection() {
                   {/* Metrics Bar */}
                   <div className="grid grid-cols-3 gap-2 p-2.5 rounded-xl bg-sky-50/30 border border-sky-100 text-xs">
                     <div>
-                      <span className="text-muted-foreground block text-[10px]">Tổng hồ sơ</span>
+                      <span className="text-muted-foreground block text-[10px]">Hồ sơ</span>
                       <span className="font-bold text-slate-900 mt-0.5 block">
                         {batch.totalCVs} CV
                       </span>
                     </div>
                     <div>
-                      <span className="text-muted-foreground block text-[10px]">Đạt chuẩn (≥ 75%)</span>
+                      <span className="text-muted-foreground block text-[10px]">Đạt chuẩn<span className="max-md:hidden"> (≥ 75%)</span></span>
                       <span className="font-bold text-sky-700 mt-0.5 block">
                         {batch.qualifiedCount} ứng viên
                       </span>
                     </div>
                     <div>
-                      <span className="text-muted-foreground block text-[10px]">Điểm phù hợp trung bình</span>
+                      <span className="text-muted-foreground block text-[10px]"><span className="md:hidden">Điểm TB</span><span className="max-md:hidden">Điểm phù hợp trung bình</span></span>
                       <span className="font-bold text-sky-700 mt-0.5 block">
                         {batch.avgScore}%
                       </span>
@@ -143,11 +143,11 @@ export function HistorySection() {
 
                   {/* Actions */}
                   <div className="flex items-center justify-between pt-1 border-t border-border/50 text-xs">
-                    <span className="text-muted-foreground">
+                    <span className="max-md:hidden text-muted-foreground">
                       Top 1: <strong className="text-slate-900">{batch.topCandidateName}</strong> ({batch.topScore}%)
                     </span>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 max-md:w-full max-md:justify-end">
                       <Button
                         size="sm"
                         variant="outline"
@@ -178,8 +178,8 @@ export function HistorySection() {
           })}
         </div>
 
-        {/* Selected Batch Details Sidecard */}
-        <div>
+        {/* Selected Batch Details Sidecard — trên mobile đã có nút CSV/Mở đợt ở từng thẻ */}
+        <div className="max-md:hidden">
           {selectedBatch ? (
             <Card className="border-border bg-card shadow-xs sticky top-20">
               <CardHeader className="pb-3 border-b border-border bg-sky-50/40">

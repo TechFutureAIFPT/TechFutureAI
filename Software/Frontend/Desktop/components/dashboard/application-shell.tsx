@@ -10,9 +10,9 @@ function PreviewNotice() {
   const { authUser, authChecked, workspaceDataState, reloadRealUserData, setIsAuthModalOpen } = useSalesOps();
   if (!authChecked) return null;
   if (workspaceDataState === "loading") return <div role="status" className="service-note">Đang tải dữ liệu tài khoản…</div>;
-  if (workspaceDataState === "error") return <div role="alert" className="service-note flex flex-wrap items-center justify-between gap-2"><span><strong>Chưa đồng bộ được dữ liệu.</strong> Các thay đổi sẽ không được báo đã lưu cho đến khi máy chủ phản hồi.</span><button className="font-semibold text-primary" onClick={() => void reloadRealUserData()}>Thử tải lại</button></div>;
+  if (workspaceDataState === "error") return <div role="alert" className="service-note flex flex-wrap items-center justify-between gap-2"><span><strong>Chưa đồng bộ được dữ liệu.</strong><span className="max-md:hidden"> Các thay đổi sẽ không được báo đã lưu cho đến khi máy chủ phản hồi.</span></span><button className="font-semibold text-primary" onClick={() => void reloadRealUserData()}>Thử tải lại</button></div>;
   if (authUser) return null;
-  return <div className="service-note flex flex-wrap items-center justify-between gap-2"><span><strong>Dữ liệu minh họa.</strong> Thay đổi trong chế độ xem trước chỉ tồn tại đến khi bạn rời phiên này.</span><button className="font-semibold text-primary" onClick={() => setIsAuthModalOpen(true)}>Đăng nhập để lưu dữ liệu</button></div>;
+  return <div className="service-note service-note-preview flex flex-wrap items-center justify-between gap-2"><span><strong>Dữ liệu minh họa.</strong><span className="max-md:hidden"> Thay đổi trong chế độ xem trước chỉ tồn tại đến khi bạn rời phiên này.</span></span><button className="font-semibold text-primary" onClick={() => setIsAuthModalOpen(true)}><span className="max-md:hidden">Đăng nhập để lưu dữ liệu</span><span className="md:hidden">Đăng nhập để lưu</span></button></div>;
 }
 
 function ApplicationFrame({ children, fullBleed = false }: { children: React.ReactNode; fullBleed?: boolean }) {
