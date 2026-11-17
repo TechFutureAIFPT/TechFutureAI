@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { CopyrightNotice } from "@/components/copyright-notice";
 
 export function LandingFooter() {
   return (
@@ -54,7 +55,10 @@ export function LandingFooter() {
 
       <div className="lp-footer__bottom">
         <div className="lp-container lp-footer__bottominner">
-          <p>© {new Date().getFullYear()} AI Match. Tuyển dụng có cơ sở. Phát triển có định hướng.</p>
+          <div className="lp-footer__legal">
+            <CopyrightNotice />
+            <p>AI Match · Tuyển dụng có cơ sở. Phát triển có định hướng.</p>
+          </div>
           <div className="lp-footer__bottomlinks">
             <a href="#gioi-thieu">Giới thiệu</a>
             <a href="#nang-luc">Công cụ</a>

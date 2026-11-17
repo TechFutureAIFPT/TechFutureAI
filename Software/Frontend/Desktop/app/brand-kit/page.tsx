@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, ArrowUpRight, Download } from "lucide-react";
 import { Brand } from "@/components/brand";
+import { CopyrightNotice } from "@/components/copyright-notice";
 import { ProductIdentity } from "@/components/product-logo";
 import { productAsset, productBrands, productLogoConcepts, serviceProducts } from "@/lib/brand";
 
@@ -17,6 +18,6 @@ export default function BrandKitPage() {
       <section aria-labelledby="service-brand-title"><h2 id="service-brand-title" className="brand-section-title">Nhận diện từng dịch vụ</h2><div className="brand-service-grid">{serviceProducts.map((product) => <article className="brand-service-card" key={product.id}><ProductIdentity product={product.id} /><div className="brand-logo-concept">{productLogoConcepts[product.id]}</div><p>{product.description}</p><div className="brand-asset-links"><a href={productAsset(product.id, "logo")} download>SVG<Download size={13} /></a><a href={productAsset(product.id, "logo", "png")} download>PNG<Download size={13} /></a><a href={productAsset(product.id, "mark")} download>Biểu tượng<Download size={13} /></a><a href={productAsset(product.id, "logo-dark")} download>Nền tối<Download size={13} /></a></div><Link className="brand-service-open" href={product.href}>Mở {product.name}<ArrowUpRight size={14} /></Link></article>)}</div></section>
       <section className="brand-usage"><h2>Quy tắc sử dụng</h2><div><p><strong>Giữ nguyên tỷ lệ.</strong> Dùng bản SVG cho website và bản PNG trong suốt khi cần ảnh. Giữ khoảng trống quanh biểu tượng bằng ít nhất ¼ chiều cao của logo.</p><p><strong>Chọn đúng nền.</strong> Bản logo thông thường dành cho nền sáng; bản có hậu tố “logo-dark” dùng trên nền tối. Không thêm viền, hiệu ứng hoặc đổi màu các mặt khối.</p><p><strong>Phân biệt nền tảng và dịch vụ.</strong> Viết đúng “{productBrands.platform.name}”, “CV Match”, “Career Match”, “Insight Match”, “Interview Match”, “Salary Match” và “Talent Match”.</p></div></section>
     </main>
-    <footer className="brand-kit-footer">AI Match · Tuyển dụng có cơ sở. Phát triển có định hướng.</footer>
+    <footer className="brand-kit-footer"><CopyrightNotice /><p>AI Match · Tuyển dụng có cơ sở. Phát triển có định hướng.</p></footer>
   </div>;
 }

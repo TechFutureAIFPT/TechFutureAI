@@ -5,6 +5,7 @@ import { Header } from "@/components/dashboard/header";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { CommandSearch } from "@/components/dashboard/command-search";
 import { MobileTabBar } from "@/components/dashboard/mobile-tab-bar";
+import { CopyrightNotice } from "@/components/copyright-notice";
 
 function PreviewNotice() {
   const { authUser, authChecked, workspaceDataState, reloadRealUserData, setIsAuthModalOpen } = useSalesOps();
@@ -20,9 +21,9 @@ function ApplicationFrame({ children, fullBleed = false }: { children: React.Rea
   const immersive = fullBleed || ["ai-assistant", "chatbot", "career-compass"].includes(activeSection);
   return <div className={immersive ? "enterprise-app is-immersive" : "enterprise-app"}>
     <a href="#workspace-content" className="skip-link">Chuyển đến nội dung</a>
-    <Sidebar />
+    <Sidebar showCopyright={immersive} />
     <div className="app-frame"><Header />
-      <main id="workspace-content" tabIndex={-1} className={immersive ? "app-content app-content-full" : "app-content"}>{!immersive && <PreviewNotice />}{children}</main>
+      <main id="workspace-content" tabIndex={-1} className={immersive ? "app-content app-content-full" : "app-content"}>{!immersive && <PreviewNotice />}{children}{!immersive && <footer className="app-footer"><CopyrightNotice /></footer>}</main>
     </div><MobileTabBar /><CommandSearch />
   </div>;
 }

@@ -5,13 +5,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ArrowUpRight, X } from "lucide-react";
 import { Brand } from "@/components/brand";
+import { CopyrightNotice } from "@/components/copyright-notice";
 import { ProductMark } from "@/components/product-logo";
 import { getProductForSection } from "@/lib/brand";
 import { canonicalSection, navigationGroups } from "@/lib/navigation";
 import { useSalesOps } from "@/lib/sales-ops-context";
 import { cn } from "@/lib/utils";
 
-export function Sidebar() {
+/** `showCopyright`: trang toàn màn hình (chat, Career Match) không có footer nội dung nên đặt bản quyền ở chân thanh điều hướng. */
+export function Sidebar({ showCopyright = false }: { showCopyright?: boolean }) {
   const { activeSection, mobileMenuOpen, setMobileMenuOpen } = useSalesOps();
   const pathname = usePathname();
   const currentProduct = getProductForSection(activeSection);
@@ -57,6 +59,7 @@ export function Sidebar() {
           })}
         </div>)}
       </nav>
+      {showCopyright && <CopyrightNotice compact className="app-sidebar-copyright" />}
       <Link href="/" className="app-sidebar-footer"><span>Khám phá nền tảng</span><ArrowUpRight size={15} /></Link>
     </aside>
   </>;

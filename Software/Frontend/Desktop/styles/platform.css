@@ -235,3 +235,25 @@ button:not(:disabled), [role="button"]:not([aria-disabled="true"]) { cursor: poi
 .brand-kit-footer { text-align: center; color: #65758b; font-size: 11px; padding: 24px; border-top: 1px solid #e0e7f0; }
 @media(max-width:1000px) { .brand-service-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } .brand-kit-heading { flex-direction: column; gap: 5px; } }
 @media(max-width:600px) { .brand-kit-heading h1 { font-size: 28px; } .brand-kit-content { padding-top: 30px; } .brand-service-grid, .master-brand-panel, .brand-usage > div { grid-template-columns: 1fr; } .brand-service-card { padding: 22px; } .master-brand-panel { padding: 22px; gap: 20px; } .brand-usage > div { gap: 20px; } .brand-back { font-size: 11px; } .brand-kit-heading .platform-button { width: 100%; } }
+
+/* ---------- Bản quyền (footer trang chủ, bộ nhận diện, workspace) ---------- */
+.copyright-notice { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 0; font-size: 12px; line-height: 1.6; color: #627683; }
+.copyright-notice strong { font-weight: 600; color: #2a4154; }
+.copyright-notice__link { display: inline-flex; align-items: center; gap: 5px; color: #1f6fd1; font-weight: 500; text-decoration: none; border-radius: 6px; }
+.copyright-notice__link:hover { text-decoration: underline; text-underline-offset: 3px; }
+.copyright-notice__link:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+.copyright-notice.is-compact { font-size: 11px; gap: 2px 8px; }
+.lp-footer__legal { display: flex; flex-direction: column; gap: 4px; }
+.lp-footer__bottom .copyright-notice { display: flex; line-height: 1.6; }
+.lp-footer__bottom .copyright-notice strong { color: var(--c-text-2); }
+.lp-footer__bottom .copyright-notice__link { color: var(--c-brand-blue); }
+.brand-kit-footer { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.brand-kit-footer .copyright-notice { justify-content: center; }
+.app-footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--platform-line); }
+.app-sidebar-copyright { padding: 12px 24px 0; border-top: 1px solid var(--platform-line); }
+.app-sidebar-copyright + .app-sidebar-footer { border-top: 0; padding-top: 8px; }
+@media (max-width: 767px) {
+  .app-footer { margin-top: 24px; padding-top: 14px; }
+  .app-footer .copyright-notice { font-size: 11.5px; }
+  .app-sidebar-copyright { padding: 12px 22px 0; }
+}
