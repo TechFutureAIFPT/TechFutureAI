@@ -35,8 +35,8 @@ export function LandingComparison() {
               {COMPARISON.map(([aspect, manual, product]) => (
                 <tr key={aspect} className="lp-table__row">
                   <th scope="row">{aspect}</th>
-                  <td>{manual}</td>
-                  <td className="lp-table__ours">{product}</td>
+                  <td data-label="Sàng lọc thủ công">{manual}</td>
+                  <td className="lp-table__ours" data-label="Với AI Match">{product}</td>
                 </tr>
               ))}
             </tbody>

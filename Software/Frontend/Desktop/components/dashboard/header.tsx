@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Bell, CheckCheck, ChevronDown, LogOut, Menu, Search, Settings2, UserRound } from "lucide-react";
+import { Bell, CheckCheck, ChevronDown, LogOut, Search, Settings2, UserRound } from "lucide-react";
 import { useSalesOps } from "@/lib/sales-ops-context";
 import { canonicalSection, navigationItems } from "@/lib/navigation";
 import { getProductForSection } from "@/lib/brand";
@@ -12,7 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { AuthModal } from "./modals/auth-modal";
 
 export function Header() {
-  const { activeSection, mobileMenuOpen, setMobileMenuOpen, setIsSearchOpen, notifications, markNotificationAsRead, markAllNotificationsAsRead, authUser, isAuthModalOpen, setIsAuthModalOpen, logoutUser } = useSalesOps();
+  const { activeSection, setIsSearchOpen, notifications, markNotificationAsRead, markAllNotificationsAsRead, authUser, isAuthModalOpen, setIsAuthModalOpen, logoutUser } = useSalesOps();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   const user = mounted ? authUser : null;
@@ -23,7 +23,6 @@ export function Header() {
   return <>
     <header className="app-header">
       <div className="app-header-context">
-        <button className="icon-button mobile-only" aria-label="Mở điều hướng" aria-controls="application-navigation" aria-expanded={mobileMenuOpen} onClick={() => setMobileMenuOpen(true)}><Menu size={19} /></button>
         <ProductMark product={currentProduct.id} className="active-product-mark" decorative />
         <div><p>{currentProduct.purpose}</p><h1>{current?.label || "Tổng quan"}</h1></div>
       </div>

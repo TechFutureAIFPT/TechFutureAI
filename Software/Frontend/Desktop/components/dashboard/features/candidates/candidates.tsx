@@ -243,7 +243,89 @@ export function CandidatesSection() {
 
       {/* Main Table */}
       <Card className="border-border bg-card shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Mobile: danh sách thẻ thay cho bảng 8 cột để không phải cuộn ngang. */}
+        <ul className="md:hidden divide-y divide-border" aria-label="Danh sách hồ sơ ứng viên">
+          {paginated.length === 0 ? (
+            <li className="py-8 px-4 text-center text-xs text-muted-foreground">
+              Không tìm thấy ứng viên nào phù hợp với bộ lọc hiện tại.
+            </li>
+          ) : (
+            paginated.map((c, idx) => {
+              const badge = stageBadges[c.stage];
+              return (
+                <li key={`m-${c.id}-${idx}`} className="flex items-start gap-3 px-4 py-3.5 active:bg-sky-50/60">
+                  <button
+                    type="button"
+                    onClick={() => setDetailCandidate(c)}
+                    className="flex min-w-0 flex-1 items-start gap-3 text-left"
+                    aria-label={`Xem chi tiết ${c.name}`}
+                  >
+                    <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center text-white font-bold text-xs shrink-0">
+                      {c.name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                        .slice(0, 2)}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center justify-between gap-2">
+                        <span className="truncate font-bold text-sm text-slate-900">{c.name}</span>
+                        <span
+                          className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                            c.matchScore >= 85
+                              ? "bg-sky-50 text-sky-700"
+                              : c.matchScore >= 70
+                              ? "bg-blue-50 text-blue-700"
+                              : "bg-amber-50 text-amber-700"
+                          }`}
+                        >
+                          {c.matchScore}%
+                        </span>
+                      </span>
+                      <span className="mt-0.5 block truncate text-xs text-slate-600">{c.jobTarget}</span>
+                      <span className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
+                        <Badge variant="outline" className={`text-[10px] ${badge.className}`}>
+                          {badge.label}
+                        </Badge>
+                        <span>{c.experienceYears} năm KN</span>
+                        <span aria-hidden="true">·</span>
+                        <span>{(c.expectedSalary / 1000000).toFixed(0)} Tr ₫</span>
+                      </span>
+                    </span>
+                  </button>
+                  <div className="flex shrink-0 flex-col gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setInterviewCandidate(c);
+                        setInterviewModalOpen(true);
+                      }}
+                      className="h-9 w-9 p-0 text-muted-foreground"
+                      aria-label={`Lên lịch phỏng vấn ${c.name}`}
+                    >
+                      <Calendar className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setEmailCandidate(c);
+                        setEmailModalOpen(true);
+                      }}
+                      className="h-9 w-9 p-0 text-muted-foreground"
+                      aria-label={`Gửi email cho ${c.name}`}
+                    >
+                      <Mail className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </li>
+              );
+            })
+          )}
+        </ul>
+
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-xs text-left">
             <thead className="bg-sky-50/50 border-b border-border text-slate-700 uppercase tracking-wider font-bold">
               <tr>

@@ -525,7 +525,7 @@ export function MatchWorkflowSection() {
     <div className="space-y-6">
       {/* Wizard Header Progress Bar */}
       <div className="bg-card border border-border rounded-xl p-4 shadow-xs">
-        <div className="flex items-center justify-between gap-2 overflow-x-auto pb-1">
+        <div className="flex items-center justify-between gap-1 sm:gap-2 overflow-x-auto pb-1">
           {stepsList.map((step) => {
             const Icon = step.icon;
             const isActive = workflow.currentStep === step.num;
@@ -541,7 +541,8 @@ export function MatchWorkflowSection() {
                     setWorkflowStep(step.num as 1 | 2 | 3 | 4 | 5);
                   }
                 }}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200 ${
+                aria-label={`Bước ${step.num}: ${step.label}`}
+                className={`flex shrink-0 items-center gap-2 px-2 sm:px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200 ${
                   isActive
                     ? "bg-sky-600 text-white shadow-xs"
                     : isCompleted
@@ -560,7 +561,7 @@ export function MatchWorkflowSection() {
                 >
                   {isCompleted ? <CheckCircle2 className="w-3.5 h-3.5" /> : step.num}
                 </div>
-                <span>{step.label}</span>
+                <span className={isActive ? undefined : "hidden sm:inline"}>{step.label}</span>
               </button>
             );
           })}

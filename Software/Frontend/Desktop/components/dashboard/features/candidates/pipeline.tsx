@@ -145,7 +145,7 @@ export function PipelineSection() {
           </div>
 
           <Select value={selectedJob} onValueChange={setSelectedJob}>
-            <SelectTrigger className="w-[180px] bg-slate-50 border-slate-200 text-xs h-9">
+            <SelectTrigger className="w-full sm:w-[180px] bg-slate-50 border-slate-200 text-xs h-9">
               <SelectValue placeholder="Vị trí tuyển dụng" />
             </SelectTrigger>
             <SelectContent>
@@ -159,7 +159,7 @@ export function PipelineSection() {
           </Select>
 
           <Select value={selectedRecruiter} onValueChange={setSelectedRecruiter}>
-            <SelectTrigger className="w-[170px] bg-slate-50 border-slate-200 text-xs h-9">
+            <SelectTrigger className="w-full sm:w-[170px] bg-slate-50 border-slate-200 text-xs h-9">
               <SelectValue placeholder="Chuyên viên HR" />
             </SelectTrigger>
             <SelectContent>

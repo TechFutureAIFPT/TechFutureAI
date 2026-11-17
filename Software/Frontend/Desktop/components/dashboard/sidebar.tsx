@@ -45,6 +45,7 @@ export function Sidebar() {
   return <>
     {mobileMenuOpen && <button className="app-backdrop" tabIndex={-1} aria-label="Đóng menu điều hướng" onClick={() => setMobileMenuOpen(false)} />}
     <aside ref={panelRef} id="application-navigation" role={mobileMenuOpen ? "dialog" : undefined} aria-modal={mobileMenuOpen ? true : undefined} aria-label="Điều hướng AI Match" className={cn("app-sidebar", mobileMenuOpen && "is-open")}>
+      <span className="sheet-handle" aria-hidden="true" />
       <div className="app-sidebar-brand"><Brand /><button ref={closeRef} className="icon-button mobile-only" aria-label="Đóng điều hướng" onClick={() => setMobileMenuOpen(false)}><X size={18} /></button></div>
       <div className="workspace-label"><ProductMark product={currentProduct.id} className="workspace-avatar" decorative /><div><strong>Không gian AI Match</strong><small>{currentProduct.name}</small></div></div>
       <nav aria-label="Điều hướng chính" className="app-navigation">

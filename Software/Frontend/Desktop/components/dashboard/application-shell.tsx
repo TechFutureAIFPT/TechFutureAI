@@ -4,7 +4,7 @@ import { SalesOpsProvider, useSalesOps, type Section } from "@/lib/sales-ops-con
 import { Header } from "@/components/dashboard/header";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { CommandSearch } from "@/components/dashboard/command-search";
-import { usePathname } from "next/navigation";
+import { MobileTabBar } from "@/components/dashboard/mobile-tab-bar";
 
 function PreviewNotice() {
   const { authUser, authChecked, workspaceDataState, reloadRealUserData, setIsAuthModalOpen } = useSalesOps();
@@ -17,14 +17,13 @@ function PreviewNotice() {
 
 function ApplicationFrame({ children, fullBleed = false }: { children: React.ReactNode; fullBleed?: boolean }) {
   const { activeSection } = useSalesOps();
-  const pathname = usePathname();
   const immersive = fullBleed || ["ai-assistant", "chatbot", "career-compass"].includes(activeSection);
-  return <div className="enterprise-app">
+  return <div className={immersive ? "enterprise-app is-immersive" : "enterprise-app"}>
     <a href="#workspace-content" className="skip-link">Chuyển đến nội dung</a>
     <Sidebar />
     <div className="app-frame"><Header />
       <main id="workspace-content" tabIndex={-1} className={immersive ? "app-content app-content-full" : "app-content"}>{!immersive && <PreviewNotice />}{children}</main>
-    </div><CommandSearch />
+    </div><MobileTabBar /><CommandSearch />
   </div>;
 }
 
